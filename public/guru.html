@@ -1,0 +1,425 @@
+<!DOCTYPE html> 
+<html lang="id"> 
+<head> 
+  <meta charset="UTF-8" /> 
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" /> 
+  <title>Dashboard Guru - SiBintang SD RK Bintang Timur</title> 
+  <!-- Tailwind CSS CDN --> 
+  <script src="https://cdn.tailwindcss.com"></script> 
+  <!-- QRCode.js Generator --> 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script> 
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet"> 
+  <link rel="stylesheet" href="/css/style.css" /> 
+  <!-- Konfigurasi PWA Android, iOS & Desktop --> 
+  <link rel="manifest" href="/manifest.json" /> 
+  <meta name="theme-color" content="#1d4ed8" /> 
+  <link rel="icon" type="image/svg+xml" href="/icon.svg" /> 
+  <link rel="apple-touch-icon" href="/icon.svg" /> 
+  <meta name="apple-mobile-web-app-capable" content="yes" /> 
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" /> 
+  <meta name="apple-mobile-web-app-title" content="SiBintang" /> 
+</head> 
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col"> 
+
+  <!-- HEADER GURU --> 
+  <header class="bg-indigo-900 text-white shadow-md sticky top-0 z-50 no-print"> 
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between"> 
+      <div class="flex items-center space-x-3"> 
+        <!-- Ikon Logo Berbasis HTML & Tailwind -->
+        <div class="relative w-10 h-11 bg-yellow-300 border-2 border-indigo-950 rounded-b-xl flex items-center justify-center shadow-md overflow-hidden flex-shrink-0">
+          <div class="absolute inset-x-0 top-2.5 h-1.5 bg-white"></div>
+          <div class="absolute inset-y-0 left-4.5 w-1.5 bg-white"></div>
+          <div class="absolute w-4 h-4 bg-red-600 rotate-45 transform shadow-sm"></div>
+          <div class="absolute w-5 h-3 bg-white border border-indigo-950 rounded-sm flex items-center justify-between px-0.5">
+            <div class="w-2 h-full border-r border-slate-300"></div>
+            <div class="w-2 h-full"></div>
+          </div>
+        </div> 
+        <div> 
+          <h1 class="font-bold text-base md:text-lg leading-tight">Portal Guru SiBintang</h1> 
+          <p class="text-xs text-indigo-200">SD RK Bintang Timur Rantauprapat</p> 
+        </div> 
+      </div> 
+      <div class="flex items-center space-x-2"> 
+        <a href="/" class="bg-indigo-700 hover:bg-indigo-600 text-xs px-3 py-1.5 rounded-lg font-semibold transition"> 
+          Halaman Siswa ↗ 
+        </a> 
+        <button id="btnLogoutGuru" onclick="logoutGuru()" class="hidden bg-red-500 hover:bg-red-600 text-xs px-3 py-1.5 rounded-lg font-semibold transition"> 
+          Keluar 
+        </button> 
+      </div> 
+    </div> 
+  </header> 
+
+  <main class="flex-grow max-w-6xl w-full mx-auto p-4 md:p-6"> 
+
+    <!-- 1. LOGIN PIN GURU --> 
+    <section id="loginGuruSection" class="bg-white rounded-2xl shadow-sm p-6 max-w-sm mx-auto mt-10 border border-slate-200 no-print"> 
+      <div class="text-center mb-5"> 
+        <div class="w-12 h-12 bg-indigo-100 text-indigo-800 rounded-2xl flex items-center justify-center mx-auto mb-3 text-sm font-bold"> 
+          PIN 
+        </div> 
+        <h2 class="text-lg font-bold text-slate-800">Akses Khusus Guru</h2> 
+        <p class="text-xs text-slate-500 mt-1">Masukkan Kode PIN Guru untuk mengelola QR Absensi & Tugas Kelas</p> 
+      </div> 
+      <form id="loginGuruForm" class="space-y-4"> 
+        <div> 
+          <label class="block text-xs font-semibold text-slate-600 mb-1">PIN Akses Guru</label> 
+          <input type="password" id="pinGuru" required placeholder="Default: 123456" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-center tracking-widest font-bold text-sm focus:ring-2 focus:ring-indigo-600 focus:outline-none" /> 
+        </div> 
+        <button type="submit" class="w-full bg-indigo-800 hover:bg-indigo-900 text-white font-bold py-2.5 rounded-xl shadow transition text-sm"> 
+          Buka Dashboard Guru 
+        </button> 
+      </form> 
+    </section> 
+
+    <!-- 2. DASHBOARD UTAMA GURU --> 
+    <div id="dashboardGuruSection" class="hidden space-y-6"> 
+
+      <!-- NAVIGASI TAB MENU GURU -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 bg-white p-1.5 rounded-2xl shadow-sm border border-slate-200 no-print">
+        <button onclick="switchGuruTab('absen')" id="tabGuruBtn-absen" class="py-2.5 px-4 text-xs md:text-sm font-bold rounded-xl bg-indigo-800 text-white shadow transition">
+          QR & Rekap Absensi
+        </button>
+        <button onclick="switchGuruTab('tugas')" id="tabGuruBtn-tugas" class="py-2.5 px-4 text-xs md:text-sm font-bold rounded-xl text-slate-700 hover:bg-slate-100 hover:text-indigo-900 transition">
+          Pemeriksaan PR / Tugas
+        </button>
+        <button onclick="switchGuruTab('pengumuman')" id="tabGuruBtn-pengumuman" class="py-2.5 px-4 text-xs md:text-sm font-bold rounded-xl text-slate-700 hover:bg-slate-100 hover:text-indigo-900 transition">
+          Papan Pengumuman
+        </button>
+      </div>
+
+      <!-- ========================================================= --> 
+      <!-- TAB 1: QR CODE & REKAP ABSENSI HARIAN                     --> 
+      <!-- ========================================================= --> 
+      <div id="tabGuruContent-absen" class="space-y-6"> 
+
+        <!-- BARIS FILTER KELAS & TANGGAL ABSEN --> 
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-end justify-between gap-4 no-print"> 
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 flex-grow"> 
+            <div> 
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Pilih Kelas</label> 
+              <select id="filterKelas" onchange="sinkronKelas('absen')" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm font-semibold bg-white focus:ring-2 focus:ring-indigo-600 focus:outline-none"> 
+                <option value="1A">Kelas 1A</option><option value="1B">Kelas 1B</option> 
+                <option value="2A">Kelas 2A</option><option value="2B">Kelas 2B</option> 
+                <option value="3A">Kelas 3A</option><option value="3B">Kelas 3B</option> 
+                <option value="4A">Kelas 4A</option><option value="4B">Kelas 4B</option> 
+                <option value="5A">Kelas 5A</option><option value="5B">Kelas 5B</option> 
+                <option value="6A">Kelas 6A</option><option value="6B">Kelas 6B</option> 
+              </select> 
+            </div> 
+            <div> 
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Tanggal Absensi</label> 
+              <input type="date" id="filterTanggal" onchange="updateDashboardAbsen()" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm font-semibold focus:ring-2 focus:ring-indigo-600 focus:outline-none" /> 
+            </div> 
+            <div> 
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Keterangan Sesi</label> 
+              <input type="text" id="ketSesi" value="Absen Pagi" oninput="generateQR()" placeholder="Misal: Absen Pagi" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-indigo-600 focus:outline-none" /> 
+            </div> 
+          </div> 
+          <div class="flex space-x-2"> 
+            <button onclick="loadRekapKelas()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow transition"> 
+              Segarkan Rekap 
+            </button> 
+            <button onclick="exportAbsensiCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow transition flex items-center space-x-1"> 
+              <span>Export Excel (CSV)</span> 
+            </button> 
+          </div> 
+        </div> 
+
+        <!-- GRID KIRI (QR) & KANAN (TABEL ABSENSI) --> 
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6"> 
+
+          <!-- KARTU QR CODE --> 
+          <div id="printArea" class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col items-center text-center"> 
+            <div class="bg-indigo-50 text-indigo-800 text-xs font-bold px-3 py-1 rounded-full mb-2"> 
+              SD RK BINTANG TIMUR RANTAUPRAPAT 
+            </div> 
+            <h3 id="qrTitleKelas" class="text-xl font-bold text-slate-800">QR Absensi Kelas 1A</h3> 
+            <p id="qrSubTanggal" class="text-xs text-slate-500 mt-0.5 mb-4">-</p> 
+
+            <div class="p-4 bg-white border-4 border-indigo-900 rounded-2xl shadow-inner my-2"> 
+              <div id="qrcodeContainer" class="flex justify-center"></div> 
+            </div> 
+
+            <p id="qrPayloadText" class="text-[11px] font-mono text-slate-400 mt-3 break-all px-2"></p> 
+            <p class="text-xs text-slate-600 mt-2 font-medium"> 
+              Arahkan kamera aplikasi <b>SiBintang</b> siswa ke kode QR di atas untuk mencatat kehadiran. 
+            </p> 
+
+            <div class="mt-5 w-full flex gap-2 no-print"> 
+              <button onclick="window.print()" class="flex-1 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold py-2.5 rounded-xl transition"> 
+                Cetak QR Kelas 
+              </button> 
+            </div> 
+          </div> 
+
+          <!-- REKAP KEHADIRAN SISWA --> 
+          <div class="lg:col-span-2 space-y-5 no-print"> 
+            <div class="grid grid-cols-3 gap-3"> 
+              <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm"> 
+                <span class="text-xs text-slate-500 font-semibold">Total Siswa Kelas</span> 
+                <p id="statTotal" class="text-2xl font-bold text-slate-800 mt-1">0</p> 
+              </div> 
+              <div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-200 shadow-sm"> 
+                <span class="text-xs text-emerald-700 font-semibold">Sudah Absen (Hadir)</span> 
+                <p id="statHadir" class="text-2xl font-bold text-emerald-700 mt-1">0</p> 
+              </div> 
+              <div class="bg-rose-50 p-4 rounded-2xl border border-rose-200 shadow-sm"> 
+                <span class="text-xs text-rose-700 font-semibold">Belum Absen</span> 
+                <p id="statBelum" class="text-2xl font-bold text-rose-600 mt-1">0</p> 
+              </div> 
+            </div> 
+
+            <!-- Tabel Siswa Belum Absen --> 
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-rose-200"> 
+              <div class="flex items-center justify-between mb-3"> 
+                <div class="flex items-center space-x-2"> 
+                  <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></span> 
+                  <h3 class="font-bold text-sm md:text-base text-rose-700">Daftar Siswa Belum Absen</h3> 
+                </div> 
+                <span id="badgeBelum" class="text-xs bg-rose-100 text-rose-700 font-bold px-2.5 py-0.5 rounded-full">0 Siswa</span> 
+              </div> 
+              <div class="overflow-x-auto"> 
+                <table class="w-full text-left border-collapse text-xs"> 
+                  <thead> 
+                    <tr class="bg-rose-50/70 text-rose-900 border-b border-rose-100"> 
+                      <th class="p-2.5 rounded-tl-lg">NIK / NISN</th> 
+                      <th class="p-2.5">Nama Siswa</th> 
+                      <th class="p-2.5">L/P</th> 
+                      <th class="p-2.5">Orang Tua</th> 
+                      <th class="p-2.5 rounded-tr-lg text-right">Aksi Cepat</th> 
+                    </tr> 
+                  </thead> 
+                  <tbody id="tbodyBelumAbsen" class="divide-y divide-slate-100"> 
+                    <tr><td colspan="5" class="p-4 text-center text-slate-400">Memuat data...</td></tr> 
+                  </tbody> 
+                </table> 
+              </div> 
+            </div> 
+
+            <!-- Tabel Siswa Sudah Absen --> 
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200"> 
+              <div class="flex items-center justify-between mb-3"> 
+                <h3 class="font-bold text-sm md:text-base text-emerald-700">Siswa Sudah Absen Hari Ini</h3> 
+                <span id="badgeHadir" class="text-xs bg-emerald-100 text-emerald-700 font-bold px-2.5 py-0.5 rounded-full">0 Siswa</span> 
+              </div> 
+              <div class="overflow-x-auto"> 
+                <table class="w-full text-left border-collapse text-xs"> 
+                  <thead> 
+                    <tr class="bg-slate-100 text-slate-600 border-b"> 
+                      <th class="p-2.5 rounded-tl-lg">Waktu Scan</th> 
+                      <th class="p-2.5">NIK</th> 
+                      <th class="p-2.5">Nama Siswa</th> 
+                      <th class="p-2.5 rounded-tr-lg">Status</th> 
+                    </tr> 
+                  </thead> 
+                  <tbody id="tbodySudahAbsen" class="divide-y divide-slate-100"> 
+                    <tr><td colspan="4" class="p-4 text-center text-slate-400">Belum ada siswa yang melakukan scan QR.</td></tr> 
+                  </tbody> 
+                </table> 
+              </div> 
+            </div> 
+          </div> 
+        </div> 
+      </div> 
+
+      <!-- ========================================================= --> 
+      <!-- TAB 2: PEMERIKSAAN PR / TUGAS SISWA                       --> 
+      <!-- ========================================================= --> 
+      <div id="tabGuruContent-tugas" class="hidden space-y-6 no-print"> 
+
+        <!-- BARIS FILTER KELAS, MAPEL & PENCARIAN JUDUL TUGAS --> 
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-end justify-between gap-4"> 
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 flex-grow"> 
+            <div> 
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Pilih Kelas</label> 
+              <select id="filterKelasTugas" onchange="sinkronKelas('tugas')" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm font-semibold bg-white focus:ring-2 focus:ring-indigo-600 focus:outline-none"> 
+                <option value="1A">Kelas 1A</option><option value="1B">Kelas 1B</option> 
+                <option value="2A">Kelas 2A</option><option value="2B">Kelas 2B</option> 
+                <option value="3A">Kelas 3A</option><option value="3B">Kelas 3B</option> 
+                <option value="4A">Kelas 4A</option><option value="4B">Kelas 4B</option> 
+                <option value="5A">Kelas 5A</option><option value="5B">Kelas 5B</option> 
+                <option value="6A">Kelas 6A</option><option value="6B">Kelas 6B</option> 
+              </select> 
+            </div> 
+            <div> 
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Mata Pelajaran</label> 
+              <select id="filterMapelTugas" onchange="loadRekapTugas()" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm font-semibold bg-white focus:ring-2 focus:ring-indigo-600 focus:outline-none"> 
+                <option value="SEMUA">-- Semua Mata Pelajaran --</option> 
+                <option value="Matematika">Matematika</option> 
+                <option value="Bahasa Indonesia">Bahasa Indonesia</option> 
+                <option value="IPAS (IPA & IPS)">IPAS (IPA & IPS)</option> 
+                <option value="Pendidikan Agama">Pendidikan Agama</option> 
+                <option value="Pendidikan Pancasila / PPKn">Pendidikan Pancasila / PPKn</option> 
+                <option value="Bahasa Inggris">Bahasa Inggris</option> 
+                <option value="Seni Budaya & Prakarya">Seni Budaya & Prakarya</option> 
+                <option value="PJOK">PJOK (Olahraga)</option> 
+                <option value="Muatan Lokal / TIK">Muatan Lokal / TIK</option> 
+              </select> 
+            </div> 
+            <div> 
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Cari Nama Siswa / Judul Tugas</label> 
+              <input type="text" id="cariTugasInput" oninput="filterTabelTugasLokal()" placeholder="Ketik kata kunci..." class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-indigo-600 focus:outline-none" /> 
+            </div> 
+          </div> 
+          <div class="flex space-x-2"> 
+            <button onclick="loadRekapTugas()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow transition"> 
+              Segarkan Tugas 
+            </button> 
+            <button onclick="exportTugasCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow transition flex items-center space-x-1"> 
+              <span>Export Nilai (CSV)</span> 
+            </button> 
+          </div> 
+        </div> 
+
+        <!-- STATISTIK PENGUMPULAN TUGAS --> 
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4"> 
+          <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm"> 
+            <span class="text-xs text-slate-500 font-semibold">Total File PR / Tugas Masuk</span> 
+            <p id="statTotalFileTugas" class="text-2xl font-bold text-indigo-800 mt-1">0 File</p> 
+          </div> 
+          <div class="bg-emerald-50 p-4 rounded-2xl border border-emerald-200 shadow-sm"> 
+            <span class="text-xs text-emerald-700 font-semibold">Siswa Sudah Mengumpulkan</span> 
+            <p id="statSiswaSudahTugas" class="text-2xl font-bold text-emerald-700 mt-1">0 Siswa</p> 
+          </div> 
+          <div class="bg-amber-50 p-4 rounded-2xl border border-amber-200 shadow-sm"> 
+            <span class="text-xs text-amber-800 font-semibold">Siswa Belum Mengumpulkan</span> 
+            <p id="statSiswaBelumTugas" class="text-2xl font-bold text-amber-700 mt-1">0 Siswa</p> 
+          </div> 
+        </div> 
+
+        <!-- TABEL UTAMA: DAFTAR FILE PR / TUGAS YANG DIKUMPULKAN --> 
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200"> 
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4"> 
+            <div> 
+              <h3 class="font-bold text-sm md:text-base text-slate-800">Daftar PR & Tugas Siswa Terkumpul</h3> 
+              <p class="text-xs text-slate-500">Klik tombol <b>Buka di Google Drive</b> untuk memeriksa hasil pekerjaan siswa.</p> 
+            </div> 
+            <span id="badgeJumlahTugas" class="text-xs bg-indigo-100 text-indigo-800 font-bold px-3 py-1 rounded-full self-start sm:self-center">0 Tugas</span> 
+          </div> 
+
+          <div class="overflow-x-auto"> 
+            <table class="w-full text-left border-collapse text-xs"> 
+              <thead> 
+                <tr class="bg-slate-100 text-slate-600 border-b"> 
+                  <th class="p-3 rounded-tl-lg">Waktu Upload</th> 
+                  <th class="p-3">Nama Siswa (NIK)</th> 
+                  <th class="p-3">Kelas</th> 
+                  <th class="p-3">Mata Pelajaran</th> 
+                  <th class="p-3">Judul / Keterangan PR</th> 
+                  <th class="p-3 rounded-tr-lg text-right">File Google Drive</th> 
+                </tr> 
+              </thead> 
+              <tbody id="tbodyDaftarTugas" class="divide-y divide-slate-200"> 
+                <tr><td colspan="6" class="p-6 text-center text-slate-400">Memuat data pengumpulan tugas...</td></tr> 
+              </tbody> 
+            </table> 
+          </div> 
+        </div> 
+
+        <!-- TABEL SISWA YANG BELUM MENGUMPULKAN TUGAS PADA MAPEL INI --> 
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-amber-200"> 
+          <div class="flex items-center justify-between mb-3"> 
+            <div> 
+              <h3 class="font-bold text-sm md:text-base text-amber-800">Siswa Belum Mengumpulkan Tugas (Sesuai Filter)</h3> 
+              <p class="text-xs text-slate-500">Daftar siswa terdaftar di kelas ini yang belum mengupload tugas pada mata pelajaran terpilih.</p> 
+            </div> 
+            <span id="badgeBelumTugas" class="text-xs bg-amber-100 text-amber-800 font-bold px-2.5 py-0.5 rounded-full">0 Siswa</span> 
+          </div> 
+          <div class="overflow-x-auto"> 
+            <table class="w-full text-left border-collapse text-xs"> 
+              <thead> 
+                <tr class="bg-amber-50/70 text-amber-900 border-b border-amber-100"> 
+                  <th class="p-2.5 rounded-tl-lg">NIK / NISN</th> 
+                  <th class="p-2.5">Nama Siswa</th> 
+                  <th class="p-2.5">Nama Orang Tua</th> 
+                  <th class="p-2.5 rounded-tr-lg text-right">Ingatkan via WhatsApp</th> 
+                </tr> 
+              </thead> 
+              <tbody id="tbodyBelumTugas" class="divide-y divide-slate-100"> 
+                <tr><td colspan="4" class="p-4 text-center text-slate-400">Memuat data...</td></tr> 
+              </tbody> 
+            </table> 
+          </div> 
+        </div> 
+
+      </div> 
+
+    <!-- ========================================================= --> 
+    <!-- TAB 3: KELOLA PENGUMUMAN SEKOLAH                       --> 
+    <!-- ========================================================= --> 
+    <div id="tabGuruContent-pengumuman" class="hidden space-y-6 no-print">
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+        <h3 class="font-bold text-base text-slate-800 mb-1">Buat Pengumuman Baru</h3>
+        <p class="text-xs text-slate-500 mb-4">Pengumuman akan langsung tampil di halaman depan portal seluruh siswa.</p>
+
+        <form id="formPengumuman" onsubmit="submitPengumuman(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Pilih Template Pengumuman Otomatis (Opsional)</label>
+          <select id="p_template" onchange="pilihTemplatePengumuman()" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm bg-white focus:ring-2 focus:ring-indigo-600 focus:outline-none">
+            <option value="">-- Buat Manual atau Pilih Template --</option>
+            <option value="libur">Jadwal Libur Sekolah & Cuti Bersama</option>
+            <option value="rapor">Jadwal Pengambilan Rapor / Buku Laporan Hasil Belajar</option>
+            <option value="tugas">Peringatan Pengumpulan Tugas & PR yang Belum Selesai</option>
+            <option value="upacara">Pemberitahuan Upacara / Kegiatan Ekstrakurikuler Wajib</option>
+          </select>
+        </div>
+
+  <div>
+    <label class="block text-xs font-semibold text-slate-600 mb-1">Judul Pengumuman *</label>
+    <input type="text" id="p_judul" required placeholder="Contoh: Jadwal Libur Semester & Penyerahan Rapor" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-indigo-600 focus:outline-none" />
+  </div>
+  <div>
+    <label class="block text-xs font-semibold text-slate-600 mb-1">Isi Pengumuman *</label>
+    <textarea id="p_isi" rows="4" required placeholder="Tuliskan isi pengumuman secara lengkap di sini..." class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-indigo-600 focus:outline-none"></textarea>
+  </div>
+  <button type="submit" id="btnKirimPengumuman" class="w-full bg-indigo-800 hover:bg-indigo-900 text-white font-bold py-3 rounded-xl shadow transition text-sm">
+    Terbitkan Pengumuman
+  </button>
+</form>
+      </div>
+    </div>
+
+    </div> 
+  </main> 
+
+  <!-- MODAL INPUT NILAI & CATATAN GURU --> 
+  <div id="modalNilai" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4"> 
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200"> 
+      <div class="flex items-center justify-between mb-4"> 
+        <h3 class="font-bold text-base text-slate-800">Beri Nilai & Catatan Tugas</h3> 
+        <button onclick="closeModalNilai()" class="text-slate-400 hover:text-slate-600 font-bold text-lg">✕</button> 
+      </div> 
+
+      <div class="mb-3 bg-slate-50 p-3 rounded-xl text-xs space-y-1"> 
+        <p><span class="font-semibold text-slate-500">Siswa:</span> <span id="modalNamaSiswa" class="font-bold text-slate-800"></span></p> 
+        <p><span class="font-semibold text-slate-500">Tugas:</span> <span id="modalJudulTugas" class="font-bold text-slate-800"></span></p> 
+      </div> 
+
+      <form id="formNilai" onsubmit="submitNilaiGuru(event)" class="space-y-4"> 
+        <input type="hidden" id="modalRowIndex" /> 
+        <div> 
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Nilai Angka (0 - 100) *</label> 
+          <input type="number" id="inputNilaiAngka" min="0" max="100" required placeholder="Contoh: 85" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-bold focus:ring-2 focus:ring-indigo-600 focus:outline-none" /> 
+        </div> 
+        <div> 
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Catatan / Komentar Guru (Opsional)</label> 
+          <textarea id="inputCatatanGuru" rows="3" placeholder="Contoh: Pengerjaan sangat rapi dan teliti, pertahankan!" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-indigo-600 focus:outline-none"></textarea> 
+        </div> 
+
+        <div class="flex space-x-2 pt-2"> 
+          <button type="button" onclick="closeModalNilai()" class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2.5 rounded-xl text-xs transition"> 
+            Batal 
+          </button> 
+          <button type="submit" id="btnSimpanNilai" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl text-xs shadow transition"> 
+            Simpan Nilai 
+          </button> 
+        </div> 
+      </form> 
+    </div> 
+  </div> 
+
+  <script src="/js/guru.js"></script> 
+</body> 
+</html>

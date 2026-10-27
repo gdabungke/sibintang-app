@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Jalur Lengkung untuk Teks Pita & Nama Kota -->
+    <path id="curvePita" d="M 96,315 A 175,175 0 0,0 416,315" />
+    <path id="curveKota" d="M 80,368 A 208,208 0 0,0 432,368" />
+  </defs>
+
+  <!-- Perisai Utama Kuning (Tanpa background hitam) -->
+  <path d="M 38,24 H 474 V 235 C 474,395 370,488 256,496 C 142,488 38,395 38,235 Z" fill="#f2ea00" stroke="#000000" stroke-width="10" stroke-linejoin="round" />
+
+  <!-- Salib Putih di Belakang Bintang -->
+  <!-- Batang Vertikal -->
+  <rect x="231" y="24" width="50" height="365" fill="#ffffff" stroke="#000000" stroke-width="6" />
+  <!-- Batang Horizontal -->
+  <rect x="64" y="65" width="384" height="54" fill="#ffffff" stroke="#000000" stroke-width="6" />
+  <!-- Penutup sambungan tengah salib agar bersih -->
+  <rect x="234" y="68" width="44" height="48" fill="#ffffff" />
+
+  <!-- Bintang Merah 5 Sudut -->
+  <polygon points="256,12 299,94 426,94 328,168 358,285 256,214 154,285 184,168 86,94 213,94" fill="#e32417" stroke="#000000" stroke-width="6" stroke-linejoin="round" />
+
+  <!-- Buku Terbuka -->
+  <g>
+    <!-- Sampul Luar Hitam/Merah -->
+    <polygon points="158,92 256,99 354,92 374,218 256,225 138,218" fill="#ffffff" stroke="#000000" stroke-width="6" stroke-linejoin="round" />
+    <!-- Aksen Merah Tebal Bawah Buku -->
+    <path d="M 148,205 Q 202,216 256,208 Q 310,216 364,205 L 358,216 Q 310,224 256,216 Q 202,224 154,216 Z" fill="#e32417" stroke="#000000" stroke-width="3" />
+    <!-- Lembaran Halaman Kiri & Kanan -->
+    <path d="M 168,88 C 198,82 228,86 256,96 L 256,208 C 228,198 198,196 152,204 Z" fill="#ffffff" stroke="#000000" stroke-width="5" stroke-linejoin="round" />
+    <path d="M 344,88 C 314,82 284,86 256,96 L 256,208 C 284,198 314,196 360,204 Z" fill="#ffffff" stroke="#000000" stroke-width="5" stroke-linejoin="round" />
+    
+    <!-- Garis-garis Baris Tulisan Buku (Kiri) -->
+    <g stroke="#000000" stroke-width="3.5" stroke-linecap="round">
+      <line x1="178" y1="104" x2="242" y2="108" />
+      <line x1="176" y1="116" x2="242" y2="120" />
+      <line x1="174" y1="128" x2="242" y2="132" />
+      <line x1="172" y1="140" x2="242" y2="144" />
+      <line x1="170" y1="152" x2="242" y2="156" />
+      <line x1="168" y1="164" x2="242" y2="168" />
+      <line x1="166" y1="176" x2="242" y2="180" />
+      <line x1="164" y1="188" x2="242" y2="192" />
+    </g>
+    <!-- Garis-garis Baris Tulisan Buku (Kanan) -->
+    <g stroke="#000000" stroke-width="3.5" stroke-linecap="round">
+      <line x1="270" y1="108" x2="334" y2="104" />
+      <line x1="270" y1="120" x2="336" y2="116" />
+      <line x1="270" y1="132" x2="338" y2="128" />
+      <line x1="270" y1="144" x2="340" y2="140" />
+      <line x1="270" y1="156" x2="342" y2="152" />
+      <line x1="270" y1="168" x2="344" y2="164" />
+      <line x1="270" y1="180" x2="346" y2="176" />
+      <line x1="270" y1="192" x2="348" y2="188" />
+    </g>
+  </g>
+
+  <!-- Ekor Pita Kiri & Kanan -->
+  <polygon points="62,272 80,226 95,256 116,238 104,310" fill="#ffffff" stroke="#000000" stroke-width="6" stroke-linejoin="round" />
+  <polygon points="450,272 432,226 417,256 396,238 408,310" fill="#ffffff" stroke="#000000" stroke-width="6" stroke-linejoin="round" />
+
+  <!-- Pita Utama Putih Melengkung -->
+  <path d="M 74,296 A 192,192 0 0,0 438,296 L 402,262 A 154,154 0 0,1 110,262 Z" fill="#ffffff" stroke="#000000" stroke-width="6" stroke-linejoin="round" />
+
+  <!-- Teks di Dalam Pita Putih: SD RK BINTANG TIMUR -->
+  <text font-family="Arial, Helvetica, sans-serif" font-size="25" font-weight="900" fill="#000000" letter-spacing="1.5">
+    <textPath href="#curvePita" startOffset="50%" text-anchor="middle">
+      SD RK BINTANG TIMUR
+    </textPath>
+  </text>
+
+  <!-- Teks Bawah Perisai: RANTAUPRAPAT -->
+  <text font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="900" fill="#111111" letter-spacing="4">
+    <textPath href="#curveKota" startOffset="50%" text-anchor="middle">
+      RANTAUPRAPAT
+    </textPath>
+  </text>
+</svg>

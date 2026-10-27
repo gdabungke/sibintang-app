@@ -1,0 +1,25 @@
+{
+  "name": "sibintang-sd-rk-bintang-timur",
+  "version": "1.0.0",
+  "description": "Aplikasi Absensi & Pengumpulan Tugas SD RK Bintang Timur Rantauprapat",
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "tsc && node dist/server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.3",
+    "googleapis": "^140.0.1",
+    "multer": "^1.4.5-lts.2"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^4.17.25",
+    "@types/multer": "^1.4.13",
+    "@types/node": "^20.19.43",
+    "typescript": "^5.9.3"
+  }
+}

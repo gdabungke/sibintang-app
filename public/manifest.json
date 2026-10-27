@@ -1,0 +1,35 @@
+{
+  "name": "SiBintang - SD RK Bintang Timur Rantauprapat",
+  "short_name": "SiBintang",
+  "description": "Aplikasi Absensi QR Code & Pengumpulan Tugas SD RK Bintang Timur Rantauprapat",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f1f5f9",
+  "theme_color": "#1d4ed8",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Portal Siswa",
+      "short_name": "Siswa",
+      "description": "Buka halaman Absen QR & Kumpul Tugas",
+      "url": "/",
+      "icons": [{ "src": "/icon.svg", "sizes": "192x192", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Dashboard Guru",
+      "short_name": "Guru",
+      "description": "Buka halaman QR Kelas & Pemeriksaan Tugas",
+      "url": "/guru.html",
+      "icons": [{ "src": "/icon.svg", "sizes": "192x192", "type": "image/svg+xml" }]
+    }
+  ]
+}
