@@ -1,27 +1,172 @@
-const PIN_STANDAR_GURU = '123456';
+let currentGuru = null;
 let qrGenerator = null;
 let cacheDaftarTugas = [];
 let cacheRekapAbsen = null;
 let cacheRekapTugasFull = null;
 
-window.addEventListener('DOMContentLoaded', () => {
-  const today = new Date().toISOString().split('T')[0];
-  document.getElementById('filterTanggal').value = today;
+// PWA: Handler Tombol Pasang Aplikasi Guru
+let deferredPromptGuru = null;
+const btnInstallGuru = document.getElementById('btnInstallAppGuru');
 
-  if (sessionStorage.getItem('sibintang_guru_auth') === 'true') {
-    bukaDashboardGuru();
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPromptGuru = e;
+  if (btnInstallGuru) {
+    btnInstallGuru.classList.remove('hidden');
   }
 });
 
-// 1. Login PIN Guru
-document.getElementById('loginGuruForm').addEventListener('submit', (e) => {
-  e.preventDefault();
-  const inputPin = document.getElementById('pinGuru').value.trim();
-  if (inputPin === PIN_STANDAR_GURU) {
-    sessionStorage.setItem('sibintang_guru_auth', 'true');
-    bukaDashboardGuru();
+btnInstallGuru?.addEventListener('click', async () => {
+  if (!deferredPromptGuru) return;
+  deferredPromptGuru.prompt();
+  const { outcome } = await deferredPromptGuru.userChoice;
+  if (outcome === 'accepted' && btnInstallGuru) {
+    btnInstallGuru.classList.add('hidden');
+  }
+  deferredPromptGuru = null;
+});
+
+window.addEventListener('appinstalled', () => {
+  if (btnInstallGuru) btnInstallGuru.classList.add('hidden');
+  showToast('Aplikasi Guru SiBintang berhasil dipasang!', 'success');
+});
+
+// Fungsi Global Toast Notification
+function showToast(message, type = 'success') {
+  const container = document.getElementById('toastContainer');
+  if (!container) return;
+  const toast = document.createElement('div');
+  toast.className = `toast-item ${type === 'success' ? 'toast-success' : type === 'error' ? 'toast-error' : 'toast-info'}`;
+  toast.innerHTML = `<span>${message}</span>`;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(15px)';
+    toast.style.transition = 'all 0.3s ease';
+    setTimeout(() => toast.remove(), 300);
+  }, 3500);
+}
+
+// Cek sesi login guru di SessionStorage saat halaman dimuat
+window.addEventListener('DOMContentLoaded', () => {
+  const today = new Date().toISOString().split('T')[0];
+  const filterTgl = document.getElementById('filterTanggal');
+  if (filterTgl) filterTgl.value = today;
+
+  const savedGuru = sessionStorage.getItem('sibintang_guru_data');
+  if (savedGuru) {
+    try {
+      currentGuru = JSON.parse(savedGuru);
+      bukaDashboardGuru();
+    } catch (e) {
+      sessionStorage.removeItem('sibintang_guru_data');
+    }
+  }
+});
+
+// Fungsi Switch Tab Auth Guru (Masuk vs Registrasi)
+function switchAuthTab(type) {
+  const formMasuk = document.getElementById('formMasukGuru');
+  const formDaftar = document.getElementById('formDaftarGuru');
+  const btnMasuk = document.getElementById('authTabBtn-masuk');
+  const btnDaftar = document.getElementById('authTabBtn-daftar');
+  if (!formMasuk || !formDaftar) return;
+
+  if (type === 'masuk') {
+    formMasuk.classList.remove('hidden');
+    formDaftar.classList.add('hidden');
+    if (btnMasuk) btnMasuk.className = 'py-2 text-xs font-bold rounded-lg bg-indigo-800 text-white shadow-sm transition';
+    if (btnDaftar) btnDaftar.className = 'py-2 text-xs font-bold rounded-lg text-slate-600 hover:text-slate-800 transition';
   } else {
-    alert('PIN Guru tidak sesuai! Gunakan PIN standar: 123456');
+    formMasuk.classList.add('hidden');
+    formDaftar.classList.remove('hidden');
+    if (btnDaftar) btnDaftar.className = 'py-2 text-xs font-bold rounded-lg bg-emerald-600 text-white shadow-sm transition';
+    if (btnMasuk) btnMasuk.className = 'py-2 text-xs font-bold rounded-lg text-slate-600 hover:text-slate-800 transition';
+  }
+}
+
+// 1. Tampilkan opsi tambahan sesuai Role yang dipilih saat registrasi
+function toggleRoleOptions() {
+  const role = document.getElementById('regRoleGuru').value;
+  const divKelas = document.getElementById('divKelasBinaan');
+  const divMapel = document.getElementById('divMapelAjar');
+  if (divKelas) divKelas.classList.add('hidden');
+  if (divMapel) divMapel.classList.add('hidden');
+
+  if (role === 'Wali Kelas' && divKelas) {
+    divKelas.classList.remove('hidden');
+  } else if (role === 'Guru Mapel' && divMapel) {
+    divMapel.classList.remove('hidden');
+  }
+}
+
+// 2A. Proses Masuk (Login) Guru Berdasarkan NIP
+document.getElementById('formMasukGuru')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const nip = document.getElementById('loginNip').value.trim();
+  const btn = document.getElementById('btnSubmitMasukGuru');
+  btn.textContent = 'Memverifikasi...';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/guru/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nip, aksi: 'login' }),
+    });
+    const result = await res.json();
+    if (result.success) {
+      currentGuru = result.data;
+      sessionStorage.setItem('sibintang_guru_data', JSON.stringify(currentGuru));
+      showToast(`✅ Selamat datang kembali, ${currentGuru.nama} (${currentGuru.role})`, 'success');
+      setTimeout(() => bukaDashboardGuru(), 800);
+    } else {
+      showToast(result.message || 'NIP belum terdaftar. Silakan daftar terlebih dahulu.', 'error');
+    }
+  } catch (err) {
+    showToast('Gagal terhubung ke server.', 'error');
+  } finally {
+    btn.textContent = 'Masuk ke Dashboard';
+    btn.disabled = false;
+  }
+});
+
+// 2B. Proses Registrasi (Daftar Baru) Guru / Pengelola
+document.getElementById('formDaftarGuru')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('btnSubmitDaftarGuru');
+  btn.textContent = 'Mendaftarkan...';
+  btn.disabled = true;
+
+  const payload = {
+    nip: document.getElementById('regNip').value.trim(),
+    nama: document.getElementById('regNamaGuru').value.trim(),
+    role: document.getElementById('regRoleGuru').value,
+    kelasBinaan: document.getElementById('regKelasBinaan')?.value || '-',
+    mapelAjar: document.getElementById('regMapelAjar')?.value || '-',
+    aksi: 'register',
+  };
+
+  try {
+    const res = await fetch('/api/guru/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const result = await res.json();
+    if (result.success) {
+      currentGuru = result.data;
+      sessionStorage.setItem('sibintang_guru_data', JSON.stringify(currentGuru));
+      showToast(`✅ Registrasi berhasil! Selamat datang, ${currentGuru.nama}`, 'success');
+      setTimeout(() => bukaDashboardGuru(), 800);
+    } else {
+      showToast(result.message || 'Gagal mendaftarkan akun pengelola.', 'error');
+    }
+  } catch (err) {
+    showToast('Gagal terhubung ke server.', 'error');
+  } finally {
+    btn.textContent = 'Daftar Akun Pengelola Baru';
+    btn.disabled = false;
   }
 });
 
@@ -29,41 +174,76 @@ function bukaDashboardGuru() {
   document.getElementById('loginGuruSection').classList.add('hidden');
   document.getElementById('dashboardGuruSection').classList.remove('hidden');
   document.getElementById('btnLogoutGuru').classList.remove('hidden');
+
+  const infoNama = document.getElementById('infoNamaGuru');
+  const infoRole = document.getElementById('infoRoleGuru');
+  if (infoNama) infoNama.textContent = currentGuru?.nama || 'Pengelola';
+  if (infoRole) {
+    let detailRole = `Peran: ${currentGuru?.role || 'Guru'}`;
+    if (currentGuru?.role === 'Wali Kelas') detailRole += ` | Kelas Binaan: ${currentGuru.kelasBinaan}`;
+    if (currentGuru?.role === 'Guru Mapel') detailRole += ` | Mapel: ${currentGuru.mapelAjar}`;
+    infoRole.textContent = detailRole;
+  }
+
+  if (currentGuru && currentGuru.role === 'Wali Kelas' && currentGuru.kelasBinaan !== '-') {
+    const selAbsen = document.getElementById('filterKelas');
+    const selTugas = document.getElementById('filterKelasTugas');
+    if (selAbsen) {
+      selAbsen.value = currentGuru.kelasBinaan;
+      selAbsen.disabled = true;
+    }
+    if (selTugas) {
+      selTugas.value = currentGuru.kelasBinaan;
+      selTugas.disabled = true;
+    }
+  }
+
   updateDashboardAbsen();
   loadRekapTugas();
 }
 
 function logoutGuru() {
-  sessionStorage.removeItem('sibintang_guru_auth');
-  location.reload();
+  sessionStorage.removeItem('sibintang_guru_data');
+  currentGuru = null;
+  showToast('Berhasil keluar dari sesi.', 'info');
+  setTimeout(() => location.reload(), 500);
 }
 
-// 2. Navigasi Tab Guru & Sinkronisasi Pilihan Kelas
+// 3. Navigasi Tab Guru & Sinkronisasi Pilihan Kelas
 function switchGuruTab(tab) {
-  ['absen', 'tugas'].forEach((t) => {
-    document.getElementById(`tabGuruContent-${t}`).classList.add('hidden');
+  ['absen', 'tugas', 'pengumuman'].forEach((t) => {
+    const content = document.getElementById(`tabGuruContent-${t}`);
     const btn = document.getElementById(`tabGuruBtn-${t}`);
-    btn.classList.remove('bg-indigo-800', 'text-white', 'shadow');
-    btn.classList.add('text-slate-600');
+    if (content) content.classList.add('hidden');
+    if (btn) {
+      btn.classList.remove('bg-indigo-800', 'text-white', 'shadow');
+      btn.classList.add('text-slate-600');
+    }
   });
 
-  document.getElementById(`tabGuruContent-${tab}`).classList.remove('hidden');
+  const activeContent = document.getElementById(`tabGuruContent-${tab}`);
   const activeBtn = document.getElementById(`tabGuruBtn-${tab}`);
-  activeBtn.classList.add('bg-indigo-800', 'text-white', 'shadow');
-  activeBtn.classList.remove('text-slate-600');
+  if (activeContent) activeContent.classList.remove('hidden');
+  if (activeBtn) {
+    activeBtn.classList.add('bg-indigo-800', 'text-white', 'shadow');
+    activeBtn.classList.remove('text-slate-600');
+  }
 
   if (tab === 'absen') loadRekapKelas();
   if (tab === 'tugas') loadRekapTugas();
 }
 
 function sinkronKelas(source) {
+  if (currentGuru && currentGuru.role === 'Wali Kelas' && currentGuru.kelasBinaan !== '-') return;
   if (source === 'absen') {
     const val = document.getElementById('filterKelas').value;
-    document.getElementById('filterKelasTugas').value = val;
+    const target = document.getElementById('filterKelasTugas');
+    if (target) target.value = val;
     updateDashboardAbsen();
   } else {
     const val = document.getElementById('filterKelasTugas').value;
-    document.getElementById('filterKelas').value = val;
+    const target = document.getElementById('filterKelas');
+    if (target) target.value = val;
     loadRekapTugas();
   }
 }
@@ -73,18 +253,23 @@ function updateDashboardAbsen() {
   loadRekapKelas();
 }
 
-// 3. Generate QR Code Absensi Harian
+// 4. Generate QR Code Absensi Harian
 function generateQR() {
   const kelas = document.getElementById('filterKelas').value;
   const tanggal = document.getElementById('filterTanggal').value;
-  const sesi = document.getElementById('ketSesi').value.trim() || 'Harian';
+  const sesi = document.getElementById('ketSesi')?.value.trim() || 'Harian';
   const qrDataString = `ABSEN-SIBINTANG|${kelas}|${tanggal}|${sesi}`;
 
-  document.getElementById('qrTitleKelas').textContent = `QR Absensi Kelas ${kelas}`;
-  document.getElementById('qrSubTanggal').textContent = `Tanggal: ${tanggal} (${sesi})`;
-  document.getElementById('qrPayloadText').textContent = qrDataString;
+  const titleEl = document.getElementById('qrTitleKelas');
+  const subEl = document.getElementById('qrSubTanggal');
+  const payloadEl = document.getElementById('qrPayloadText');
+
+  if (titleEl) titleEl.textContent = `QR Absensi Kelas ${kelas}`;
+  if (subEl) subEl.textContent = `Tanggal: ${tanggal} (${sesi})`;
+  if (payloadEl) payloadEl.textContent = qrDataString;
 
   const container = document.getElementById('qrcodeContainer');
+  if (!container) return;
   container.innerHTML = '';
 
   qrGenerator = new QRCode(container, {
@@ -97,7 +282,7 @@ function generateQR() {
   });
 }
 
-// 4. Ambil Rekap Kehadiran Siswa
+// 5. Ambil Rekap Kehadiran Siswa
 async function loadRekapKelas() {
   const kelas = document.getElementById('filterKelas').value;
   const tanggal = document.getElementById('filterTanggal').value;
@@ -108,7 +293,6 @@ async function loadRekapKelas() {
     if (!data.success) return;
 
     cacheRekapAbsen = data;
-
     document.getElementById('statTotal').textContent = data.totalSiswa;
     document.getElementById('statHadir').textContent = data.jumlahHadir;
     document.getElementById('statBelum').textContent = data.jumlahBelum;
@@ -131,7 +315,7 @@ async function loadRekapKelas() {
 
           return `
             <tr class="hover:bg-rose-50/40">
-              <td class="p-2.5 font-mono text-slate-600">${s.nik}</td>
+              <td class="p-2.5 font-mono text-slate-600">${s.nis}</td>
               <td class="p-2.5 font-bold text-slate-800">${s.nama}</td>
               <td class="p-2.5">${s.jk}</td>
               <td class="p-2.5">${s.ortu}</td>
@@ -149,13 +333,13 @@ async function loadRekapKelas() {
       tbodySudah.innerHTML = data.sudahAbsen
         .map(
           (s) => `
-          <tr class="hover:bg-slate-50">
-            <td class="p-2.5 font-medium text-slate-600">${s.waktuAbsen}</td>
-            <td class="p-2.5 font-mono text-slate-500">${s.nik}</td>
-            <td class="p-2.5 font-bold text-slate-800">${s.nama}</td>
-            <td class="p-2.5"><span class="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded font-bold">${s.status}</span></td>
-          </tr>
-        `
+            <tr class="hover:bg-slate-50">
+              <td class="p-2.5 font-medium text-slate-600">${s.waktuAbsen}</td>
+              <td class="p-2.5 font-mono text-slate-500">${s.nis}</td>
+              <td class="p-2.5 font-bold text-slate-800">${s.nama}</td>
+              <td class="p-2.5"><span class="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded font-bold">${s.status}</span></td>
+            </tr>
+          `
         )
         .join('');
     }
@@ -164,7 +348,7 @@ async function loadRekapKelas() {
   }
 }
 
-// 5. Ambil Daftar & Rekap Pengumpulan Tugas
+// 6. Ambil Daftar & Rekap Pengumpulan Tugas
 async function loadRekapTugas() {
   const kelas = document.getElementById('filterKelasTugas').value;
   const mapel = document.getElementById('filterMapelTugas').value;
@@ -202,7 +386,7 @@ async function loadRekapTugas() {
 
           return `
             <tr class="hover:bg-amber-50/40">
-              <td class="p-2.5 font-mono text-slate-600">${s.nik}</td>
+              <td class="p-2.5 font-mono text-slate-600">${s.nis}</td>
               <td class="p-2.5 font-bold text-slate-800">${s.nama}</td>
               <td class="p-2.5">${s.ortu}</td>
               <td class="p-2.5 text-right">${waBtn}</td>
@@ -218,10 +402,11 @@ async function loadRekapTugas() {
 
 function renderTabelTugas(list) {
   const tbody = document.getElementById('tbodyDaftarTugas');
-  document.getElementById('badgeJumlahTugas').textContent = `${list.length} File Tugas`;
+  const badgeJumlah = document.getElementById('badgeJumlahTugas');
+  if (badgeJumlah) badgeJumlah.textContent = `${list.length} File Tugas`;
 
   if (list.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400">Belum ada file PR/Tugas yang dikumpulkan untuk filter ini.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400">Belum ada file PR/Tugas yang dikumpulkan untuk filter ini.</td></tr>`;
     return;
   }
 
@@ -230,7 +415,6 @@ function renderTabelTugas(list) {
       const badgeNilai = item.nilai
         ? `<span class="bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-lg font-bold text-xs">⭐ ${item.nilai}</span>`
         : `<span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-semibold text-[11px]">Belum Dinilai</span>`;
-
       const catatanText = item.catatan ? `<div class="text-[11px] text-slate-500 italic mt-0.5">"${item.catatan}"</div>` : '';
 
       return `
@@ -238,7 +422,7 @@ function renderTabelTugas(list) {
           <td class="p-3 text-slate-500 whitespace-nowrap">${item.waktu}</td>
           <td class="p-3">
             <div class="font-bold text-slate-800">${item.nama}</div>
-            <div class="text-[11px] font-mono text-slate-400">NIK: ${item.nik}</div>
+            <div class="text-[11px] font-mono text-slate-400">NIS: ${item.nis}</div>
           </td>
           <td class="p-3"><span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-semibold">${item.kelas}</span></td>
           <td class="p-3"><span class="bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-lg font-bold">${item.mapel}</span></td>
@@ -246,7 +430,6 @@ function renderTabelTugas(list) {
             ${item.judul}
             ${catatanText}
           </td>
-          <td class="p-3 text-center">${badgeNilai}</td>
           <td class="p-3 text-right whitespace-nowrap space-x-1">
             <a href="${item.link}" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1.5 rounded-xl font-bold inline-block text-xs">File ↗</a>
             <button onclick="openModalNilai(${item.rowIndex}, '${item.nama.replace(/'/g, '')}', '${item.judul.replace(/'/g, '')}', '${item.nilai || ''}', '${(item.catatan || '').replace(/'/g, '')}')" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-800 px-2.5 py-1.5 rounded-xl font-bold inline-block text-xs">
@@ -268,14 +451,14 @@ function filterTabelTugasLokal() {
   const hasil = cacheDaftarTugas.filter(
     (item) =>
       item.nama.toLowerCase().includes(keyword) ||
-      item.nik.toLowerCase().includes(keyword) ||
+      item.nis.toLowerCase().includes(keyword) ||
       item.judul.toLowerCase().includes(keyword) ||
       item.mapel.toLowerCase().includes(keyword)
   );
   renderTabelTugas(hasil);
 }
 
-// 6. Modal Penilaian Guru
+// 7. Modal Penilaian Guru
 function openModalNilai(rowIndex, nama, judul, nilai, catatan) {
   document.getElementById('modalRowIndex').value = rowIndex;
   document.getElementById('modalNamaSiswa').textContent = nama;
@@ -295,7 +478,6 @@ async function submitNilaiGuru(e) {
   const nilai = document.getElementById('inputNilaiAngka').value;
   const catatan = document.getElementById('inputCatatanGuru').value.trim();
   const btn = document.getElementById('btnSimpanNilai');
-
   btn.textContent = 'Menyimpan...';
   btn.disabled = true;
 
@@ -307,20 +489,21 @@ async function submitNilaiGuru(e) {
     });
     const result = await res.json();
     if (result.success) {
+      showToast('✅ Nilai dan catatan berhasil disimpan!', 'success');
       closeModalNilai();
       loadRekapTugas();
     } else {
-      alert(result.message);
+      showToast(result.message || 'Gagal menyimpan nilai.', 'error');
     }
   } catch (err) {
-    alert('Gagal terhubung ke server.');
+    showToast('Gagal terhubung ke server.', 'error');
   } finally {
-    btn.textContent = '💾 Simpan Nilai';
+    btn.textContent = 'Simpan Nilai';
     btn.disabled = false;
   }
 }
 
-// 7. Fitur Export ke Excel (CSV)
+// 8. Fitur Export ke Excel (CSV)
 function escapeCSV(val) {
   if (val === null || val === undefined) return '""';
   const str = String(val).replace(/"/g, '""');
@@ -342,56 +525,49 @@ function downloadCSVFile(filename, rows) {
 
 function exportAbsensiCSV() {
   if (!cacheRekapAbsen) {
-    alert('Data absensi belum termuat. Silakan klik Segarkan Rekap terlebih dahulu.');
+    showToast('Data absensi belum termuat.', 'error');
     return;
   }
-
   const { kelas, tanggal, sudahAbsen, belumAbsen } = cacheRekapAbsen;
   if (sudahAbsen.length === 0 && belumAbsen.length === 0) {
-    alert('Belum ada data siswa di kelas ini untuk di-export.');
+    showToast('Belum ada data siswa di kelas ini.', 'error');
     return;
   }
-
   const rows = [
     ['REKAP ABSENSI HARIAN - SD RK BINTANG TIMUR RANTAUPRAPAT'],
     [`Kelas: ${kelas}`, `Tanggal: ${tanggal}`],
     [],
-    ['No', 'NIK / NISN', 'Nama Lengkap Siswa', 'L/P', 'Kelas', 'Status Kehadiran', 'Waktu Scan Absen', 'Nama Orang Tua', 'No. HP Ortu'],
+    ['No', 'NIS', 'Nama Lengkap Siswa', 'L/P', 'Kelas', 'Status Kehadiran', 'Waktu Scan Absen', 'Nama Orang Tua', 'No. HP Ortu'],
   ];
-
   let no = 1;
   sudahAbsen.forEach((s) => {
-    rows.push([no++, `'${s.nik}`, s.nama, s.jk, s.kelas, s.status || 'Hadir', s.waktuAbsen || '-', s.ortu || '-', `'${s.nohp || '-'}`]);
+    rows.push([no++, `'${s.nis}`, s.nama, s.jk, s.kelas, s.status || 'Hadir', s.waktuAbsen || '-', s.ortu || '-', `'${s.nohp || '-'}`]);
   });
-
   belumAbsen.forEach((s) => {
-    rows.push([no++, `'${s.nik}`, s.nama, s.jk, s.kelas, 'Belum Absen', '-', s.ortu || '-', `'${s.nohp || '-'}`]);
+    rows.push([no++, `'${s.nis}`, s.nama, s.jk, s.kelas, 'Belum Absen', '-', s.ortu || '-', `'${s.nohp || '-'}`]);
   });
-
   downloadCSVFile(`Rekap_Absensi_Kelas_${kelas}_${tanggal}.csv`, rows);
+  showToast('File CSV absensi berhasil diunduh.', 'success');
 }
 
 function exportTugasCSV() {
   const kelas = document.getElementById('filterKelasTugas').value;
   const mapel = document.getElementById('filterMapelTugas').value;
-
   if (!cacheDaftarTugas || cacheDaftarTugas.length === 0) {
-    alert('Belum ada data tugas terkumpul pada filter ini untuk di-export.');
+    showToast('Belum ada data tugas terkumpul.', 'error');
     return;
   }
-
   const rows = [
     ['REKAP PENGUMPULAN & NILAI TUGAS - SD RK BINTANG TIMUR RANTAUPRAPAT'],
     [`Kelas: ${kelas}`, `Mata Pelajaran: ${mapel}`],
     [],
-    ['No', 'Waktu Upload', 'NIK / NISN', 'Nama Siswa', 'Kelas', 'Mata Pelajaran', 'Judul / Keterangan Tugas', 'Nilai Angka', 'Catatan Guru', 'Link File Google Drive'],
+    ['No', 'Waktu Upload', 'NIS', 'Nama Siswa', 'Kelas', 'Mata Pelajaran', 'Judul / Keterangan Tugas', 'Nilai Angka', 'Catatan Guru', 'Link File Google Drive'],
   ];
-
   cacheDaftarTugas.forEach((t, idx) => {
     rows.push([
       idx + 1,
       t.waktu,
-      `'${t.nik}`,
+      `'${t.nis}`,
       t.nama,
       t.kelas,
       t.mapel,
@@ -401,192 +577,79 @@ function exportTugasCSV() {
       t.link,
     ]);
   });
-
   if (cacheRekapTugasFull && cacheRekapTugasFull.belumKumpul && cacheRekapTugasFull.belumKumpul.length > 0) {
     rows.push([]);
     rows.push(['DAFTAR SISWA BELUM MENGUMPULKAN TUGAS PADA FILTER INI']);
-    rows.push(['No', 'NIK / NISN', 'Nama Siswa', 'Kelas', 'Nama Orang Tua', 'No. HP Ortu']);
+    rows.push(['No', 'NIS', 'Nama Siswa', 'Kelas', 'Nama Orang Tua', 'No. HP Ortu']);
     cacheRekapTugasFull.belumKumpul.forEach((s, idx) => {
-      rows.push([idx + 1, `'${s.nik}`, s.nama, s.kelas, s.ortu || '-', `'${s.nohp || '-'}`]);
+      rows.push([idx + 1, `'${s.nis}`, s.nama, s.kelas, s.ortu || '-', `'${s.nohp || '-'}`]);
     });
   }
-
   const cleanMapel = mapel.replace(/[^a-zA-Z0-9]/g, '_');
   downloadCSVFile(`Rekap_Nilai_Tugas_Kelas_${kelas}_${cleanMapel}.csv`, rows);
+  showToast('File CSV tugas berhasil diunduh.', 'success');
 }
 
-// =========================================================
-// REGISTRASI PWA SERVICE WORKER & TOMBOL INSTALL OTOMATIS
-// =========================================================
-let deferredPrompt = null;
-
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker
-      .register('/sw.js')
-      .then(() => console.log('PWA Service Worker SiBintang aktif.'))
-      .catch((err) => console.error('Gagal mendaftarkan Service Worker:', err));
-  });
-}
-
-// Tangkap event instalasi PWA di Android / Chrome Desktop
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
-  tampilkanBannerInstallPWA();
-});
-
-function tampilkanBannerInstallPWA() {
-  if (document.getElementById('pwaInstallBanner')) return;
-
-  const banner = document.createElement('div');
-  banner.id = 'pwaInstallBanner';
-  banner.className = 'fixed bottom-4 left-4 right-4 max-w-md mx-auto bg-slate-900 text-white p-3.5 rounded-2xl shadow-xl flex items-center justify-between z-50 border border-slate-700 no-print';
-  banner.innerHTML = `
-    <div class="flex items-center space-x-3">
-      <div class="bg-yellow-400 text-blue-900 font-bold rounded-xl w-9 h-9 flex items-center justify-center text-lg shadow">★</div>
-      <div>
-        <p class="text-xs font-bold">Install Aplikasi SiBintang</p>
-        <p class="text-[11px] text-slate-300">Pasang di layar utama HP agar lebih praktis</p>
-      </div>
-    </div>
-    <div class="flex items-center space-x-1.5">
-      <button id="btnConfirmInstallPWA" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition">
-        Install
-      </button>
-      <button onclick="document.getElementById('pwaInstallBanner').remove()" class="text-slate-400 hover:text-white px-1.5 text-sm font-bold">
-        ✕
-      </button>
-    </div>
-  `;
-
-  document.body.appendChild(banner);
-
-  document.getElementById('btnConfirmInstallPWA').addEventListener('click', async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      banner.remove();
-    }
-    deferredPrompt = null;
-  });
-}
-
-// Fungsi Global Toast Notification
-function showToast(message, type = 'success') {
-  let container = document.getElementById('toastContainer');
-  if (!container) {
-    container = document.createElement('div');
-    container.id = 'toastContainer';
-    document.body.appendChild(container);
-  }
-
-  const toast = document.createElement('div');
-  toast.className = `toast-item toast-${type}`;
-  
-  toast.innerHTML = `
-    <div class="flex items-center space-x-2.5">
-      <span class="font-bold">${type === 'success' ? 'SUKSES:' : type === 'error' ? 'PERHATIAN:' : 'INFO:'}</span>
-      <span>${message}</span>
-    </div>
-  `;
-
-  container.appendChild(toast);
-
-  setTimeout(() => {
-    toast.style.opacity = '0';
-    toast.style.transform = 'translateY(20px)';
-    toast.style.transition = 'all 0.3s ease';
-    setTimeout(() => toast.remove(), 300);
-  }, 3500);
-}
-
-// Perbarui fungsi switchGuruTab agar mencakup 'pengumuman'
-function switchGuruTab(tab) {
-  ['absen', 'tugas', 'pengumuman'].forEach((t) => {
-    const content = document.getElementById(`tabGuruContent-${t}`);
-    const btn = document.getElementById(`tabGuruBtn-${t}`);
-    if (content) content.classList.add('hidden');
-    if (btn) {
-      btn.classList.remove('bg-indigo-800', 'text-white', 'shadow');
-      btn.classList.add('text-slate-600');
-    }
-  });
-
-  const activeContent = document.getElementById(`tabGuruContent-${tab}`);
-  const activeBtn = document.getElementById(`tabGuruBtn-${tab}`);
-  if (activeContent) activeContent.classList.remove('hidden');
-  if (activeBtn) {
-    activeBtn.classList.add('bg-indigo-800', 'text-white', 'shadow');
-    activeBtn.classList.remove('text-slate-600');
-  }
-
-  if (tab === 'absen') loadRekapKelas();
-  if (tab === 'tugas') loadRekapTugas();
-}
-
-// Handler Kirim Pengumuman
-async function submitPengumuman(e) {
-  e.preventDefault();
-  const judul = document.getElementById('p_judul').value.trim();
-  const isi = document.getElementById('p_isi').value.trim();
-  const btn = document.getElementById('btnKirimPengumuman');
-
-  btn.textContent = 'Menerbitkan...';
-  btn.disabled = true;
-
-  try {
-    const res = await fetch('/api/guru/pengumuman', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ judul, isi, pembuat: 'Dewan Guru SD RK Bintang Timur' })
-    });
-    const result = await res.json();
-    if (result.success) {
-      alert(result.message);
-      document.getElementById('formPengumuman').reset();
-    } else {
-      alert(result.message);
-    }
-  } catch (err) {
-    alert('Gagal terhubung ke server.');
-  } finally {
-    btn.textContent = 'Terbitkan Pengumuman';
-    btn.disabled = false;
-  }
-}
-
-// Data Template Pengumuman Otomatis
+// 9. Kelola Pengumuman Sekolah
 const templatePengumumanData = {
   libur: {
-    judul: "Jadwal Libur Sekolah dan Cuti Bersama",
-    isi: "Diberitahukan kepada seluruh siswa dan orang tua murid SD RK Bintang Timur Rantauprapat bahwa kegiatan belajar mengajar diliburkan mulai tanggal ... sampai dengan ... dalam rangka libur semester. Kegiatan sekolah akan aktif kembali seperti biasa pada hari ..."
+    judul: 'Jadwal Libur Sekolah dan Cuti Bersama',
+    isi: 'Diberitahukan kepada seluruh siswa dan orang tua murid SD RK Bintang Timur Rantauprapat bahwa kegiatan belajar mengajar diliburkan mulai tanggal ... sampai dengan ... dalam rangka libur semester. Kegiatan sekolah akan aktif kembali seperti biasa pada hari ...',
   },
   rapor: {
-    judul: "Jadwal Pengambilan Rapor / Buku Laporan Hasil Belajar",
-    isi: "Kepada Bapak/Ibu Orang Tua/Wali murid, diundang untuk hadir pada pengambilan Buku Laporan Hasil Belajar (Rapor) semester ini yang akan dilaksanakan pada hari ..., tanggal ..., pukul ... bertempat di ruang kelas masing-masing."
+    judul: 'Jadwal Pengambilan Rapor / Buku Laporan Hasil Belajar',
+    isi: 'Kepada Bapak/Ibu Orang Tua/Wali murid, diundang untuk hadir pada pengambilan Buku Laporan Hasil Belajar (Rapor) semester ini yang akan dilaksanakan pada hari ..., tanggal ..., pukul ... bertempat di ruang kelas masing-masing.',
   },
   tugas: {
-    judul: "Peringatan Pengumpulan Tugas dan PR Sekolah",
-    isi: "Diingatkan kepada seluruh siswa untuk segera menyelesaikan dan mengumpulkan PR atau tugas sekolah yang belum diserahkan melalui aplikasi SiBintang sebelum batas waktu yang telah ditentukan oleh guru mata pelajaran."
+    judul: 'Peringatan Pengumpulan Tugas dan PR Sekolah',
+    isi: 'Diingatkan kepada seluruh siswa untuk segera menyelesaikan dan mengumpulkan PR atau tugas sekolah yang belum diserahkan melalui aplikasi SiBintang sebelum batas waktu yang telah ditentukan oleh guru mata pelajaran.',
   },
   upacara: {
-    judul: "Pemberitahuan Kegiatan Upacara / Ekstrakurikuler Wajib",
-    isi: "Diberitahukan kepada seluruh siswa agar hadir tepat waktu pada kegiatan sekolah yang akan dilaksanakan pada hari ... pukul ... dengan mengenakan pakaian seragam lengkap sesuai ketentuan sekolah."
-  }
+    judul: 'Pemberitahuan Kegiatan Upacara / Ekstrakurikuler Wajib',
+    isi: 'Diberitahukan kepada seluruh siswa agar hadir tepat waktu pada kegiatan sekolah yang akan dilaksanakan pada hari ... pukul ... dengan mengenakan pakaian seragam lengkap sesuai ketentuan sekolah.',
+  },
 };
 
 function pilihTemplatePengumuman() {
   const kunci = document.getElementById('p_template').value;
   const inputJudul = document.getElementById('p_judul');
   const inputIsi = document.getElementById('p_isi');
-
   if (templatePengumumanData[kunci]) {
     inputJudul.value = templatePengumumanData[kunci].judul;
     inputIsi.value = templatePengumumanData[kunci].isi;
   } else {
     inputJudul.value = '';
     inputIsi.value = '';
+  }
+}
+
+async function submitPengumuman(e) {
+  e.preventDefault();
+  const judul = document.getElementById('p_judul').value.trim();
+  const isi = document.getElementById('p_isi').value.trim();
+  const btn = document.getElementById('btnKirimPengumuman');
+  btn.textContent = 'Menerbitkan...';
+  btn.disabled = true;
+
+  const pembuatNama = currentGuru ? `${currentGuru.nama} (${currentGuru.role})` : 'Dewan Guru';
+
+  try {
+    const res = await fetch('/api/guru/pengumuman', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ judul, isi, pembuat: pembuatNama }),
+    });
+    const result = await res.json();
+    if (result.success) {
+      showToast('✅ Pengumuman berhasil diterbitkan!', 'success');
+      document.getElementById('formPengumuman').reset();
+    } else {
+      showToast(result.message || 'Gagal menerbitkan pengumuman.', 'error');
+    }
+  } catch (err) {
+    showToast('Gagal terhubung ke server.', 'error');
+  } finally {
+    btn.textContent = 'Terbitkan Pengumuman';
+    btn.disabled = false;
   }
 }
