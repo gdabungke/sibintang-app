@@ -15,6 +15,22 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
 
+// ==========================================
+// AMBIL AKUN KHUSUS AMAN DARI VERCEL ENV
+// ==========================================
+const getAkunKhusus = () => {
+  if (process.env.AKUN_KHUSUS_JSON) {
+    try {
+      return JSON.parse(process.env.AKUN_KHUSUS_JSON);
+    } catch (e) {
+      console.error('Gagal parsing AKUN_KHUSUS_JSON:', e);
+    }
+  }
+  return []; // Kosong jika tidak ada env variable (aman dari hardcode publik)
+};
+
+const AKUN_KHUSUS = getAkunKhusus();
+
 // Konfigurasi Multer (Simpan file sementara di memori sebelum diupload ke Drive)
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -53,7 +69,7 @@ app.post('/api/login', async (req: Request, res: Response) => {
     }
 
     // 1. BYPASS LOGIN AKUN KHUSUS ADMIN & KEPALA SEKOLAH KE PORTAL SISWA
-    const akunKhusus = AKUN_KHUSUS.find((user) => user.nip === nis);
+    const akunKhusus = AKUN_KHUSUS.find((user: any) => user.nip === nis);
     if (akunKhusus) {
       return res.json({
         success: true,
@@ -127,31 +143,6 @@ app.post('/api/login', async (req: Request, res: Response) => {
   }
 });
 
-// Daftar Akun Khusus (Langsung terdaftar di kode sistem)
-const AKUN_KHUSUS = [
-  {
-    nip: '133715',
-    nama: 'Marolo',
-    role: 'Admin Sistem',
-    kelasBinaan: '-',
-    mapelAjar: '-'
-  },
-  {
-    nip: 'ADMINSDRKBT',
-    nama: 'Administrator Utama',
-    role: 'Admin Sistem',
-    kelasBinaan: '-',
-    mapelAjar: '-'
-  },
-  {
-    nip: 'KEPSEK01',
-    nama: 'Kepala Sekolah',
-    role: 'Kepala Sekolah',
-    kelasBinaan: '-',
-    mapelAjar: '-'
-  }
-];
-
 // 2. ENDPOINT LOGIN & REGISTRASI GURU / PENGELOLA (Berdasarkan NIP)
 app.post('/api/guru/login', async (req: Request, res: Response) => {
   try {
@@ -161,7 +152,7 @@ app.post('/api/guru/login', async (req: Request, res: Response) => {
     }
 
     // 1. BYPASS AKUN KHUSUS (ADMIN & KEPALA SEKOLAH)
-    const akunKhusus = AKUN_KHUSUS.find((user) => user.nip === nip);
+    const akunKhusus = AKUN_KHUSUS.find((user: any) => user.nip === nip);
     if (akunKhusus) {
       return res.json({
         success: true,
