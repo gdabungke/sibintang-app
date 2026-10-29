@@ -21,15 +21,17 @@ const upload = multer({
   limits: { fileSize: 15 * 1024 * 1024 } // Maksimal 15 MB
 });
 
-// Autentikasi Google API menggunakan Service Account
-const KEYFILEPATH = path.join(__dirname, '../credentials.json');
+// Autentikasi Google API menggunakan Environment Variables Vercel (KODE AMAN)
 const SCOPES = [
   'https://www.googleapis.com/auth/spreadsheets',
   'https://www.googleapis.com/auth/drive.file'
 ];
 
 const auth = new google.auth.GoogleAuth({
-  keyFile: KEYFILEPATH,
+  credentials: {
+    client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+    private_key: process.env.GOOGLE_PRIVATE_KEY ? process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n') : undefined,
+  },
   scopes: SCOPES,
 });
 

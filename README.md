@@ -1,6 +1,8 @@
 <div align="center">
 
-# 🌟 SiBintang (Sistem Informasi Bintang Timur)
+<img src="https://raw.githubusercontent.com/gdabungke/sibintang-app/main/public/icon.svg" alt="Logo SiBintang" width="90" height="90" style="border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); margin-bottom: 10px;" />
+
+# SiBintang (Sistem Informasi Bintang Timur)
 ### Platform Manajemen Sekolah & Absensi Berbasis PWA (Progressive Web App)
 **SD RK Bintang Timur Rantauprapat**
 
@@ -54,5 +56,5 @@ Jika Anda ingin menjalankan atau mengembangkan proyek ini secara lokal di komput
 
 1. **Clone Repository ini:**
    ```bash
-   git clone [https://github.com/username-anda/sibintang-app.git](https://github.com/username-anda/sibintang-app.git)
+   git clone [https://github.com/gdabungke/sibintang-app.git](https://github.com/gdabungke/sibintang-app.git)
    cd sibintang-app
