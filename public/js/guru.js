@@ -82,6 +82,9 @@ isiDropdown('buatTugasMapel', DAFTAR_MAPEL, 'Pilih Mata Pelajaran');
 isiDropdown('p_target', DAFTAR_TARGET_PENGUMUMAN);
 isiDropdown('p_kategori', DAFTAR_KATEGORI_PENGUMUMAN);
 isiDropdown('p_template', DAFTAR_TEMPLATE_PENGUMUMAN);
+
+  // Render footer dinamis
+  renderFooter();
   
   // 1b. Registrasi Service Worker PWA
   if ('serviceWorker' in navigator) {
