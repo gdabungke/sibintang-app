@@ -25,14 +25,10 @@ const DAFTAR_TARGET_TOKEN = [
   }
 ];
 
-// Master Daftar Kelas Rinci
+// Master Daftar Kelas
 const DAFTAR_KELAS = [
-  '1A', '1B',
-  '2A', '2B',
-  '3A', '3B',
-  '4A', '4B',
-  '5A', '5B',
-  '6A', '6B'
+  '1A', '1B', '2A', '2B', '3A', '3B',
+  '4A', '4B', '5A', '5B', '6A', '6B'
 ];
 
 // Master Daftar Mata Pelajaran
@@ -48,15 +44,13 @@ const DAFTAR_MAPEL = [
   'Muatan Lokal / Bahasa Daerah'
 ];
 
-// --- MASTER DATA KHUSUS PENGUMUMAN ---
-
-// 1. Target Sasaran Pengumuman (Global SEMUA vs Khusus Kelas)
+// Master Target Pengumuman
 const DAFTAR_TARGET_PENGUMUMAN = [
   { val: 'SEMUA', label: 'Semua Siswa (Global Seluruh Sekolah)' },
   ...DAFTAR_KELAS.map(k => ({ val: k, label: `Khusus Siswa Kelas ${k}` }))
 ];
 
-// 2. Kategori Pengumuman
+// Master Kategori Pengumuman
 const DAFTAR_KATEGORI_PENGUMUMAN = [
   'Umum',
   'Akademik & Ujian',
@@ -66,7 +60,7 @@ const DAFTAR_KATEGORI_PENGUMUMAN = [
   'Penting & Mendesak'
 ];
 
-// 3. Pilihan Template Pengumuman Cepat
+// Master Template Pengumuman
 const DAFTAR_TEMPLATE_PENGUMUMAN = [
   { val: '', label: '-- Pilih Template Pengumuman (Opsional) --' },
   { val: 'libur', label: 'Jadwal Libur Semester & Cuti Bersama' },
@@ -75,7 +69,6 @@ const DAFTAR_TEMPLATE_PENGUMUMAN = [
   { val: 'upacara', label: 'Kegiatan Upacara / Seragam Wajib' }
 ];
 
-// Data Isi Template Pengumuman
 const TEMPLATE_PENGUMUMAN_DATA = {
   libur: {
     kategori: 'Libur & Cuti Bersama',
@@ -98,3 +91,58 @@ const TEMPLATE_PENGUMUMAN_DATA = {
     isi: 'Diberitahukan kepada seluruh siswa agar hadir tepat waktu pada kegiatan sekolah yang akan dilaksanakan pada hari ... pukul ... dengan mengenakan pakaian seragam lengkap sesuai ketentuan sekolah.'
   }
 };
+
+// Helper Pengisi Dropdown Otomatis
+function isiDropdown(selectId, items, placeholder = '', opsiTambahan = null) {
+  const el = document.getElementById(selectId);
+  if (!el) return;
+  el.innerHTML = '';
+
+  if (placeholder) {
+    const optDef = document.createElement('option');
+    optDef.value = '';
+    optDef.textContent = placeholder;
+    optDef.disabled = true;
+    optDef.selected = true;
+    el.appendChild(optDef);
+  }
+
+  if (opsiTambahan) {
+    const optExtra = document.createElement('option');
+    optExtra.value = opsiTambahan.val;
+    optExtra.textContent = opsiTambahan.label;
+    el.appendChild(optExtra);
+  }
+
+  items.forEach(item => {
+    const opt = document.createElement('option');
+    if (typeof item === 'object') {
+      opt.value = item.val;
+      opt.textContent = item.label;
+    } else {
+      opt.value = item;
+      opt.textContent = item;
+    }
+    el.appendChild(opt);
+  });
+}
+
+function isiDropdownGrup(selectId, dataGrup) {
+  const el = document.getElementById(selectId);
+  if (!el) return;
+  el.innerHTML = '';
+
+  dataGrup.forEach(g => {
+    const groupEl = document.createElement('optgroup');
+    groupEl.label = g.grup;
+
+    g.items.forEach(item => {
+      const opt = document.createElement('option');
+      opt.value = item;
+      opt.textContent = item;
+      groupEl.appendChild(opt);
+    });
+
+    el.appendChild(groupEl);
+  });
+}
