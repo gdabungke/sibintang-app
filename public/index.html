@@ -36,7 +36,7 @@
                     <p class="text-xs text-blue-200">SD RK Bintang Timur Rantauprapat</p>
                 </div>
             </div>
-            <button id="btnLogout" onclick="logout()" class="hidden bg-red-500 hover:bg-red-600 text-xs px-3 py-1.5 rounded-lg font-semibold transition">
+            <button id="btnLogout" type="button" class="hidden bg-red-500 hover:bg-red-600 text-xs px-3 py-1.5 rounded-lg font-semibold transition">
                 Keluar
             </button>
         </div>
@@ -54,10 +54,10 @@
 
             <!-- Tombol Tab Switch (Masuk vs Registrasi) -->
             <div class="grid grid-cols-2 gap-1 bg-slate-100 p-1 rounded-xl mb-6">
-                <button onclick="switchAuthTab('masuk')" id="authTabBtn-masuk" class="py-2 text-xs font-bold rounded-lg bg-blue-700 text-white shadow-sm transition">
+                <button id="authTabBtn-masuk" type="button" class="py-2 text-xs font-bold rounded-lg bg-blue-700 text-white shadow-sm transition">
                     Masuk (Login)
                 </button>
-                <button onclick="switchAuthTab('daftar')" id="authTabBtn-daftar" class="py-2 text-xs font-bold rounded-lg text-slate-600 hover:text-slate-800 transition">
+                <button id="authTabBtn-daftar" type="button" class="py-2 text-xs font-bold rounded-lg text-slate-600 hover:text-slate-800 transition">
                     Registrasi (Daftar)
                 </button>
             </div>
@@ -144,7 +144,7 @@
                     <h3 class="font-bold text-sm md:text-base text-amber-900">
                         Papan Pengumuman Sekolah
                     </h3>
-                    <button onclick="loadPengumumanSiswa()" class="text-xs text-amber-800 font-semibold hover:underline">Perbarui</button>
+                    <button id="btnPerbaruiPengumuman" type="button" class="text-xs text-amber-800 font-semibold hover:underline">Perbarui</button>
                 </div>
                 <div id="listPengumumanSiswa" class="space-y-3 max-h-60 overflow-y-auto pr-1">
                     <p class="text-xs text-slate-500 text-center py-2">Memuat pengumuman...</p>
@@ -153,16 +153,16 @@
 
             <!-- Navigasi Tab -->
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-white p-1.5 rounded-xl shadow-sm border border-slate-200">
-                <button onclick="switchTab('absen')" id="tabBtn-absen" class="py-2.5 text-xs font-bold rounded-lg bg-blue-700 text-white transition">
+                <button id="tabBtn-absen" type="button" class="py-2.5 text-xs font-bold rounded-lg bg-blue-700 text-white transition">
                     Scan Absen
                 </button>
-                <button onclick="switchTab('tugas')" id="tabBtn-tugas" class="py-2.5 text-xs font-bold rounded-lg text-slate-600 hover:bg-slate-100 transition">
+                <button id="tabBtn-tugas" type="button" class="py-2.5 text-xs font-bold rounded-lg text-slate-600 hover:bg-slate-100 transition">
                     Kumpul PR / Tugas
                 </button>
-                <button onclick="switchTab('izin')" id="tabBtn-izin" class="py-2.5 text-xs font-bold rounded-lg text-slate-600 hover:bg-slate-100 transition">
+                <button id="tabBtn-izin" type="button" class="py-2.5 text-xs font-bold rounded-lg text-slate-600 hover:bg-slate-100 transition">
                     Izin / Sakit
                 </button>
-                <button onclick="switchTab('riwayat')" id="tabBtn-riwayat" class="py-2.5 text-xs font-bold rounded-lg text-slate-600 hover:bg-slate-100 transition">
+                <button id="tabBtn-riwayat" type="button" class="py-2.5 text-xs font-bold rounded-lg text-slate-600 hover:bg-slate-100 transition">
                     Riwayat Log
                 </button>
             </div>
@@ -173,10 +173,10 @@
                 <p class="text-xs text-slate-500 mb-4">Arahkan kamera ke QR Code Absensi Kelas SD RK Bintang Timur.</p>
                 <div id="reader" class="w-full max-w-sm mx-auto overflow-hidden rounded-xl border-2 border-dashed border-blue-400 bg-slate-50"></div>
                 <div class="mt-4 flex justify-center space-x-3">
-                    <button onclick="startScanner()" id="btnStartScan" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow">
+                    <button id="btnStartScan" type="button" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow">
                         Aktifkan Kamera QR
                     </button>
-                    <button onclick="stopScanner()" id="btnStopScan" class="hidden bg-slate-500 hover:bg-slate-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl">
+                    <button id="btnStopScan" type="button" class="hidden bg-slate-500 hover:bg-slate-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl">
                         Matikan Kamera
                     </button>
                 </div>
@@ -189,7 +189,7 @@
                 <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
                     <div class="flex items-center justify-between mb-3">
                         <h3 class="font-bold text-base text-slate-800">Daftar Tugas & PR dari Guru</h3>
-                        <button onclick="loadDaftarTugasGuru()" class="text-xs text-blue-600 font-semibold hover:underline">Perbarui Tugas</button>
+                        <button id="btnPerbaruiTugasGuru" type="button" class="text-xs text-blue-600 font-semibold hover:underline">Perbarui Tugas</button>
                     </div>
                     <div id="containerDaftarTugasGuru" class="space-y-3">
                         <p class="text-xs text-slate-500 text-center py-2">Memuat daftar tugas...</p>
@@ -300,7 +300,7 @@
                 <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
                     <div class="flex items-center justify-between mb-3">
                         <h3 class="font-bold text-sm md:text-base">Riwayat Absensi Kehadiran</h3>
-                        <button onclick="loadRiwayat()" class="text-xs text-blue-600 font-semibold hover:underline">Segarkan</button>
+                        <button id="btnSegarkanRiwayat" type="button" class="text-xs text-blue-600 font-semibold hover:underline">Segarkan</button>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse text-xs">
@@ -345,81 +345,62 @@
 
     <!-- Banner Khusus Pengguna iPhone / iOS -->
     <div id="ios-install-banner" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: #1e293b; color: #fff; padding: 15px; text-align: center; z-index: 9999; box-shadow: 0 -4px 10px rgba(0,0,0,0.3); font-family: sans-serif;">
-      <p style="margin: 0 0 8px 0; font-size: 14px;">📲 <b>Pasang SiBintang di iPhone Anda:</b> Ketuk tombol <b>Share (Bagikan)</b> <span style="font-size: 18px;">⎋</span> di bawah browser, lalu pilih <b>"Add to Home Screen"</b>.</p>
-      <button onclick="document.getElementById('ios-install-banner').style.display='none'" style="background: #38bdf8; border: none; padding: 6px 14px; color: #0f172a; font-weight: bold; border-radius: 4px; cursor: pointer;">Tutup</button>
+      <p style="margin: 0 0 8px 0; font-size: 14px;"><b>Pasang SiBintang di iPhone Anda:</b> Ketuk tombol <b>Share (Bagikan)</b> di bawah browser, lalu pilih <b>"Add to Home Screen"</b>.</p>
+      <button id="btnDismissIosBanner" type="button" style="background: #38bdf8; border: none; padding: 6px 14px; color: #0f172a; font-weight: bold; border-radius: 4px; cursor: pointer;">Tutup</button>
     </div>
-    
-    <script>
-      const isIos = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
-      const isInStandaloneMode = ('standalone' in window.navigator) && (window.navigator.standalone);
-      if (isIos && !isInStandaloneMode) {
-        window.addEventListener('DOMContentLoaded', () => {
-          document.getElementById('ios-install-banner').style.display = 'block';
-        });
-      }
-    </script>
 
-    <!-- Pendaftaran Service Worker untuk PWA -->
-    <script>
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js').catch((err) => {
-          console.log('Service Worker registration failed:', err);
-        });
-      }
-    </script>
-    
     <!-- File JavaScript Eksternal -->
     <script src="/js/siswa.js"></script>
 
-<!-- FOOTER PROFESIONAL SIBINTANG -->
-<footer class="mt-auto bg-slate-900 text-slate-300 font-sans border-t-4 border-amber-500">
-  <div class="max-w-4xl mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-3 gap-8 text-center md:text-left">
-    
-    <!-- Kolom 1: Identitas & Naungan -->
-    <div class="space-y-2">
-      <h3 class="font-bold text-white text-sm uppercase tracking-wider flex items-center justify-center md:justify-start space-x-2">
-        <span class="w-2 h-2 bg-amber-400 rounded-full"></span>
-        <span>SD Swasta RK Bintang Timur</span>
-      </h3>
-      <p class="text-xs text-slate-400 leading-relaxed">
-        Naungan: Yayasan Perguruan Katolik Santo Laurensius.[cite: 1] <br>
-        Terakreditasi <span class="text-amber-400 font-bold">A</span> | NPSN: 10205570[cite: 1]
-      </p>
-    </div>
+    <!-- FOOTER PROFESIONAL SIBINTANG -->
+    <footer class="mt-auto bg-slate-900 text-slate-300 font-sans border-t-4 border-amber-500">
+      <div class="max-w-4xl mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-3 gap-8 text-center md:text-left">
+        
+        <!-- Kolom 1: Identitas & Naungan -->
+        <div class="space-y-2">
+          <h3 class="font-bold text-white text-sm uppercase tracking-wider flex items-center justify-center md:justify-start space-x-2">
+            <span class="w-2 h-2 bg-amber-400 rounded-full"></span>
+            <span>SD Swasta RK Bintang Timur</span>
+          </h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Naungan: Yayasan Perguruan Katolik Santo Laurensius.<br>
+            Terakreditasi <span class="text-amber-400 font-bold">A</span> | NPSN: 10205570
+          </p>
+        </div>
 
-    <!-- Kolom 2: Alamat Lengkap -->
-    <div class="space-y-2">
-      <h3 class="font-bold text-white text-sm uppercase tracking-wider flex items-center justify-center md:justify-start space-x-2">
-        <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
-        <span>Lokasi Sekolah</span>
-      </h3>
-      <p class="text-xs text-slate-400 leading-relaxed">
-        Jl. Cut Mutia No. 10 (Jln. Cut Meutia Ujung), Kel. Siringo-Ringo, Kec. Rantau Utara, Kab. Labuhanbatu, Sumatera Utara 21413[cite: 1].
-      </p>
-    </div>
+        <!-- Kolom 2: Alamat Lengkap -->
+        <div class="space-y-2">
+          <h3 class="font-bold text-white text-sm uppercase tracking-wider flex items-center justify-center md:justify-start space-x-2">
+            <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
+            <span>Lokasi Sekolah</span>
+          </h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Jl. Cut Mutia No. 10 (Jln. Cut Meutia Ujung), Kel. Siringo-Ringo, Kec. Rantau Utara, Kab. Labuhanbatu, Sumatera Utara 21413.
+          </p>
+        </div>
 
-    <!-- Kolom 3: Kontak Resmi -->
-    <div class="space-y-2">
-      <h3 class="font-bold text-white text-sm uppercase tracking-wider flex items-center justify-center md:justify-start space-x-2">
-        <span class="w-2 h-2 bg-emerald-500 rounded-full"></span>
-        <span>Kontak & Layanan</span>
-      </h3>
-      <p class="text-xs text-slate-400 leading-relaxed">
-        <span class="font-semibold text-slate-300">Telp:</span> 0624-2602068<br>
-        <span class="font-semibold text-slate-300">Email:</span> sdrk_bintangtimur@yahoo.com[cite: 1]
-      </p>
-    </div>
+        <!-- Kolom 3: Kontak Resmi -->
+        <div class="space-y-2">
+          <h3 class="font-bold text-white text-sm uppercase tracking-wider flex items-center justify-center md:justify-start space-x-2">
+            <span class="w-2 h-2 bg-emerald-500 rounded-full"></span>
+            <span>Kontak & Layanan</span>
+          </h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            <span class="font-semibold text-slate-300">Telp:</span> 0624-2602068<br>
+            <span class="font-semibold text-slate-300">Email:</span> sdrk_bintangtimur@yahoo.com
+          </p>
+        </div>
 
-  </div>
+      </div>
 
-  <!-- Pembatas Garis Berbeda Warna & Hak Cipta -->
-  <div class="bg-slate-950 py-4 px-4 border-t border-slate-800 text-center text-slate-400 text-xs">
-    <div class="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-2">
-      <p>Sistem Informasi Manajemen Sekolah & Absensi (SiBintang PWA)</p>
-      <p class="text-slate-500 text-[11px]">Hak Cipta © 2026 SD RK Bintang Timur Rantauprapat. Hak cipta dilindungi undang-undang.</p>
-    </div>
-  </div>
-</footer>
+      <!-- Pembatas Garis Berbeda Warna & Hak Cipta -->
+      <div class="bg-slate-950 py-4 px-4 border-t border-slate-800 text-center text-slate-400 text-xs">
+        <div class="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-2">
+          <p>Sistem Informasi Manajemen Sekolah & Absensi (SiBintang PWA)</p>
+          <p class="text-slate-500 text-[11px]">Hak Cipta © 2026 SD RK Bintang Timur Rantauprapat. Hak cipta dilindungi undang-undang.</p>
+        </div>
+      </div>
+    </footer>
       
 </body>
 </html>
