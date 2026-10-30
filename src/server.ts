@@ -21,29 +21,27 @@ const upload = multer({
   limits: { fileSize: 15 * 1024 * 1024 } // Maksimal 15 MB
 });
 
-// Autentikasi Google API menggunakan GOOGLE_CREDENTIALS_JSON dari Vercel
+// Autentikasi Google API menggunakan GOOGLE_CREDENTIALS_JSON di Vercel
 const SCOPES = [
   'https://www.googleapis.com/auth/spreadsheets',
   'https://www.googleapis.com/auth/drive.file'
 ];
 
-let googleCredentials = undefined;
-try {
-  const rawCreds = process.env.GOOGLE_CREDENTIALS_JSON || process.env.GOOGLE_CREDENTIALS;
-  if (rawCreds) {
-    googleCredentials = JSON.parse(rawCreds);
-  }
-} catch (error) {
-  console.error('Gagal mengurai GOOGLE_CREDENTIALS_JSON:', error);
+let auth;
+if (process.env.GOOGLE_CREDENTIALS_JSON) {
+  // Membaca langsung dari string JSON mentah di Vercel
+  const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON);
+  auth = new google.auth.GoogleAuth({
+    credentials,
+    scopes: SCOPES,
+  });
+} else {
+  // Jika berjalan secara lokal di komputer (menggunakan file fisik credentials.json)
+  auth = new google.auth.GoogleAuth({
+    keyFile: path.join(__dirname, '../credentials.json'),
+    scopes: SCOPES,
+  });
 }
-
-const auth = new google.auth.GoogleAuth({
-  credentials: googleCredentials || {
-    client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-    private_key: process.env.GOOGLE_PRIVATE_KEY ? process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n') : undefined,
-  },
-  scopes: SCOPES,
-});
 
 const sheets = google.sheets({ version: 'v4', auth });
 const drive = google.drive({ version: 'v3', auth });
