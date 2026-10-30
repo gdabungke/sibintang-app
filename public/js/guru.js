@@ -99,12 +99,14 @@ window.addEventListener('DOMContentLoaded', () => {
       bukaDashboardGuru();
     } catch (e) {
       sessionStorage.removeItem('sibintang_guru_data');
+      updateGuruHeaderUI(false);
     }
+  } else {
+    updateGuruHeaderUI(false);
   }
 });
 
-  // 6. Cek Sesi Login Guru
-  
+// 6. Sinkronisasi Header Guru Sesuai Status Login
 function updateGuruHeaderUI(isLoggedIn) {
   const spacer = document.getElementById('guruHeaderSpacer');
   const brand = document.getElementById('guruBrandSection');
@@ -112,13 +114,11 @@ function updateGuruHeaderUI(isLoggedIn) {
   const btnLogout = document.getElementById('btnLogoutGuru');
 
   if (isLoggedIn) {
-    // Saat Guru Masuk Dashboard: Logo pindah ke kiri, tampilkan tombol Keluar
     if (spacer) spacer.classList.add('hidden');
     if (brand) brand.classList.remove('mx-auto');
     if (linkSiswa) linkSiswa.classList.add('hidden');
     if (btnLogout) btnLogout.classList.remove('hidden');
   } else {
-    // Saat Belum Login: Logo terkunci presisi di tengah layar
     if (spacer) spacer.classList.remove('hidden');
     if (brand) brand.classList.add('mx-auto');
     if (linkSiswa) linkSiswa.classList.remove('hidden');
@@ -196,15 +196,15 @@ function switchAuthTab(type) {
 
 // Tampilkan Opsi Tambahan Sesuai Role
 function toggleRoleOptions() {
-  const role = document.getElementById('regRoleGuru').value;
+  const role = document.getElementById('regRoleGuru')?.value || '';
   const divKelas = document.getElementById('divKelasBinaan');
   const divMapel = document.getElementById('divMapelAjar');
   if (divKelas) divKelas.classList.add('hidden');
   if (divMapel) divMapel.classList.add('hidden');
 
-  if (role === 'Wali Kelas' && divKelas) {
+  if ((role === 'Wali Kelas' || role === 'Guru Kelas') && divKelas) {
     divKelas.classList.remove('hidden');
-  } else if (role === 'Guru Mapel' && divMapel) {
+  } else if ((role === 'Guru Mapel' || role === 'Guru Mata Pelajaran') && divMapel) {
     divMapel.classList.remove('hidden');
   }
 }
@@ -230,7 +230,7 @@ document.getElementById('formMasukGuru')?.addEventListener('submit', async (e) =
       showToast(`Selamat datang kembali, ${currentGuru.nama} (${currentGuru.role})`, 'success');
       setTimeout(() => bukaDashboardGuru(), 800);
     } else {
-      showToast(result.message || 'NIP belum terdaftar. Silakan daftar terlebih dahulu.', 'error');
+      showToast(result.message || result.error || 'NIP belum terdaftar. Silakan daftar terlebih dahulu.', 'error');
     }
   } catch (err) {
     showToast('Gagal terhubung ke server.', 'error');
@@ -247,12 +247,23 @@ document.getElementById('formDaftarGuru')?.addEventListener('submit', async (e) 
   btn.textContent = 'Mendaftarkan...';
   btn.disabled = true;
 
+  const role = document.getElementById('regRoleGuru')?.value || '';
+  const mapelAjar = document.getElementById('regMapelAjar')?.value || '-';
+
+  // Validasi jika memilih Guru Mapel tapi belum memilih mata pelajaran
+  if ((role === 'Guru Mapel' || role === 'Guru Mata Pelajaran') && (!mapelAjar || mapelAjar === '-' || mapelAjar.includes('Pilih'))) {
+    showToast('Pilih mata pelajaran yang Anda ampu!', 'error');
+    btn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><span>Daftar Akun Pengelola Baru</span>`;
+    btn.disabled = false;
+    return;
+  }
+
   const payload = {
     nip: document.getElementById('regNip').value.trim(),
     nama: document.getElementById('regNamaGuru').value.trim(),
-    role: document.getElementById('regRoleGuru').value,
+    role: role,
     kelasBinaan: document.getElementById('regKelasBinaan')?.value || '-',
-    mapelAjar: document.getElementById('regMapelAjar')?.value || '-',
+    mapelAjar: mapelAjar,
     token: document.getElementById('regTokenGuru')?.value.trim() || '',
     aksi: 'register',
   };
@@ -270,7 +281,7 @@ document.getElementById('formDaftarGuru')?.addEventListener('submit', async (e) 
       showToast(`Registrasi berhasil! Selamat datang, ${currentGuru.nama}`, 'success');
       setTimeout(() => bukaDashboardGuru(), 800);
     } else {
-      showToast(result.message || 'Gagal mendaftarkan akun pengelola.', 'error');
+      showToast(result.message || result.error || 'Gagal mendaftarkan akun pengelola.', 'error');
     }
   } catch (err) {
     showToast('Gagal terhubung ke server.', 'error');
@@ -284,6 +295,7 @@ function bukaDashboardGuru() {
   document.getElementById('loginGuruSection')?.classList.add('hidden');
   document.getElementById('dashboardGuruSection')?.classList.remove('hidden');
   document.getElementById('btnLogoutGuru')?.classList.remove('hidden');
+  updateGuruHeaderUI(true);
 
   const infoNama = document.getElementById('infoNamaGuru');
   const infoRole = document.getElementById('infoRoleGuru');
@@ -291,7 +303,7 @@ function bukaDashboardGuru() {
   if (infoRole) {
     let detailRole = `Peran: ${currentGuru?.role || 'Guru'}`;
     if (currentGuru?.role === 'Wali Kelas') detailRole += ` | Kelas Binaan: ${currentGuru.kelasBinaan}`;
-    if (currentGuru?.role === 'Guru Mapel') detailRole += ` | Mapel: ${currentGuru.mapelAjar}`;
+    if (currentGuru?.role === 'Guru Mapel' || currentGuru?.role === 'Guru Mata Pelajaran') detailRole += ` | Mapel: ${currentGuru.mapelAjar}`;
     infoRole.textContent = detailRole;
   }
 
@@ -332,6 +344,7 @@ function logoutGuru() {
   sessionStorage.removeItem('sibintang_guru_data');
   currentGuru = null;
   document.getElementById('btnLogoutGuru')?.classList.add('hidden');
+  updateGuruHeaderUI(false);
   showToast('Berhasil keluar dari sesi.', 'info');
   setTimeout(() => location.reload(), 500);
 }
@@ -382,8 +395,8 @@ function updateDashboardAbsen() {
 
 // 4. Generate QR Code Absensi
 function generateQR() {
-  const kelas = document.getElementById('filterKelas').value;
-  const tanggal = document.getElementById('filterTanggal').value;
+  const kelas = document.getElementById('filterKelas')?.value || '1A';
+  const tanggal = document.getElementById('filterTanggal')?.value || new Date().toISOString().split('T')[0];
   const sesi = document.getElementById('ketSesi')?.value.trim() || 'Harian';
   const qrDataString = `ABSEN-SIBINTANG|${kelas}|${tanggal}|${sesi}`;
 
@@ -410,8 +423,9 @@ function generateQR() {
 
 // 5. Rekap Absensi Siswa
 async function loadRekapKelas() {
-  const kelas = document.getElementById('filterKelas').value;
-  const tanggal = document.getElementById('filterTanggal').value;
+  const kelas = document.getElementById('filterKelas')?.value;
+  const tanggal = document.getElementById('filterTanggal')?.value;
+  if (!kelas || !tanggal) return;
 
   try {
     const res = await fetch(`/api/guru/rekap?kelas=${encodeURIComponent(kelas)}&tanggal=${encodeURIComponent(tanggal)}`);
@@ -419,14 +433,14 @@ async function loadRekapKelas() {
     if (!data.success) return;
 
     cacheRekapAbsen = data;
-    document.getElementById('statTotal').textContent = data.totalSiswa;
-    document.getElementById('statHadir').textContent = data.jumlahHadir;
-    document.getElementById('statBelum').textContent = data.jumlahBelum;
-    document.getElementById('badgeBelum').textContent = `${data.jumlahBelum} Siswa`;
-    document.getElementById('badgeHadir').textContent = `${data.jumlahHadir} Siswa`;
+    document.getElementById('statTotal').textContent = data.totalSiswa || 0;
+    document.getElementById('statHadir').textContent = data.jumlahHadir || 0;
+    document.getElementById('statBelum').textContent = data.jumlahBelum || 0;
+    document.getElementById('badgeBelum').textContent = `${data.jumlahBelum || 0} Siswa`;
+    document.getElementById('badgeHadir').textContent = `${data.jumlahHadir || 0} Siswa`;
 
     const tbodyBelum = document.getElementById('tbodyBelumAbsen');
-    if (data.belumAbsen.length === 0) {
+    if (!data.belumAbsen || data.belumAbsen.length === 0) {
       tbodyBelum.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-emerald-600 font-semibold">Semua siswa terdaftar di Kelas ${kelas} sudah absen hari ini.</td></tr>`;
     } else {
       tbodyBelum.innerHTML = data.belumAbsen
@@ -453,7 +467,7 @@ async function loadRekapKelas() {
     }
 
     const tbodySudah = document.getElementById('tbodySudahAbsen');
-    if (data.sudahAbsen.length === 0) {
+    if (!data.sudahAbsen || data.sudahAbsen.length === 0) {
       tbodySudah.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400">Belum ada siswa yang melakukan scan QR pada tanggal ini.</td></tr>`;
     } else {
       tbodySudah.innerHTML = data.sudahAbsen
@@ -476,8 +490,9 @@ async function loadRekapKelas() {
 
 // 6. Rekap Pengumpulan Tugas
 async function loadRekapTugas() {
-  const kelas = document.getElementById('filterKelasTugas').value;
-  const mapel = document.getElementById('filterMapelTugas').value;
+  const kelas = document.getElementById('filterKelasTugas')?.value;
+  const mapel = document.getElementById('filterMapelTugas')?.value;
+  if (!kelas || !mapel) return;
 
   try {
     const res = await fetch(`/api/guru/tugas?kelas=${encodeURIComponent(kelas)}&mapel=${encodeURIComponent(mapel)}`);
@@ -487,17 +502,17 @@ async function loadRekapTugas() {
     cacheRekapTugasFull = data;
     cacheDaftarTugas = data.daftarTugas || [];
 
-    document.getElementById('statTotalFileTugas').textContent = `${data.totalTerkumpul} File`;
-    document.getElementById('statSiswaSudahTugas').textContent = `${data.jumlahSiswaSudah} Siswa`;
-    document.getElementById('statSiswaBelumTugas').textContent = `${data.jumlahSiswaBelum} Siswa`;
-    document.getElementById('badgeBelumTugas').textContent = `${data.jumlahSiswaBelum} Siswa`;
+    document.getElementById('statTotalFileTugas').textContent = `${data.totalTerkumpul || 0} File`;
+    document.getElementById('statSiswaSudahTugas').textContent = `${data.jumlahSiswaSudah || 0} Siswa`;
+    document.getElementById('statSiswaBelumTugas').textContent = `${data.jumlahSiswaBelum || 0} Siswa`;
+    document.getElementById('badgeBelumTugas').textContent = `${data.jumlahSiswaBelum || 0} Siswa`;
 
     renderTabelTugas(cacheDaftarTugas);
 
     const tbodyBelumTugas = document.getElementById('tbodyBelumTugas');
     const infoMapel = mapel === 'SEMUA' ? 'PR/Tugas Sekolah' : `Mata Pelajaran ${mapel}`;
 
-    if (data.belumKumpul.length === 0) {
+    if (!data.belumKumpul || data.belumKumpul.length === 0) {
       tbodyBelumTugas.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-emerald-600 font-semibold">Seluruh siswa di Kelas ${kelas} sudah mengumpulkan tugas pada kategori ini.</td></tr>`;
     } else {
       tbodyBelumTugas.innerHTML = data.belumKumpul
@@ -531,17 +546,13 @@ function renderTabelTugas(list) {
   const badgeJumlah = document.getElementById('badgeJumlahTugas');
   if (badgeJumlah) badgeJumlah.textContent = `${list.length} File Tugas`;
 
-  if (list.length === 0) {
+  if (!list || list.length === 0) {
     tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400">Belum ada file PR/Tugas yang dikumpulkan untuk filter ini.</td></tr>`;
     return;
   }
 
   tbody.innerHTML = list
     .map((item) => {
-      const badgeNilai = item.nilai
-        ? `<span class="bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-lg font-bold text-xs inline-flex items-center">${ICONS.star} Nilai: ${item.nilai}</span>`
-        : `<span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-semibold text-[11px]">Belum Dinilai</span>`;
-
       const catatanText = item.catatan ? `<div class="text-[11px] text-slate-500 italic mt-0.5">"${item.catatan}"</div>` : '';
       const safeNama = (item.nama || '').replace(/'/g, "\\'");
       const safeJudul = (item.judul || '').replace(/'/g, "\\'");
@@ -623,7 +634,7 @@ document.getElementById('formNilai')?.addEventListener('submit', async (e) => {
       closeModalNilai();
       loadRekapTugas();
     } else {
-      showToast(result.message || 'Gagal menyimpan nilai.', 'error');
+      showToast(result.message || result.error || 'Gagal menyimpan nilai.', 'error');
     }
   } catch (err) {
     showToast('Gagal terhubung ke server.', 'error');
@@ -641,30 +652,45 @@ async function submitBuatTugasGuru(e) {
   const judul = document.getElementById('buatTugasJudul').value.trim();
   const deadline = document.getElementById('buatTugasDeadline').value;
   const deskripsi = document.getElementById('buatTugasDeskripsi').value.trim();
-  const fileInput = document.getElementById('buatTugasFile').files[0];
+  const fileInput = document.getElementById('buatTugasFile')?.files?.[0];
 
   const activeUser = currentGuru || JSON.parse(sessionStorage.getItem('sibintang_guru_data') || '{}');
-  const formData = new FormData();
-  formData.append('kelas', kelas);
-  formData.append('mapel', mapel);
-  formData.append('judul', judul);
-  formData.append('deadline', deadline);
-  formData.append('deskripsi', deskripsi);
-  formData.append('pembuat', activeUser.nama || 'Guru');
-
-  if (fileInput) {
-    formData.append('fileSoal', fileInput);
-  }
-
   const btn = document.getElementById('btnPublikasiTugas');
   btn.textContent = 'Memublikasikan...';
   btn.disabled = true;
 
   try {
-    const res = await fetch('/api/guru/buat-tugas', {
-      method: 'POST',
-      body: formData,
-    });
+    let res;
+    // Jika tidak ada file lampiran, kirim JSON biasa agar backend Vercel tidak error multipart
+    if (!fileInput) {
+      res = await fetch('/api/guru/buat-tugas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          kelas,
+          mapel,
+          judul,
+          deadline,
+          deskripsi,
+          pembuat: activeUser.nama || 'Guru',
+        }),
+      });
+    } else {
+      const formData = new FormData();
+      formData.append('kelas', kelas);
+      formData.append('mapel', mapel);
+      formData.append('judul', judul);
+      formData.append('deadline', deadline);
+      formData.append('deskripsi', deskripsi);
+      formData.append('pembuat', activeUser.nama || 'Guru');
+      formData.append('fileSoal', fileInput);
+
+      res = await fetch('/api/guru/buat-tugas', {
+        method: 'POST',
+        body: formData,
+      });
+    }
+
     const data = await res.json();
     if (data.success) {
       showToast('Tugas baru berhasil dipublikasikan ke siswa!', 'success');
@@ -673,7 +699,7 @@ async function submitBuatTugasGuru(e) {
         document.getElementById('buatTugasKelas').value = currentGuru.kelasBinaan;
       }
     } else {
-      showToast(data.message || 'Gagal memublikasikan tugas.', 'error');
+      showToast(data.message || data.error || 'Gagal memublikasikan tugas.', 'error');
     }
   } catch (err) {
     showToast('Terjadi kesalahan server saat memublikasikan tugas.', 'error');
@@ -686,13 +712,18 @@ async function submitBuatTugasGuru(e) {
 // 9. Dynamic Token Generator Khusus Admin / Kepala Sekolah
 async function submitGenerateToken(e) {
   e.preventDefault();
-  const kategori = document.getElementById('tokenKategori').value;
-  const customToken = document.getElementById('customTokenInput').value.trim();
-  const activeUser = currentGuru || JSON.parse(sessionStorage.getItem('sibintang_guru_data') || '{}');
+  // Kompatibel dengan id='tokenTarget' (HTML baru) maupun id='tokenKategori' (HTML lama)
+  const kategoriEl = document.getElementById('tokenTarget') || document.getElementById('tokenKategori');
+  const customTokenEl = document.getElementById('customToken') || document.getElementById('customTokenInput');
+  const kategori = kategoriEl?.value || 'Guru';
+  const customToken = customTokenEl?.value.trim() || '';
 
-  const btn = document.getElementById('btnGenerateToken');
-  btn.textContent = 'Membuat...';
-  btn.disabled = true;
+  const activeUser = currentGuru || JSON.parse(sessionStorage.getItem('sibintang_guru_data') || '{}');
+  const btn = document.getElementById('btnGenerateToken') || e.target.querySelector('button[type="submit"]');
+  if (btn) {
+    btn.textContent = 'Membuat...';
+    btn.disabled = true;
+  }
 
   try {
     const res = await fetch('/api/admin/generate-token', {
@@ -702,22 +733,26 @@ async function submitGenerateToken(e) {
     });
     const data = await res.json();
     if (data.success) {
-      document.getElementById('teksTokenBaru').textContent = data.token;
-      document.getElementById('hasilTokenContainer').classList.remove('hidden');
+      const teksToken = document.getElementById('teksTokenBaru') || document.getElementById('hasilTokenTeks');
+      if (teksToken) teksToken.textContent = data.token;
+      document.getElementById('hasilTokenContainer')?.classList.remove('hidden');
       showToast(data.message || 'Token berhasil dibuat!', 'success');
     } else {
-      showToast(data.message || 'Gagal membuat token.', 'error');
+      showToast(data.message || data.error || 'Gagal membuat token.', 'error');
     }
   } catch (err) {
     showToast('Gagal terhubung ke server saat generate token.', 'error');
   } finally {
-    btn.innerHTML = `${ICONS.plus}<span>Buat Token Baru</span>`;
-    btn.disabled = false;
+    if (btn) {
+      btn.innerHTML = `${ICONS.plus}<span>Buat Token Baru</span>`;
+      btn.disabled = false;
+    }
   }
 }
 
 function salinToken() {
-  const tokenText = document.getElementById('teksTokenBaru').textContent;
+  const tokenEl = document.getElementById('teksTokenBaru') || document.getElementById('hasilTokenTeks');
+  const tokenText = tokenEl?.textContent;
   if (!tokenText) return;
   navigator.clipboard.writeText(tokenText).then(() => {
     showToast('Token berhasil disalin ke clipboard!', 'info');
@@ -765,10 +800,10 @@ function exportAbsensiCSV() {
   ];
 
   let no = 1;
-  sudahAbsen.forEach((s) => {
+  (sudahAbsen || []).forEach((s) => {
     rows.push([no++, `'${s.nis}`, s.nama, s.jk, s.kelas, s.status || 'Hadir', s.waktuAbsen || '-', s.ortu || '-', `'${s.nohp || '-'}`]);
   });
-  belumAbsen.forEach((s) => {
+  (belumAbsen || []).forEach((s) => {
     rows.push([no++, `'${s.nis}`, s.nama, s.jk, s.kelas, 'Belum Absen', '-', s.ortu || '-', `'${s.nohp || '-'}`]);
   });
 
@@ -777,8 +812,8 @@ function exportAbsensiCSV() {
 }
 
 function exportTugasCSV() {
-  const kelas = document.getElementById('filterKelasTugas').value;
-  const mapel = document.getElementById('filterMapelTugas').value;
+  const kelas = document.getElementById('filterKelasTugas')?.value;
+  const mapel = document.getElementById('filterMapelTugas')?.value;
 
   if (!cacheDaftarTugas || cacheDaftarTugas.length === 0) {
     showToast('Belum ada data tugas terkumpul.', 'error');
@@ -842,7 +877,7 @@ const templatePengumumanData = {
 };
 
 function pilihTemplatePengumuman() {
-  const kunci = document.getElementById('p_template').value;
+  const kunci = document.getElementById('p_template')?.value;
   const inputJudul = document.getElementById('p_judul');
   const inputIsi = document.getElementById('p_isi');
 
@@ -857,11 +892,11 @@ function pilihTemplatePengumuman() {
 
 document.getElementById('formPengumuman')?.addEventListener('submit', async (e) => {
   e.preventDefault();
-  const target = document.getElementById('p_target').value;
-  const kategori = document.getElementById('p_kategori').value;
-  const tglBerakhir = document.getElementById('p_expired').value;
-  const judul = document.getElementById('p_judul').value.trim();
-  const isi = document.getElementById('p_isi').value.trim();
+  const target = document.getElementById('p_target')?.value;
+  const kategori = document.getElementById('p_kategori')?.value;
+  const tglBerakhir = document.getElementById('p_expired')?.value;
+  const judul = document.getElementById('p_judul')?.value.trim();
+  const isi = document.getElementById('p_isi')?.value.trim();
   const btn = document.getElementById('btnKirimPengumuman');
 
   // Proteksi hak akses role: selain Admin / Kepala Sekolah tidak boleh buat pengumuman global SEMUA
@@ -887,7 +922,7 @@ document.getElementById('formPengumuman')?.addEventListener('submit', async (e) 
       showToast('Pengumuman berhasil diterbitkan!', 'success');
       document.getElementById('formPengumuman').reset();
     } else {
-      showToast(result.message || 'Gagal menerbitkan pengumuman.', 'error');
+      showToast(result.message || result.error || 'Gagal menerbitkan pengumuman.', 'error');
     }
   } catch (err) {
     showToast('Gagal terhubung ke server.', 'error');
