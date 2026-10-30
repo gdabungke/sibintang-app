@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sibintang-pwa-v1';
+const CACHE_NAME = 'sibintang-pwa-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -7,7 +7,7 @@ const STATIC_ASSETS = [
   '/js/siswa.js',
   '/js/guru.js',
   '/manifest.json',
-  '/icon.svg'
+  '/icon.png' 
 ];
 
 // 1. Install Service Worker & Simpan Aset Statis
@@ -47,8 +47,11 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(req)
       .then((networkRes) => {
-        const resClone = networkRes.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(req, resClone));
+        // Hanya simpan respon yang valid (status 200) ke cache
+        if (networkRes && networkRes.status === 200) {
+          const resClone = networkRes.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(req, resClone));
+        }
         return networkRes;
       })
       .catch(() => caches.match(req))
