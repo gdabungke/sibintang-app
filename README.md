@@ -74,3 +74,16 @@ sibintang-app/
 ├── README.md                      # Dokumentasi teknis proyek
 ├── tsconfig.json                  # Konfigurasi kompilasi TypeScript
 └── vercel.json                    # Konfigurasi perutean & build deployment Vercel
+
+---
+
+## Lisensi & Hak Cipta
+
+Hak Cipta &copy; 2026 **Yayasan Perguruan Katolik Santo Laurensius**. Seluruh hak cipta dilindungi undang-undang.
+
+### Ketentuan Lisensi Proprietary (Hak Milik Tertutup)
+Perangkat lunak ini, termasuk seluruh kode sumber, desain antarmuka, aset visual, dan dokumentasi terkait, merupakan **properti eksklusif Yayasan Perguruan Katolik Santo Laurensius** untuk operasional **SD Swasta RK Bintang Timur Rantauprapat**.
+
+- **Penggunaan Terbatas**: Hanya diizinkan untuk digunakan dalam lingkungan operasional resmi sekolah-sekolah di bawah naungan Yayasan Perguruan Katolik Santo Laurensius.
+- **Larangan Modifikasi & Distribusi**: Dilarang keras menyalin, mendistribusikan, memodifikasi, merekayasa balik (*reverse engineering*), menjual, melisensikan ulang (*sublicense*), atau mempublikasikan ulang repositori ini kepada pihak ketiga di luar naungan yayasan tanpa izin tertulis resmi dari pengurus yayasan.
+- **Pelanggaran**: Setiap penggunaan tanpa izin yang sah dapat dikenakan sanksi hukum sesuai ketentuan perundang-undangan hak cipta yang berlaku di Republik Indonesia.
