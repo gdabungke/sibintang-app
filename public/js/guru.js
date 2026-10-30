@@ -821,9 +821,20 @@ function pilihTemplatePengumuman() {
 
 document.getElementById('formPengumuman')?.addEventListener('submit', async (e) => {
   e.preventDefault();
+  const target = document.getElementById('p_target').value;
+  const kategori = document.getElementById('p_kategori').value;
+  const tglBerakhir = document.getElementById('p_expired').value;
   const judul = document.getElementById('p_judul').value.trim();
   const isi = document.getElementById('p_isi').value.trim();
   const btn = document.getElementById('btnKirimPengumuman');
+
+  // Proteksi hak akses role: selain Admin / Kepala Sekolah tidak boleh buat pengumuman global SEMUA
+  const userRole = currentGuru?.role || '';
+  if (target === 'SEMUA' && (userRole !== 'Admin Sistem' && userRole !== 'Admin' && userRole !== 'Kepala Sekolah')) {
+    showToast('Hanya Kepala Sekolah atau Admin yang dapat menerbitkan Pengumuman Global!', 'error');
+    return;
+  }
+
   btn.textContent = 'Menerbitkan...';
   btn.disabled = true;
 
@@ -833,7 +844,7 @@ document.getElementById('formPengumuman')?.addEventListener('submit', async (e) 
     const res = await fetch('/api/guru/pengumuman', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ judul, isi, pembuat: pembuatNama }),
+      body: JSON.stringify({ target, kategori, tglBerakhir, judul, isi, pembuat: pembuatNama }),
     });
     const result = await res.json();
     if (result.success) {
@@ -845,7 +856,7 @@ document.getElementById('formPengumuman')?.addEventListener('submit', async (e) 
   } catch (err) {
     showToast('Gagal terhubung ke server.', 'error');
   } finally {
-    btn.innerHTML = `${ICONS.send}<span>Terbitkan Pengumuman</span>`;
+    btn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg><span>Terbitkan Pengumuman</span>`;
     btn.disabled = false;
   }
 });
