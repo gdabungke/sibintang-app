@@ -30,6 +30,9 @@ function showToast(message, type = 'success') {
 
 // Inisialisasi saat Halaman Dimuat
 window.addEventListener('DOMContentLoaded', () => {
+  // Isi Dropdown dari constan.js
+isiDropdown('regKelas', DAFTAR_KELAS, 'Pilih Kelas');
+isiDropdown('mapel', DAFTAR_MAPEL, 'Pilih Mata Pelajaran');
   initEventListeners();
   const saved = localStorage.getItem('sibintang_siswa');
   if (saved) {
@@ -44,10 +47,6 @@ window.addEventListener('DOMContentLoaded', () => {
     updateHeaderUI(false);
   }
 });
-
-// Isi Dropdown dari constan.js
-isiDropdown('regKelas', DAFTAR_KELAS, 'Pilih Kelas');
-isiDropdown('mapel', DAFTAR_MAPEL, 'Pilih Mata Pelajaran');
 
 // Pendaftaran Seluruh Event Listener Elemen DOM
 function initEventListeners() {
