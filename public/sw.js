@@ -4,6 +4,7 @@ const STATIC_ASSETS = [
   '/index.html',
   '/guru.html',
   '/css/style.css',
+  '/js/constants.js',
   '/js/siswa.js',
   '/js/guru.js',
   '/manifest.json',
