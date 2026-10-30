@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/gdabungke/sibintang-app/main/public/icon.svg" alt="Logo SiBintang" width="96" height="96" style="border-radius: 20px; box-shadow: 0 4px 14px rgba(0,0,0,0.12); margin-bottom: 12px;" />
+<img src="https://raw.githubusercontent.com/gdabungke/sibintang-app/main/public/icon.png" alt="Logo SiBintang" width="96" height="96" style="border-radius: 20px; box-shadow: 0 4px 14px rgba(0,0,0,0.12); margin-bottom: 12px;" />
 
 # SiBintang (Sistem Informasi Bintang Timur)
 ### Platform Manajemen Sekolah Terpadu Berbasis PWA (Progressive Web App)
@@ -74,3 +74,102 @@ sibintang-app/
 ├── README.md                      # Dokumentasi teknis proyek
 ├── tsconfig.json                  # Konfigurasi kompilasi TypeScript
 └── vercel.json                    # Konfigurasi perutean & build deployment Vercel
+```
+
+---
+
+## Skema Basis Data (Google Sheets)
+
+Aplikasi menggunakan berkas spreadsheet Google Sheets dengan skema 8 tab terstruktur sebagai basis data:
+
+1. **`Tokens`**: Pencatatan token pendaftaran (`TokenKey`, `Kategori`, `Status (Aktif)`, `Waktu Dibuat`, `Pembuat`).
+2. **`Guru`**: Registrasi staf pengelola (`NIP / ID Guru`, `Nama Lengkap & Gelar`, `Peran (Role)`, `Kelas Binaan`, `Mata Pelajaran Ajar`).
+3. **`Siswa`**: Data induk siswa terdaftar (`NIS`, `Nama Siswa`, `Kelas`, `Jenis Kelamin`, `Nama Orang Tua`, `No. WhatsApp`).
+4. **`Absensi`**: Buku log kehadiran harian (`Waktu (Timestamp)`, `NIS`, `Nama Siswa`, `Kelas`, `Status Kehadiran`, `Keterangan / Isi QR`).
+5. **`DaftarTugas`**: Katalog penugasan guru (`Waktu Dibuat`, `Kelas`, `Mata Pelajaran`, `Judul Tugas`, `Deskripsi / Instruksi`, `Link File Soal (Drive)`, `Deadline`, `Pembuat`).
+6. **`Tugas`**: Log penyerahan tugas siswa (`Waktu Upload`, `NIS`, `Nama Siswa`, `Kelas`, `Mata Pelajaran`, `Judul / Ket. Tugas`, `Link File Drive`, `Nilai`, `Catatan Guru`).
+7. **`Izin`**: Catatan permohonan izin/sakit (`Waktu Pengajuan`, `NIS`, `Nama Siswa`, `Kelas`, `Status (Izin/Sakit)`, `Keterangan / Alasan`, `Tanggal Mulai`, `Link Bukti Surat (Drive)`).
+8. **`Pengumuman`**: Pusat informasi sekolah (`Waktu (Timestamp)`, `Target (SEMUA/Kelas)`, `Kategori`, `Tenggat Waktu / Expired`, `Judul Pengumuman`, `Isi Pengumuman`, `Pembuat`).
+
+---
+
+## Panduan Instalasi & Menjalankan Aplikasi
+
+### A. Lingkungan Pengembangan Lokal (Local Development)
+
+#### 1. Prasyarat
+- **Node.js** versi 18.x atau 20.x LTS
+- **npm** (atau package manager lain seperti yarn/pnpm)
+- Google Cloud Service Account dengan akses aktif ke **Google Sheets API** dan **Google Drive API**
+
+#### 2. Kloning Repositori
+```bash
+git clone https://github.com/gdabungke/sibintang-app.git
+cd sibintang-app
+```
+
+#### 3. Instalasi Dependensi
+```bash
+npm install
+```
+
+#### 4. Konfigurasi Variabel Lingkungan (`.env`)
+Salin berkas template lingkungan atau buat berkas `.env` pada direktori root proyek:
+```env
+PORT=3000
+SPREADSHEET_ID=masukkan_id_spreadsheet_google_anda
+DRIVE_FOLDER_ID=masukkan_id_folder_google_drive_tujuan
+GOOGLE_SERVICE_ACCOUNT_EMAIL=akun-layanan@proyek-anda.iam.gserviceaccount.com
+GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC...\n-----END PRIVATE KEY-----\n"
+```
+
+#### 5. Menjalankan Server
+```bash
+# Mode Pengembangan (Hot Reload dengan ts-node-dev)
+npm run dev
+
+# Atau kompilasi TypeScript dan jalankan mode produksi (Production)
+npm run build
+npm start
+```
+Akses melalui peramban:
+- **Portal Siswa**: `http://localhost:3000/`
+- **Portal Guru**: `http://localhost:3000/guru.html`
+
+---
+
+### B. Deployment ke Vercel (Produksi)
+
+1. Pastikan repositori GitHub Anda telah terhubung ke proyek Vercel.
+2. Tambahkan variabel lingkungan (*Environment Variables*) pada dashboard Vercel (**Settings > Environment Variables**):
+   - `SPREADSHEET_ID`
+   - `DRIVE_FOLDER_ID`
+   - `GOOGLE_SERVICE_ACCOUNT_EMAIL`
+   - `GOOGLE_PRIVATE_KEY` (Pastikan format baris baru `\n` ditangani dengan benar).
+3. Jalankan *Deploy*. Konfigurasi rute pada `vercel.json` akan otomatis menangani perutean serverless ke backend.
+
+---
+
+### C. Pemasangan Aplikasi di Perangkat Pengguna (PWA)
+
+Aplikasi SiBintang dapat dipasang (*install*) langsung ke layar utama (*Home Screen*) perangkat pengguna tanpa unduhan APK atau App Store:
+
+- **Perangkat Android (Google Chrome / Edge)**:
+  Buka tautan aplikasi di peramban, tunggu hingga banner *Pasang Aplikasi SiBintang* muncul di bagian bawah layar, lalu klik tombol **Pasang**. Jika banner tidak muncul, ketuk ikon menu titik tiga di pojok kanan atas, lalu pilih **Install app** atau **Tambahkan ke Layar Utama**.
+- **Perangkat iOS / iPadOS (Safari)**:
+  Buka tautan aplikasi di Safari, ketuk tombol **Share (Bagikan)** di bilah bawah peramban, gulir ke bawah, lalu pilih opsi **Add to Home Screen (Tambahkan ke Layar Utama)**.
+- **Desktop (Google Chrome / Edge)**:
+  Klik ikon unduh/instal di sisi kanan bilah alamat URL peramban (*address bar*), lalu konfirmasi pemasangan aplikasi.
+
+---
+
+## Lisensi & Hak Cipta
+
+Hak Cipta &copy; 2026 **Yayasan Perguruan Katolik Santo Laurensius**. Seluruh hak cipta dilindungi undang-undang.
+
+### Ketentuan Lisensi Proprietary (Hak Milik Tertutup)
+Perangkat lunak ini, termasuk seluruh kode sumber, desain antarmuka, aset visual, dan dokumentasi terkait, merupakan **properti eksklusif Yayasan Perguruan Katolik Santo Laurensius** untuk operasional **SD Swasta RK Bintang Timur Rantauprapat**.
+
+- **Penggunaan Terbatas**: Hanya diizinkan untuk digunakan dalam lingkungan operasional resmi sekolah-sekolah di bawah naungan Yayasan Perguruan Katolik Santo Laurensius.
+- **Larangan Modifikasi & Distribusi**: Dilarang keras menyalin, mendistribusikan, memodifikasi, merekayasa balik (*reverse engineering*), menjual, melisensikan ulang (*sublicense*), atau mempublikasikan ulang repositori ini kepada pihak ketiga di luar naungan yayasan tanpa izin tertulis resmi dari pengurus yayasan.
+- **Pelanggaran**: Setiap penggunaan tanpa izin yang sah dapat dikenakan sanksi hukum sesuai ketentuan perundang-undangan hak cipta yang berlaku di Republik Indonesia.
