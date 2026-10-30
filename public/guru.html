@@ -35,14 +35,13 @@
             <div class="flex items-center space-x-2">
                 <!-- Tombol Pasang Aplikasi PWA Guru -->
                 <button id="btnInstallAppGuru" class="hidden bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-3 py-1.5 rounded-lg font-bold transition flex items-center space-x-1.5 shadow-sm">
-                    <span>📲</span>
                     <span class="hidden sm:inline">Pasang Aplikasi</span>
                 </button>
 
                 <a href="/" class="bg-indigo-700 hover:bg-indigo-600 text-xs px-3 py-1.5 rounded-lg font-semibold transition">
-                    Halaman Siswa ↗
+                    Halaman Siswa
                 </a>
-                <button id="btnLogoutGuru" onclick="logoutGuru()" class="hidden bg-red-500 hover:bg-red-600 text-xs px-3 py-1.5 rounded-lg font-semibold transition">
+                <button id="btnLogoutGuru" class="hidden bg-red-500 hover:bg-red-600 text-xs px-3 py-1.5 rounded-lg font-semibold transition">
                     Keluar
                 </button>
             </div>
@@ -62,10 +61,10 @@
 
             <!-- Tombol Tab Switch (Masuk vs Registrasi) -->
             <div class="grid grid-cols-2 gap-1 bg-slate-100 p-1 rounded-xl mb-6">
-                <button onclick="switchAuthTab('masuk')" id="authTabBtn-masuk" class="py-2 text-xs font-bold rounded-lg bg-indigo-800 text-white shadow-sm transition">
+                <button id="authTabBtn-masuk" type="button" class="py-2 text-xs font-bold rounded-lg bg-indigo-800 text-white shadow-sm transition">
                     Masuk (Login)
                 </button>
-                <button onclick="switchAuthTab('daftar')" id="authTabBtn-daftar" class="py-2 text-xs font-bold rounded-lg text-slate-600 hover:text-slate-800 transition">
+                <button id="authTabBtn-daftar" type="button" class="py-2 text-xs font-bold rounded-lg text-slate-600 hover:text-slate-800 transition">
                     Registrasi (Daftar)
                 </button>
             </div>
@@ -93,7 +92,7 @@
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Status / Peran (Role) *</label>
-                    <select id="regRoleGuru" required onchange="toggleRoleOptions()" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-indigo-600 focus:outline-none bg-white">
+                    <select id="regRoleGuru" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-indigo-600 focus:outline-none bg-white">
                         <option value="">Pilih Peran</option>
                         <option value="Wali Kelas">Wali Kelas</option>
                         <option value="Guru Mapel">Guru Mata Pelajaran</option>
@@ -133,6 +132,12 @@
                     </select>
                 </div>
 
+                <!-- Kolom Token Registrasi Pengelola -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Token Pendaftaran Pengelola *</label>
+                    <input type="text" id="regTokenGuru" required placeholder="Masukkan token rahasia pengelola" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-indigo-600 focus:outline-none" />
+                </div>
+
                 <button type="submit" id="btnSubmitDaftarGuru" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow transition text-sm">
                     Daftar Akun Pengelola Baru
                 </button>
@@ -154,15 +159,61 @@
                 </div>
             </div>
 
+            <!-- PANEL GENERATOR TOKEN KHUSUS ADMIN / KEPALA SEKOLAH -->
+            <div id="panelAdminToken" class="hidden bg-white p-6 rounded-2xl shadow-sm border border-slate-200 no-print">
+                <h3 class="text-base font-bold text-slate-800 mb-1">Generator Token Pendaftaran Resmi</h3>
+                <p class="text-xs text-slate-500 mb-4">Buat token akses pendaftaran baru untuk staf atau siswa langsung dari portal tanpa mengubah Vercel.</p>
+                
+                <form id="formGenerateToken" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Pilih Kategori / Target Token</label>
+                            <select id="tokenKategori" required class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-indigo-600 focus:outline-none bg-white">
+                                <optgroup label="Kategori Staf / Pengelola">
+                                    <option value="Kepala Sekolah">Kepala Sekolah</option>
+                                    <option value="Guru">Guru</option>
+                                    <option value="Operator">Operator</option>
+                                </optgroup>
+                                <optgroup label="Kategori Siswa per Kelas">
+                                    <option value="Kelas 1">Siswa - Kelas 1</option>
+                                    <option value="Kelas 2">Siswa - Kelas 2</option>
+                                    <option value="Kelas 3">Siswa - Kelas 3</option>
+                                    <option value="Kelas 4">Siswa - Kelas 4</option>
+                                    <option value="Kelas 5">Siswa - Kelas 5</option>
+                                    <option value="Kelas 6">Siswa - Kelas 6</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Kustom Token (Opsional)</label>
+                            <input type="text" id="customTokenInput" placeholder="Kosongkan untuk generate otomatis" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-indigo-600 focus:outline-none" />
+                        </div>
+                    </div>
+                    
+                    <button type="submit" id="btnGenerateToken" class="bg-indigo-800 hover:bg-indigo-900 text-white font-semibold text-xs px-5 py-2.5 rounded-xl transition shadow-md">
+                        Buat Token Baru
+                    </button>
+                </form>
+
+                <!-- Kotak Hasil Generate -->
+                <div id="hasilTokenContainer" class="hidden mt-4 p-4 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
+                    <div>
+                        <p class="text-[11px] text-slate-500 font-medium">Token Berhasil Dibuat:</p>
+                        <p id="teksTokenBaru" class="text-sm font-bold text-indigo-600 tracking-wider"></p>
+                    </div>
+                    <button type="button" id="btnSalinToken" class="text-xs bg-slate-200 hover:bg-slate-300 px-3 py-1.5 rounded-lg font-medium transition">Salin Token</button>
+                </div>
+            </div>
+
             <!-- NAVIGASI TAB MENU GURU -->
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 bg-white p-1.5 rounded-2xl shadow-sm border border-slate-200 no-print">
-                <button onclick="switchGuruTab('absen')" id="tabGuruBtn-absen" class="py-2.5 px-4 text-xs md:text-sm font-bold rounded-xl bg-indigo-800 text-white shadow transition">
+                <button id="tabGuruBtn-absen" type="button" class="py-2.5 px-4 text-xs md:text-sm font-bold rounded-xl bg-indigo-800 text-white shadow transition">
                     QR & Rekap Absensi
                 </button>
-                <button onclick="switchGuruTab('tugas')" id="tabGuruBtn-tugas" class="py-2.5 px-4 text-xs md:text-sm font-bold rounded-xl text-slate-700 hover:bg-slate-100 hover:text-indigo-900 transition">
+                <button id="tabGuruBtn-tugas" type="button" class="py-2.5 px-4 text-xs md:text-sm font-bold rounded-xl text-slate-700 hover:bg-slate-100 hover:text-indigo-900 transition">
                     Pemeriksaan PR / Tugas
                 </button>
-                <button onclick="switchGuruTab('pengumuman')" id="tabGuruBtn-pengumuman" class="py-2.5 px-4 text-xs md:text-sm font-bold rounded-xl text-slate-700 hover:bg-slate-100 hover:text-indigo-900 transition">
+                <button id="tabGuruBtn-pengumuman" type="button" class="py-2.5 px-4 text-xs md:text-sm font-bold rounded-xl text-slate-700 hover:bg-slate-100 hover:text-indigo-900 transition">
                     Papan Pengumuman
                 </button>
             </div>
@@ -173,7 +224,7 @@
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 flex-grow">
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">Pilih Kelas</label>
-                            <select id="filterKelas" onchange="sinkronKelas('absen')" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm font-semibold bg-white focus:ring-2 focus:ring-indigo-600 focus:outline-none">
+                            <select id="filterKelas" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm font-semibold bg-white focus:ring-2 focus:ring-indigo-600 focus:outline-none">
                                 <option value="1A">Kelas 1A</option><option value="1B">Kelas 1B</option>
                                 <option value="2A">Kelas 2A</option><option value="2B">Kelas 2B</option>
                                 <option value="3A">Kelas 3A</option><option value="3B">Kelas 3B</option>
@@ -184,18 +235,18 @@
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">Tanggal Absensi</label>
-                            <input type="date" id="filterTanggal" onchange="updateDashboardAbsen()" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm font-semibold focus:ring-2 focus:ring-indigo-600 focus:outline-none" />
+                            <input type="date" id="filterTanggal" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm font-semibold focus:ring-2 focus:ring-indigo-600 focus:outline-none" />
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">Keterangan Sesi</label>
-                            <input type="text" id="ketSesi" value="Absen Pagi" oninput="generateQR()" placeholder="Misal: Absen Pagi" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-indigo-600 focus:outline-none" />
+                            <input type="text" id="ketSesi" value="Absen Pagi" placeholder="Misal: Absen Pagi" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-indigo-600 focus:outline-none" />
                         </div>
                     </div>
                     <div class="flex space-x-2">
-                        <button onclick="loadRekapKelas()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow transition">
+                        <button id="btnSegarkanRekap" type="button" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow transition">
                             Segarkan Rekap
                         </button>
-                        <button onclick="exportAbsensiCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow transition flex items-center space-x-1">
+                        <button id="btnExportCSV" type="button" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow transition flex items-center space-x-1">
                             <span>Export Excel (CSV)</span>
                         </button>
                     </div>
@@ -216,7 +267,7 @@
                             Arahkan kamera aplikasi <b>SiBintang</b> siswa ke kode QR di atas untuk mencatat kehadiran.
                         </p>
                         <div class="mt-5 w-full flex gap-2 no-print">
-                            <button onclick="window.print()" class="flex-1 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold py-2.5 rounded-xl transition">
+                            <button id="btnCetakQR" type="button" class="flex-1 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold py-2.5 rounded-xl transition">
                                 Cetak QR Kelas
                             </button>
                         </div>
@@ -291,11 +342,71 @@
 
             <!-- TAB 2: TUGAS -->
             <div id="tabGuruContent-tugas" class="hidden space-y-6 no-print">
+                <!-- FORM PEMBUATAN TUGAS / PR BARU OLEH GURU -->
+                <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+                    <h3 class="font-bold text-base text-slate-800 mb-1">Buat & Publikasikan Tugas / PR Baru</h3>
+                    <p class="text-xs text-slate-500 mb-4">Kirimkan instruksi tugas atau lampirkan file soal ke Google Drive agar langsung tampil di portal siswa.</p>
+                    
+                    <form id="formBuatTugasGuru" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Kelas Tujuan *</label>
+                                <select id="buatTugasKelas" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm bg-white focus:ring-2 focus:ring-indigo-600 focus:outline-none">
+                                    <option value="">Pilih Kelas</option>
+                                    <option value="1A">Kelas 1A</option><option value="1B">Kelas 1B</option>
+                                    <option value="2A">Kelas 2A</option><option value="2B">Kelas 2B</option>
+                                    <option value="3A">Kelas 3A</option><option value="3B">Kelas 3B</option>
+                                    <option value="4A">Kelas 4A</option><option value="4B">Kelas 4B</option>
+                                    <option value="5A">Kelas 5A</option><option value="5B">Kelas 5B</option>
+                                    <option value="6A">Kelas 6A</option><option value="6B">Kelas 6B</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Mata Pelajaran *</label>
+                                <select id="buatTugasMapel" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm bg-white focus:ring-2 focus:ring-indigo-600 focus:outline-none">
+                                    <option value="">Pilih Mata Pelajaran</option>
+                                    <option value="Matematika">Matematika</option>
+                                    <option value="Bahasa Indonesia">Bahasa Indonesia</option>
+                                    <option value="IPAS (IPA & IPS)">IPAS (IPA & IPS)</option>
+                                    <option value="Pendidikan Agama">Pendidikan Agama</option>
+                                    <option value="Pendidikan Pancasila / PPKn">Pendidikan Pancasila / PPKn</option>
+                                    <option value="Bahasa Inggris">Bahasa Inggris</option>
+                                    <option value="Seni Budaya & Prakarya">Seni Budaya & Prakarya</option>
+                                    <option value="PJOK">PJOK (Olahraga)</option>
+                                    <option value="Muatan Lokal / TIK">Muatan Lokal / TIK</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Judul Tugas *</label>
+                                <input type="text" id="buatTugasJudul" required placeholder="Contoh: PR Perkalian Pecahan Hal 50" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-indigo-600 focus:outline-none" />
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Batas Pengumpulan (Deadline) *</label>
+                                <input type="date" id="buatTugasDeadline" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-indigo-600 focus:outline-none" />
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Deskripsi / Instruksi Pengerjaan *</label>
+                            <textarea id="buatTugasDeskripsi" rows="3" required placeholder="Tuliskan petunjuk pengerjaan tugas secara rinci di sini..." class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-indigo-600 focus:outline-none"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Upload File Soal / Materi (Opsional - PDF/Word/Foto)</label>
+                            <input type="file" id="buatTugasFile" accept="image/*,.pdf,.doc,.docx" class="w-full text-xs text-slate-600 file:mr-3 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 border border-slate-300 rounded-xl p-1.5" />
+                        </div>
+                        <button type="submit" id="btnPublikasiTugas" class="w-full bg-indigo-800 hover:bg-indigo-900 text-white font-bold py-3 rounded-xl shadow transition text-sm">
+                            Publikasikan Tugas ke Siswa
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Bagian Filter Rekap Tugas -->
                 <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-end justify-between gap-4">
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 flex-grow">
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">Pilih Kelas</label>
-                            <select id="filterKelasTugas" onchange="sinkronKelas('tugas')" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm font-semibold bg-white focus:ring-2 focus:ring-indigo-600 focus:outline-none">
+                            <select id="filterKelasTugas" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm font-semibold bg-white focus:ring-2 focus:ring-indigo-600 focus:outline-none">
                                 <option value="1A">Kelas 1A</option><option value="1B">Kelas 1B</option>
                                 <option value="2A">Kelas 2A</option><option value="2B">Kelas 2B</option>
                                 <option value="3A">Kelas 3A</option><option value="3B">Kelas 3B</option>
@@ -306,7 +417,7 @@
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">Mata Pelajaran</label>
-                            <select id="filterMapelTugas" onchange="loadRekapTugas()" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm font-semibold bg-white focus:ring-2 focus:ring-indigo-600 focus:outline-none">
+                            <select id="filterMapelTugas" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm font-semibold bg-white focus:ring-2 focus:ring-indigo-600 focus:outline-none">
                                 <option value="SEMUA">-- Semua Mata Pelajaran --</option>
                                 <option value="Matematika">Matematika</option>
                                 <option value="Bahasa Indonesia">Bahasa Indonesia</option>
@@ -321,14 +432,14 @@
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">Cari Nama Siswa / Judul Tugas</label>
-                            <input type="text" id="cariTugasInput" oninput="filterTabelTugasLokal()" placeholder="Ketik kata kunci..." class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-indigo-600 focus:outline-none" />
+                            <input type="text" id="cariTugasInput" placeholder="Ketik kata kunci..." class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-indigo-600 focus:outline-none" />
                         </div>
                     </div>
                     <div class="flex space-x-2">
-                        <button onclick="loadRekapTugas()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow transition">
+                        <button id="btnSegarkanTugas" type="button" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow transition">
                             Segarkan Tugas
                         </button>
-                        <button onclick="exportTugasCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow transition flex items-center space-x-1">
+                        <button id="btnExportTugasCSV" type="button" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow transition flex items-center space-x-1">
                             <span>Export Nilai (CSV)</span>
                         </button>
                     </div>
@@ -407,10 +518,10 @@
                 <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
                     <h3 class="font-bold text-base text-slate-800 mb-1">Buat Pengumuman Baru</h3>
                     <p class="text-xs text-slate-500 mb-4">Pengumuman akan langsung tampil di halaman depan portal seluruh siswa.</p>
-                    <form id="formPengumuman" onsubmit="submitPengumuman(event)" class="space-y-4">
+                    <form id="formPengumuman" class="space-y-4">
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">Pilih Template Pengumuman Otomatis (Opsional)</label>
-                            <select id="p_template" onchange="pilihTemplatePengumuman()" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm bg-white focus:ring-2 focus:ring-indigo-600 focus:outline-none">
+                            <select id="p_template" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm bg-white focus:ring-2 focus:ring-indigo-600 focus:outline-none">
                                 <option value="">-- Buat Manual atau Pilih Template --</option>
                                 <option value="libur">Jadwal Libur Sekolah & Cuti Bersama</option>
                                 <option value="rapor">Jadwal Pengambilan Rapor / Buku Laporan Hasil Belajar</option>
@@ -440,13 +551,13 @@
         <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="font-bold text-base text-slate-800">Beri Nilai & Catatan Tugas</h3>
-                <button onclick="closeModalNilai()" class="text-slate-400 hover:text-slate-600 font-bold text-lg">✕</button>
+                <button id="btnCloseModalNilai" type="button" class="text-slate-400 hover:text-slate-600 font-bold text-lg">✕</button>
             </div>
             <div class="mb-3 bg-slate-50 p-3 rounded-xl text-xs space-y-1">
                 <p><span class="font-semibold text-slate-500">Siswa:</span> <span id="modalNamaSiswa" class="font-bold text-slate-800"></span></p>
                 <p><span class="font-semibold text-slate-500">Tugas:</span> <span id="modalJudulTugas" class="font-bold text-slate-800"></span></p>
             </div>
-            <form id="formNilai" onsubmit="submitNilaiGuru(event)" class="space-y-4">
+            <form id="formNilai" class="space-y-4">
                 <input type="hidden" id="modalRowIndex" />
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Nilai Angka (0 - 100) *</label>
@@ -457,7 +568,7 @@
                     <textarea id="inputCatatanGuru" rows="3" placeholder="Contoh: Pengerjaan sangat rapi dan teliti, pertahankan!" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-indigo-600 focus:outline-none"></textarea>
                 </div>
                 <div class="flex space-x-2 pt-2">
-                    <button type="button" onclick="closeModalNilai()" class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2.5 rounded-xl text-xs transition">
+                    <button type="button" id="btnBatalNilai" class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2.5 rounded-xl text-xs transition">
                         Batal
                     </button>
                     <button type="submit" id="btnSimpanNilai" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl text-xs shadow transition">
@@ -470,84 +581,52 @@
 
     <!-- Banner Khusus Pengguna iPhone / iOS -->
     <div id="ios-install-banner" style="display: none; position: fixed; bottom: 0; left: 0; right: 0; background: #1e293b; color: #fff; padding: 15px; text-align: center; z-index: 9999; box-shadow: 0 -4px 10px rgba(0,0,0,0.3); font-family: sans-serif;">
-      <p style="margin: 0 0 8px 0; font-size: 14px;">📲 <b>Pasang SiBintang di iPhone Anda:</b> Ketuk tombol <b>Share (Bagikan)</b> <span style="font-size: 18px;">⎋</span> di bawah browser, lalu pilih <b>"Add to Home Screen"</b>.</p>
-      <button onclick="document.getElementById('ios-install-banner').style.display='none'" style="background: #38bdf8; border: none; padding: 6px 14px; color: #0f172a; font-weight: bold; border-radius: 4px; cursor: pointer;">Tutup</button>
+      <p style="margin: 0 0 8px 0; font-size: 14px;"><b>Pasang SiBintang di iPhone Anda:</b> Ketuk tombol <b>Share (Bagikan)</b> di bawah browser, lalu pilih <b>"Add to Home Screen"</b>.</p>
+      <button id="btnDismissIosBanner" type="button" style="background: #38bdf8; border: none; padding: 6px 14px; color: #0f172a; font-weight: bold; border-radius: 4px; cursor: pointer;">Tutup</button>
     </div>
-    
-    <script>
-      // Cek apakah pengguna menggunakan perangkat iOS (iPhone/iPad) dan bukan di dalam mode standalone (belum di-install)
-      const isIos = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
-      const isInStandaloneMode = ('standalone' in window.navigator) && (window.navigator.standalone);
-    
-      if (isIos && !isInStandaloneMode) {
-        // Tampilkan banner khusus iOS setelah halaman dimuat
-        window.addEventListener('DOMContentLoaded', () => {
-          document.getElementById('ios-install-banner').style.display = 'block';
-        });
-      }
-    </script>
-
-    <!-- Pendaftaran Service Worker untuk PWA -->
-    <script>
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js').catch((err) => {
-          console.log('Service Worker registration failed:', err);
-        });
-      }
-    </script>
 
     <!-- File JavaScript Eksternal -->
     <script src="/js/guru.js"></script>
     
-  <!-- FOOTER PROFESIONAL SIBINTANG -->
-<footer class="mt-auto bg-slate-900 text-slate-300 font-sans border-t-4 border-amber-500">
-  <div class="max-w-4xl mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-3 gap-8 text-center md:text-left">
-    
-    <!-- Kolom 1: Identitas & Naungan -->
-    <div class="space-y-2">
-      <h3 class="font-bold text-white text-sm uppercase tracking-wider flex items-center justify-center md:justify-start space-x-2">
-        <span class="w-2 h-2 bg-amber-400 rounded-full"></span>
-        <span>SD Swasta RK Bintang Timur</span>
-      </h3>
-      <p class="text-xs text-slate-400 leading-relaxed">
-        Naungan: Yayasan Perguruan Katolik Santo Laurensius.<br>
-        Terakreditasi <span class="text-amber-400 font-bold">A</span> | NPSN: 10205570
-      </p>
-    </div>
-
-    <!-- Kolom 2: Alamat Lengkap -->
-    <div class="space-y-2">
-      <h3 class="font-bold text-white text-sm uppercase tracking-wider flex items-center justify-center md:justify-start space-x-2">
-        <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
-        <span>Lokasi Sekolah</span>
-      </h3>
-      <p class="text-xs text-slate-400 leading-relaxed">
-        Jl. Cut Mutia No. 10 (Jln. Cut Meutia Ujung), Kel. Siringo-Ringo, Kec. Rantau Utara, Kab. Labuhanbatu, Sumatera Utara 21413.
-      </p>
-    </div>
-
-    <!-- Kolom 3: Kontak Resmi -->
-    <div class="space-y-2">
-      <h3 class="font-bold text-white text-sm uppercase tracking-wider flex items-center justify-center md:justify-start space-x-2">
-        <span class="w-2 h-2 bg-emerald-500 rounded-full"></span>
-        <span>Kontak & Layanan</span>
-      </h3>
-      <p class="text-xs text-slate-400 leading-relaxed">
-        <span class="font-semibold text-slate-300">Telp:</span> 0624-2602068<br>
-        <span class="font-semibold text-slate-300">Email:</span> sdrk_bintangtimur@yahoo.com
-      </p>
-    </div>
-
-  </div>
-
-  <!-- Pembatas Garis Berbeda Warna & Hak Cipta -->
-  <div class="bg-slate-950 py-4 px-4 border-t border-slate-800 text-center text-slate-400 text-xs">
-    <div class="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-2">
-      <p>Sistem Informasi Manajemen Sekolah & Absensi (SiBintang PWA)</p>
-      <p class="text-slate-500 text-[11px]">Hak Cipta © 2026 SD RK Bintang Timur Rantauprapat. Hak cipta dilindungi undang-undang.</p>
-    </div>
-  </div>
-</footer>
-
+    <!-- FOOTER PROFESIONAL SIBINTANG -->
+    <footer class="mt-auto bg-slate-900 text-slate-300 font-sans border-t-4 border-amber-500">
+      <div class="max-w-4xl mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-3 gap-8 text-center md:text-left">
+        <div class="space-y-2">
+          <h3 class="font-bold text-white text-sm uppercase tracking-wider flex items-center justify-center md:justify-start space-x-2">
+            <span class="w-2 h-2 bg-amber-400 rounded-full"></span>
+            <span>SD Swasta RK Bintang Timur</span>
+          </h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Naungan: Yayasan Perguruan Katolik Santo Laurensius.<br>
+            Terakreditasi <span class="text-amber-400 font-bold">A</span> | NPSN: 10205570
+          </p>
+        </div>
+        <div class="space-y-2">
+          <h3 class="font-bold text-white text-sm uppercase tracking-wider flex items-center justify-center md:justify-start space-x-2">
+            <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
+            <span>Lokasi Sekolah</span>
+          </h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Jl. Cut Mutia No. 10 (Jln. Cut Meutia Ujung), Kel. Siringo-Ringo, Kec. Rantau Utara, Kab. Labuhanbatu, Sumatera Utara 21413.
+          </p>
+        </div>
+        <div class="space-y-2">
+          <h3 class="font-bold text-white text-sm uppercase tracking-wider flex items-center justify-center md:justify-start space-x-2">
+            <span class="w-2 h-2 bg-emerald-500 rounded-full"></span>
+            <span>Kontak & Layanan</span>
+          </h3>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            <span class="font-semibold text-slate-300">Telp:</span> 0624-2602068<br>
+            <span class="font-semibold text-slate-300">Email:</span> sdrk_bintangtimur@yahoo.com
+          </p>
+        </div>
+      </div>
+      <div class="bg-slate-950 py-4 px-4 border-t border-slate-800 text-center text-slate-400 text-xs">
+        <div class="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-2">
+          <p>Sistem Informasi Manajemen Sekolah & Absensi (SiBintang PWA)</p>
+          <p class="text-slate-500 text-[11px]">Hak Cipta © 2026 SD RK Bintang Timur Rantauprapat. Hak cipta dilindungi undang-undang.</p>
+        </div>
+      </div>
+    </footer>
 </body>
 </html>
