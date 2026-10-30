@@ -120,44 +120,19 @@
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1">Status / Peran (Role) *</label>
-                        <select id="regRoleGuru" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-indigo-600 focus:outline-none bg-white">
-                            <option value="" disabled selected>Pilih Peran Anda</option>
-                            <option value="Guru Kelas">Guru Kelas</option>
-                            <option value="Guru Mata Pelajaran">Guru Mata Pelajaran</option>
-                            <option value="Kepala Sekolah">Kepala Sekolah</option>
-                            <option value="Operator">Operator</option>
-                        </select>
+                        <select id="regRoleGuru" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-indigo-600 focus:outline-none bg-white"></select>
                     </div>
 
                     <!-- Opsi Kelas Binaan (Jika Wali Kelas) -->
                     <div id="divKelasBinaan" class="hidden">
                         <label class="block text-xs font-semibold text-slate-600 mb-1">Kelas Binaan (Wali Kelas) *</label>
-                        <select id="regKelasBinaan" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm bg-white focus:ring-2 focus:ring-indigo-600 focus:outline-none">
-                            <option value="">Pilih Kelas</option>
-                            <option value="1A">Kelas 1A</option><option value="1B">Kelas 1B</option>
-                            <option value="2A">Kelas 2A</option><option value="2B">Kelas 2B</option>
-                            <option value="3A">Kelas 3A</option><option value="3B">Kelas 3B</option>
-                            <option value="4A">Kelas 4A</option><option value="4B">Kelas 4B</option>
-                            <option value="5A">Kelas 5A</option><option value="5B">Kelas 5B</option>
-                            <option value="6A">Kelas 6A</option><option value="6B">Kelas 6B</option>
-                        </select>
+                        <select id="regKelasBinaan" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm bg-white focus:ring-2 focus:ring-indigo-600 focus:outline-none"></select>
                     </div>
 
                     <!-- Opsi Mata Pelajaran (Jika Guru Mapel) -->
                     <div id="divMapelAjar" class="hidden">
                         <label class="block text-xs font-semibold text-slate-600 mb-1">Mata Pelajaran yang Diampu *</label>
-                        <select id="regMapelAjar" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm bg-white focus:ring-2 focus:ring-indigo-600 focus:outline-none">
-                            <option value="">Pilih Mata Pelajaran</option>
-                            <option value="Matematika">Matematika</option>
-                            <option value="Bahasa Indonesia">Bahasa Indonesia</option>
-                            <option value="IPAS (IPA & IPS)">IPAS (IPA & IPS)</option>
-                            <option value="Pendidikan Agama">Pendidikan Agama</option>
-                            <option value="Pendidikan Pancasila / PPKn">Pendidikan Pancasila / PPKn</option>
-                            <option value="Bahasa Inggris">Bahasa Inggris</option>
-                            <option value="Seni Budaya & Prakarya">Seni Budaya & Prakarya</option>
-                            <option value="PJOK">PJOK (Olahraga)</option>
-                            <option value="Muatan Lokal / TIK">Muatan Lokal / TIK</option>
-                        </select>
+                        <select id="regMapelAjar" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm bg-white focus:ring-2 focus:ring-indigo-600 focus:outline-none"></select>
                     </div>
 
                     <!-- Kolom Token Registrasi Pengelola -->
@@ -213,22 +188,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">Pilih Kategori / Target Token</label>
-                            <select id="tokenKategori" required class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-indigo-600 focus:outline-none bg-white">
-                                <optgroup label="Staf & Pengelola">
-                                <option value="Guru Kelas">Guru Kelas</option>
-                                <option value="Guru Mata Pelajaran">Guru Mata Pelajaran</option>
-                                <option value="Kepala Sekolah">Kepala Sekolah</option>
-                                <option value="Operator">Operator / Tata Usaha</option>
-                            </optgroup>
-                            <optgroup label="Siswa per Kelas">
-                                <option value="Siswa - Kelas 1">Siswa - Kelas 1</option>
-                                <option value="Siswa - Kelas 2">Siswa - Kelas 2</option>
-                                <option value="Siswa - Kelas 3">Siswa - Kelas 3</option>
-                                <option value="Siswa - Kelas 4">Siswa - Kelas 4</option>
-                                <option value="Siswa - Kelas 5">Siswa - Kelas 5</option>
-                                <option value="Siswa - Kelas 6">Siswa - Kelas 6</option>
-                            </optgroup>
-                            </select>
+                            <select id="tokenTarget" required class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-indigo-600 focus:outline-none bg-white"></select>
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">Kustom Token (Opsional)</label>
@@ -277,14 +237,7 @@
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 flex-grow">
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">Pilih Kelas</label>
-                            <select id="filterKelas" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm font-semibold bg-white focus:ring-2 focus:ring-indigo-600 focus:outline-none">
-                                <option value="1A">Kelas 1A</option><option value="1B">Kelas 1B</option>
-                                <option value="2A">Kelas 2A</option><option value="2B">Kelas 2B</option>
-                                <option value="3A">Kelas 3A</option><option value="3B">Kelas 3B</option>
-                                <option value="4A">Kelas 4A</option><option value="4B">Kelas 4B</option>
-                                <option value="5A">Kelas 5A</option><option value="5B">Kelas 5B</option>
-                                <option value="6A">Kelas 6A</option><option value="6B">Kelas 6B</option>
-                            </select>
+                            <select id="filterKelas" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm font-semibold bg-white focus:ring-2 focus:ring-indigo-600 focus:outline-none"></select>
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">Tanggal Absensi</label>
@@ -426,30 +379,11 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-xs font-semibold text-slate-600 mb-1">Kelas Tujuan *</label>
-                                <select id="buatTugasKelas" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm bg-white focus:ring-2 focus:ring-indigo-600 focus:outline-none">
-                                    <option value="">Pilih Kelas</option>
-                                    <option value="1A">Kelas 1A</option><option value="1B">Kelas 1B</option>
-                                    <option value="2A">Kelas 2A</option><option value="2B">Kelas 2B</option>
-                                    <option value="3A">Kelas 3A</option><option value="3B">Kelas 3B</option>
-                                    <option value="4A">Kelas 4A</option><option value="4B">Kelas 4B</option>
-                                    <option value="5A">Kelas 5A</option><option value="5B">Kelas 5B</option>
-                                    <option value="6A">Kelas 6A</option><option value="6B">Kelas 6B</option>
-                                </select>
+                                <select id="buatTugasKelas" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm bg-white focus:ring-2 focus:ring-indigo-600 focus:outline-none"></select>
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-slate-600 mb-1">Mata Pelajaran *</label>
-                                <select id="buatTugasMapel" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm bg-white focus:ring-2 focus:ring-indigo-600 focus:outline-none">
-                                    <option value="">Pilih Mata Pelajaran</option>
-                                    <option value="Matematika">Matematika</option>
-                                    <option value="Bahasa Indonesia">Bahasa Indonesia</option>
-                                    <option value="IPAS (IPA & IPS)">IPAS (IPA & IPS)</option>
-                                    <option value="Pendidikan Agama">Pendidikan Agama</option>
-                                    <option value="Pendidikan Pancasila / PPKn">Pendidikan Pancasila / PPKn</option>
-                                    <option value="Bahasa Inggris">Bahasa Inggris</option>
-                                    <option value="Seni Budaya & Prakarya">Seni Budaya & Prakarya</option>
-                                    <option value="PJOK">PJOK (Olahraga)</option>
-                                    <option value="Muatan Lokal / TIK">Muatan Lokal / TIK</option>
-                                </select>
+                                <select id="buatTugasMapel" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm bg-white focus:ring-2 focus:ring-indigo-600 focus:outline-none"></select>
                             </div>
                         </div>
 
@@ -486,29 +420,11 @@
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 flex-grow">
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">Pilih Kelas</label>
-                            <select id="filterKelasTugas" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm font-semibold bg-white focus:ring-2 focus:ring-indigo-600 focus:outline-none">
-                                <option value="1A">Kelas 1A</option><option value="1B">Kelas 1B</option>
-                                <option value="2A">Kelas 2A</option><option value="2B">Kelas 2B</option>
-                                <option value="3A">Kelas 3A</option><option value="3B">Kelas 3B</option>
-                                <option value="4A">Kelas 4A</option><option value="4B">Kelas 4B</option>
-                                <option value="5A">Kelas 5A</option><option value="5B">Kelas 5B</option>
-                                <option value="6A">Kelas 6A</option><option value="6B">Kelas 6B</option>
-                            </select>
+                            <select id="filterKelasTugas" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm font-semibold bg-white focus:ring-2 focus:ring-indigo-600 focus:outline-none"></select>
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">Mata Pelajaran</label>
-                            <select id="filterMapelTugas" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm font-semibold bg-white focus:ring-2 focus:ring-indigo-600 focus:outline-none">
-                                <option value="SEMUA">-- Semua Mata Pelajaran --</option>
-                                <option value="Matematika">Matematika</option>
-                                <option value="Bahasa Indonesia">Bahasa Indonesia</option>
-                                <option value="IPAS (IPA & IPS)">IPAS (IPA & IPS)</option>
-                                <option value="Pendidikan Agama">Pendidikan Agama</option>
-                                <option value="Pendidikan Pancasila / PPKn">Pendidikan Pancasila / PPKn</option>
-                                <option value="Bahasa Inggris">Bahasa Inggris</option>
-                                <option value="Seni Budaya & Prakarya">Seni Budaya & Prakarya</option>
-                                <option value="PJOK">PJOK (Olahraga)</option>
-                                <option value="Muatan Lokal / TIK">Muatan Lokal / TIK</option>
-                            </select>
+                            <select id="filterMapelTugas" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm font-semibold bg-white focus:ring-2 focus:ring-indigo-600 focus:outline-none"></select>
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">Cari Nama Siswa / Judul Tugas</label>
@@ -627,27 +543,13 @@
                             <!-- Target Pengumuman -->
                             <div>
                                 <label class="block text-xs font-semibold text-slate-600 mb-1">Cakupan Target *</label>
-                                <select id="p_target" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm bg-white focus:ring-2 focus:ring-indigo-600 focus:outline-none">
-                                    <option value="SEMUA">Semua Kelas (Global Sekolah)</option>
-                                    <optgroup label="Khusus Kelas Tertentu">
-                                        <option value="1A">Kelas 1A</option><option value="1B">Kelas 1B</option>
-                                        <option value="2A">Kelas 2A</option><option value="2B">Kelas 2B</option>
-                                        <option value="3A">Kelas 3A</option><option value="3B">Kelas 3B</option>
-                                        <option value="4A">Kelas 4A</option><option value="4B">Kelas 4B</option>
-                                        <option value="5A">Kelas 5A</option><option value="5B">Kelas 5B</option>
-                                        <option value="6A">Kelas 6A</option><option value="6B">Kelas 6B</option>
-                                    </optgroup>
-                                </select>
+                                <select id="p_target" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm bg-white focus:ring-2 focus:ring-indigo-600 focus:outline-none"></select>
                             </div>
 
                             <!-- Kategori Sumber -->
                             <div>
                                 <label class="block text-xs font-semibold text-slate-600 mb-1">Kategori Pengumuman *</label>
-                                <select id="p_kategori" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm bg-white focus:ring-2 focus:ring-indigo-600 focus:outline-none">
-                                    <option value="Resmi Sekolah">Resmi Sekolah (Admin / Kepsek)</option>
-                                    <option value="Wali Kelas">Informasi Wali Kelas</option>
-                                    <option value="Mata Pelajaran">Info Guru Mata Pelajaran</option>
-                                </select>
+                                <select id="p_kategori" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm bg-white focus:ring-2 focus:ring-indigo-600 focus:outline-none"></select>
                             </div>
 
                             <!-- Masa Aktif / Expired Date -->
@@ -659,13 +561,7 @@
 
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">Template Pengumuman Cepat (Opsional)</label>
-                            <select id="p_template" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm bg-white focus:ring-2 focus:ring-indigo-600 focus:outline-none">
-                                <option value="">-- Ketik Bebas atau Pilih Template --</option>
-                                <option value="libur">Jadwal Libur Sekolah & Cuti Bersama</option>
-                                <option value="rapor">Jadwal Pengambilan Rapor</option>
-                                <option value="tugas">Peringatan Tugas / PR yang Belum Selesai</option>
-                                <option value="upacara">Pemberitahuan Upacara & Seragam</option>
-                            </select>
+                            <select id="p_template" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm bg-white focus:ring-2 focus:ring-indigo-600 focus:outline-none"></select>
                         </div>
 
                         <div>
@@ -735,7 +631,9 @@
     </div>
 
     <!-- File JavaScript Eksternal -->
+    <script src="/js/constants.js"></script>
     <script src="/js/guru.js"></script>
+    
 <!-- FOOTER RESMI SIBINTANG (TERKUNCI & TIDAK BERGESER) -->
     <footer id="mainFooter" class="w-full flex-shrink-0 bg-slate-900 text-slate-300 font-['Plus_Jakarta_Sans',sans-serif] border-t-4 border-amber-500 no-print mt-auto">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 py-8 md:py-10">
