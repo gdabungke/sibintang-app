@@ -47,12 +47,35 @@ function showToast(message, type = 'success') {
   }, 3500);
 }
 
-// Cek sesi login guru di SessionStorage saat halaman dimuat
+// Inisialisasi saat Halaman Dimuat
 window.addEventListener('DOMContentLoaded', () => {
+  // 1. Registrasi Service Worker PWA
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch((err) => {
+      console.error('Service Worker registration failed:', err);
+    });
+  }
+
+  // 2. Deteksi Banner iOS
+  const isIos = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+  const isInStandaloneMode = ('standalone' in window.navigator) && (window.navigator.standalone);
+  const iosBanner = document.getElementById('ios-install-banner');
+  if (isIos && !isInStandaloneMode && iosBanner) {
+    iosBanner.style.display = 'block';
+  }
+  document.getElementById('btnDismissIosBanner')?.addEventListener('click', () => {
+    if (iosBanner) iosBanner.style.display = 'none';
+  });
+
+  // 3. Set Default Filter Tanggal Hari Ini
   const today = new Date().toISOString().split('T')[0];
   const filterTgl = document.getElementById('filterTanggal');
   if (filterTgl) filterTgl.value = today;
 
+  // 4. Hubungkan Event Listener Seluruh Elemen
+  initEventListeners();
+
+  // 5. Cek Sesi Login Guru
   const savedGuru = sessionStorage.getItem('sibintang_guru_data');
   if (savedGuru) {
     try {
@@ -63,6 +86,53 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   }
 });
+
+// Pendaftaran Event Listener Elemen DOM
+function initEventListeners() {
+  // Tab Switch Login vs Register
+  document.getElementById('authTabBtn-masuk')?.addEventListener('click', () => switchAuthTab('masuk'));
+  document.getElementById('authTabBtn-daftar')?.addEventListener('click', () => switchAuthTab('daftar'));
+
+  // Toggle Opsi Role Pendaftaran Guru
+  document.getElementById('regRoleGuru')?.addEventListener('change', toggleRoleOptions);
+
+  // Tombol Logout
+  document.getElementById('btnLogoutGuru')?.addEventListener('click', logoutGuru);
+
+  // Navigasi Tab Dashboard Guru
+  document.getElementById('tabGuruBtn-absen')?.addEventListener('click', () => switchGuruTab('absen'));
+  document.getElementById('tabGuruBtn-tugas')?.addEventListener('click', () => switchGuruTab('tugas'));
+  document.getElementById('tabGuruBtn-pengumuman')?.addEventListener('click', () => switchGuruTab('pengumuman'));
+
+  // Filter Absensi
+  document.getElementById('filterKelas')?.addEventListener('change', () => sinkronKelas('absen'));
+  document.getElementById('filterTanggal')?.addEventListener('change', updateDashboardAbsen);
+  document.getElementById('ketSesi')?.addEventListener('input', generateQR);
+  document.getElementById('btnSegarkanRekap')?.addEventListener('click', loadRekapKelas);
+  document.getElementById('btnExportCSV')?.addEventListener('click', exportAbsensiCSV);
+  document.getElementById('btnCetakQR')?.addEventListener('click', () => window.print());
+
+  // Filter Tugas
+  document.getElementById('filterKelasTugas')?.addEventListener('change', () => sinkronKelas('tugas'));
+  document.getElementById('filterMapelTugas')?.addEventListener('change', loadRekapTugas);
+  document.getElementById('cariTugasInput')?.addEventListener('input', filterTabelTugasLokal);
+  document.getElementById('btnSegarkanTugas')?.addEventListener('click', loadRekapTugas);
+  document.getElementById('btnExportTugasCSV')?.addEventListener('click', exportTugasCSV);
+
+  // Template Pengumuman
+  document.getElementById('p_template')?.addEventListener('change', pilihTemplatePengumuman);
+
+  // Modal Penilaian
+  document.getElementById('btnCloseModalNilai')?.addEventListener('click', closeModalNilai);
+  document.getElementById('btnBatalNilai')?.addEventListener('click', closeModalNilai);
+
+  // Form Buat Tugas Baru oleh Guru
+  document.getElementById('formBuatTugasGuru')?.addEventListener('submit', submitBuatTugasGuru);
+
+  // Form Generate Token Admin
+  document.getElementById('formGenerateToken')?.addEventListener('submit', submitGenerateToken);
+  document.getElementById('btnSalinToken')?.addEventListener('click', salinToken);
+}
 
 // Fungsi Switch Tab Auth Guru (Masuk vs Registrasi)
 function switchAuthTab(type) {
@@ -85,7 +155,7 @@ function switchAuthTab(type) {
   }
 }
 
-// 1. Tampilkan opsi tambahan sesuai Role yang dipilih saat registrasi
+// Tampilkan Opsi Tambahan Sesuai Role
 function toggleRoleOptions() {
   const role = document.getElementById('regRoleGuru').value;
   const divKelas = document.getElementById('divKelasBinaan');
@@ -100,7 +170,7 @@ function toggleRoleOptions() {
   }
 }
 
-// 2A. Proses Masuk (Login) Guru Berdasarkan NIP
+// 1. Proses Masuk (Login) Guru Berdasarkan NIP
 document.getElementById('formMasukGuru')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   const nip = document.getElementById('loginNip').value.trim();
@@ -118,7 +188,7 @@ document.getElementById('formMasukGuru')?.addEventListener('submit', async (e) =
     if (result.success) {
       currentGuru = result.data;
       sessionStorage.setItem('sibintang_guru_data', JSON.stringify(currentGuru));
-      showToast(`✅ Selamat datang kembali, ${currentGuru.nama} (${currentGuru.role})`, 'success');
+      showToast(`Selamat datang kembali, ${currentGuru.nama} (${currentGuru.role})`, 'success');
       setTimeout(() => bukaDashboardGuru(), 800);
     } else {
       showToast(result.message || 'NIP belum terdaftar. Silakan daftar terlebih dahulu.', 'error');
@@ -131,7 +201,7 @@ document.getElementById('formMasukGuru')?.addEventListener('submit', async (e) =
   }
 });
 
-// 2B. Proses Registrasi (Daftar Baru) Guru / Pengelola
+// 2. Proses Registrasi (Daftar Baru) Guru dengan Validasi Token
 document.getElementById('formDaftarGuru')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   const btn = document.getElementById('btnSubmitDaftarGuru');
@@ -144,6 +214,7 @@ document.getElementById('formDaftarGuru')?.addEventListener('submit', async (e) 
     role: document.getElementById('regRoleGuru').value,
     kelasBinaan: document.getElementById('regKelasBinaan')?.value || '-',
     mapelAjar: document.getElementById('regMapelAjar')?.value || '-',
+    token: document.getElementById('regTokenGuru')?.value.trim() || '',
     aksi: 'register',
   };
 
@@ -157,7 +228,7 @@ document.getElementById('formDaftarGuru')?.addEventListener('submit', async (e) 
     if (result.success) {
       currentGuru = result.data;
       sessionStorage.setItem('sibintang_guru_data', JSON.stringify(currentGuru));
-      showToast(`✅ Registrasi berhasil! Selamat datang, ${currentGuru.nama}`, 'success');
+      showToast(`Registrasi berhasil! Selamat datang, ${currentGuru.nama}`, 'success');
       setTimeout(() => bukaDashboardGuru(), 800);
     } else {
       showToast(result.message || 'Gagal mendaftarkan akun pengelola.', 'error');
@@ -185,9 +256,22 @@ function bukaDashboardGuru() {
     infoRole.textContent = detailRole;
   }
 
+  // Tampilkan Panel Generator Token jika user memiliki hak Admin / Kepala Sekolah
+  const role = currentGuru?.role || '';
+  const panelAdmin = document.getElementById('panelAdminToken');
+  if (panelAdmin) {
+    if (role === 'Admin' || role === 'Admin Sistem' || role === 'Kepala Sekolah') {
+      panelAdmin.classList.remove('hidden');
+    } else {
+      panelAdmin.classList.add('hidden');
+    }
+  }
+
+  // Penguncian Dropdown Kelas untuk Wali Kelas
   if (currentGuru && currentGuru.role === 'Wali Kelas' && currentGuru.kelasBinaan !== '-') {
     const selAbsen = document.getElementById('filterKelas');
     const selTugas = document.getElementById('filterKelasTugas');
+    const selBuatTugas = document.getElementById('buatTugasKelas');
     if (selAbsen) {
       selAbsen.value = currentGuru.kelasBinaan;
       selAbsen.disabled = true;
@@ -195,6 +279,9 @@ function bukaDashboardGuru() {
     if (selTugas) {
       selTugas.value = currentGuru.kelasBinaan;
       selTugas.disabled = true;
+    }
+    if (selBuatTugas) {
+      selBuatTugas.value = currentGuru.kelasBinaan;
     }
   }
 
@@ -209,7 +296,7 @@ function logoutGuru() {
   setTimeout(() => location.reload(), 500);
 }
 
-// 3. Navigasi Tab Guru & Sinkronisasi Pilihan Kelas
+// 3. Navigasi Tab Menu Guru
 function switchGuruTab(tab) {
   ['absen', 'tugas', 'pengumuman'].forEach((t) => {
     const content = document.getElementById(`tabGuruContent-${t}`);
@@ -217,7 +304,7 @@ function switchGuruTab(tab) {
     if (content) content.classList.add('hidden');
     if (btn) {
       btn.classList.remove('bg-indigo-800', 'text-white', 'shadow');
-      btn.classList.add('text-slate-600');
+      btn.classList.add('text-slate-700');
     }
   });
 
@@ -226,7 +313,7 @@ function switchGuruTab(tab) {
   if (activeContent) activeContent.classList.remove('hidden');
   if (activeBtn) {
     activeBtn.classList.add('bg-indigo-800', 'text-white', 'shadow');
-    activeBtn.classList.remove('text-slate-600');
+    activeBtn.classList.remove('text-slate-700');
   }
 
   if (tab === 'absen') loadRekapKelas();
@@ -253,7 +340,7 @@ function updateDashboardAbsen() {
   loadRekapKelas();
 }
 
-// 4. Generate QR Code Absensi Harian
+// 4. Generate QR Code Absensi
 function generateQR() {
   const kelas = document.getElementById('filterKelas').value;
   const tanggal = document.getElementById('filterTanggal').value;
@@ -282,7 +369,7 @@ function generateQR() {
   });
 }
 
-// 5. Ambil Rekap Kehadiran Siswa
+// 5. Rekap Absensi Siswa
 async function loadRekapKelas() {
   const kelas = document.getElementById('filterKelas').value;
   const tanggal = document.getElementById('filterTanggal').value;
@@ -301,13 +388,13 @@ async function loadRekapKelas() {
 
     const tbodyBelum = document.getElementById('tbodyBelumAbsen');
     if (data.belumAbsen.length === 0) {
-      tbodyBelum.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-emerald-600 font-semibold">🎉 Semua siswa terdaftar di Kelas ${kelas} sudah absen hari ini!</td></tr>`;
+      tbodyBelum.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-emerald-600 font-semibold">Semua siswa terdaftar di Kelas ${kelas} sudah absen hari ini.</td></tr>`;
     } else {
       tbodyBelum.innerHTML = data.belumAbsen
         .map((s) => {
           const cleanPhone = (s.nohp || '').replace(/^0/, '62').replace(/[^0-9]/g, '');
           const waText = encodeURIComponent(
-            `Halo Bapak/Ibu ${s.ortu}, kami dari SD RK Bintang Timur Rantauprapat menginformasikan bahwa ananda *${s.nama}* (Kelas ${s.kelas}) belum tercatat melakukan scan absensi pada tanggal ${tanggal}. Terima kasih.`
+            `Halo Bapak/Ibu ${s.ortu}, kami dari SD RK Bintang Timur Rantauprapat menginformasikan bahwa ananda ${s.nama} (Kelas ${s.kelas}) belum tercatat melakukan scan absensi pada tanggal ${tanggal}. Terima kasih.`
           );
           const waBtn = cleanPhone
             ? `<a href="https://wa.me/${cleanPhone}?text=${waText}" target="_blank" class="bg-green-600 hover:bg-green-700 text-white px-2.5 py-1 rounded-lg font-bold inline-block">Hubungi Ortu</a>`
@@ -348,7 +435,7 @@ async function loadRekapKelas() {
   }
 }
 
-// 6. Ambil Daftar & Rekap Pengumpulan Tugas
+// 6. Rekap Pengumpulan Tugas
 async function loadRekapTugas() {
   const kelas = document.getElementById('filterKelasTugas').value;
   const mapel = document.getElementById('filterMapelTugas').value;
@@ -372,13 +459,13 @@ async function loadRekapTugas() {
     const infoMapel = mapel === 'SEMUA' ? 'PR/Tugas Sekolah' : `Mata Pelajaran ${mapel}`;
 
     if (data.belumKumpul.length === 0) {
-      tbodyBelumTugas.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-emerald-600 font-semibold">🎉 Seluruh siswa di Kelas ${kelas} sudah mengumpulkan tugas pada kategori ini!</td></tr>`;
+      tbodyBelumTugas.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-emerald-600 font-semibold">Seluruh siswa di Kelas ${kelas} sudah mengumpulkan tugas pada kategori ini.</td></tr>`;
     } else {
       tbodyBelumTugas.innerHTML = data.belumKumpul
         .map((s) => {
           const cleanPhone = (s.nohp || '').replace(/^0/, '62').replace(/[^0-9]/g, '');
           const waText = encodeURIComponent(
-            `Halo Bapak/Ibu ${s.ortu}, kami dari SD RK Bintang Timur Rantauprapat menginformasikan bahwa ananda *${s.nama}* (Kelas ${s.kelas}) belum mengumpulkan *${infoMapel}* di aplikasi SiBintang. Mohon bantuannya untuk mengingatkan ananda. Terima kasih.`
+            `Halo Bapak/Ibu ${s.ortu}, kami dari SD RK Bintang Timur Rantauprapat menginformasikan bahwa ananda ${s.nama} (Kelas ${s.kelas}) belum mengumpulkan ${infoMapel} di aplikasi SiBintang. Mohon bantuannya untuk mengingatkan ananda. Terima kasih.`
           );
           const waBtn = cleanPhone
             ? `<a href="https://wa.me/${cleanPhone}?text=${waText}" target="_blank" class="bg-amber-600 hover:bg-amber-700 text-white px-2.5 py-1 rounded-lg font-bold inline-block">Ingatkan Ortu</a>`
@@ -413,7 +500,7 @@ function renderTabelTugas(list) {
   tbody.innerHTML = list
     .map((item) => {
       const badgeNilai = item.nilai
-        ? `<span class="bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-lg font-bold text-xs">⭐ ${item.nilai}</span>`
+        ? `<span class="bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-lg font-bold text-xs">Nilai: ${item.nilai}</span>`
         : `<span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-semibold text-[11px]">Belum Dinilai</span>`;
       const catatanText = item.catatan ? `<div class="text-[11px] text-slate-500 italic mt-0.5">"${item.catatan}"</div>` : '';
 
@@ -431,9 +518,9 @@ function renderTabelTugas(list) {
             ${catatanText}
           </td>
           <td class="p-3 text-right whitespace-nowrap space-x-1">
-            <a href="${item.link}" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1.5 rounded-xl font-bold inline-block text-xs">File ↗</a>
-            <button onclick="openModalNilai(${item.rowIndex}, '${item.nama.replace(/'/g, '')}', '${item.judul.replace(/'/g, '')}', '${item.nilai || ''}', '${(item.catatan || '').replace(/'/g, '')}')" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-800 px-2.5 py-1.5 rounded-xl font-bold inline-block text-xs">
-              ✍️ Nilai
+            <a href="${item.link}" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1.5 rounded-xl font-bold inline-block text-xs">File</a>
+            <button type="button" onclick="openModalNilai(${item.rowIndex}, '${item.nama.replace(/'/g, '')}', '${item.judul.replace(/'/g, '')}', '${item.nilai || ''}', '${(item.catatan || '').replace(/'/g, '')}')" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-800 px-2.5 py-1.5 rounded-xl font-bold inline-block text-xs">
+              Beri Nilai
             </button>
           </td>
         </tr>
@@ -472,7 +559,7 @@ function closeModalNilai() {
   document.getElementById('modalNilai').classList.add('hidden');
 }
 
-async function submitNilaiGuru(e) {
+document.getElementById('formNilai')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   const rowIndex = document.getElementById('modalRowIndex').value;
   const nilai = document.getElementById('inputNilaiAngka').value;
@@ -489,7 +576,7 @@ async function submitNilaiGuru(e) {
     });
     const result = await res.json();
     if (result.success) {
-      showToast('✅ Nilai dan catatan berhasil disimpan!', 'success');
+      showToast('Nilai dan catatan berhasil disimpan!', 'success');
       closeModalNilai();
       loadRekapTugas();
     } else {
@@ -501,9 +588,99 @@ async function submitNilaiGuru(e) {
     btn.textContent = 'Simpan Nilai';
     btn.disabled = false;
   }
+});
+
+// 8. Pembuatan Tugas / PR Baru oleh Guru
+async function submitBuatTugasGuru(e) {
+  e.preventDefault();
+  const kelas = document.getElementById('buatTugasKelas').value;
+  const mapel = document.getElementById('buatTugasMapel').value;
+  const judul = document.getElementById('buatTugasJudul').value.trim();
+  const deadline = document.getElementById('buatTugasDeadline').value;
+  const deskripsi = document.getElementById('buatTugasDeskripsi').value.trim();
+  const fileInput = document.getElementById('buatTugasFile').files[0];
+  const activeUser = currentGuru || JSON.parse(sessionStorage.getItem('sibintang_guru_data') || '{}');
+
+  const formData = new FormData();
+  formData.append('kelas', kelas);
+  formData.append('mapel', mapel);
+  formData.append('judul', judul);
+  formData.append('deadline', deadline);
+  formData.append('deskripsi', deskripsi);
+  formData.append('pembuat', activeUser.nama || 'Guru');
+  if (fileInput) {
+    formData.append('fileSoal', fileInput);
+  }
+
+  const btn = document.getElementById('btnPublikasiTugas');
+  btn.textContent = 'Memublikasikan...';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/guru/buat-tugas', {
+      method: 'POST',
+      body: formData,
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast('Tugas baru berhasil dipublikasikan ke siswa!', 'success');
+      document.getElementById('formBuatTugasGuru').reset();
+    } else {
+      showToast(data.message || 'Gagal memublikasikan tugas.', 'error');
+    }
+  } catch (err) {
+    showToast('Terjadi kesalahan server saat memublikasikan tugas.', 'error');
+  } finally {
+    btn.textContent = 'Publikasikan Tugas ke Siswa';
+    btn.disabled = false;
+  }
 }
 
-// 8. Fitur Export ke Excel (CSV)
+// 9. Dynamic Token Generator Khusus Admin / Kepala Sekolah
+async function submitGenerateToken(e) {
+  e.preventDefault();
+  const kategori = document.getElementById('tokenKategori').value;
+  const customToken = document.getElementById('customTokenInput').value.trim();
+  const activeUser = currentGuru || JSON.parse(sessionStorage.getItem('sibintang_guru_data') || '{}');
+  const btn = document.getElementById('btnGenerateToken');
+
+  btn.textContent = 'Membuat...';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/admin/generate-token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kategori, customToken, pembuat: activeUser.nama || 'Admin' }),
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      document.getElementById('teksTokenBaru').textContent = data.token;
+      document.getElementById('hasilTokenContainer').classList.remove('hidden');
+      showToast(data.message || 'Token berhasil dibuat!', 'success');
+    } else {
+      showToast(data.message || 'Gagal membuat token.', 'error');
+    }
+  } catch (err) {
+    showToast('Gagal terhubung ke server saat generate token.', 'error');
+  } finally {
+    btn.textContent = 'Buat Token Baru';
+    btn.disabled = false;
+  }
+}
+
+function salinToken() {
+  const tokenText = document.getElementById('teksTokenBaru').textContent;
+  if (!tokenText) return;
+  navigator.clipboard.writeText(tokenText).then(() => {
+    showToast('Token berhasil disalin ke clipboard!', 'info');
+  }).catch(() => {
+    showToast('Gagal menyalin token.', 'error');
+  });
+}
+
+// 10. Fitur Export ke Excel (CSV)
 function escapeCSV(val) {
   if (val === null || val === undefined) return '""';
   const str = String(val).replace(/"/g, '""');
@@ -590,7 +767,7 @@ function exportTugasCSV() {
   showToast('File CSV tugas berhasil diunduh.', 'success');
 }
 
-// 9. Kelola Pengumuman Sekolah
+// 11. Kelola Pengumuman Sekolah
 const templatePengumumanData = {
   libur: {
     judul: 'Jadwal Libur Sekolah dan Cuti Bersama',
@@ -623,7 +800,7 @@ function pilihTemplatePengumuman() {
   }
 }
 
-async function submitPengumuman(e) {
+document.getElementById('formPengumuman')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   const judul = document.getElementById('p_judul').value.trim();
   const isi = document.getElementById('p_isi').value.trim();
@@ -641,7 +818,7 @@ async function submitPengumuman(e) {
     });
     const result = await res.json();
     if (result.success) {
-      showToast('✅ Pengumuman berhasil diterbitkan!', 'success');
+      showToast('Pengumuman berhasil diterbitkan!', 'success');
       document.getElementById('formPengumuman').reset();
     } else {
       showToast(result.message || 'Gagal menerbitkan pengumuman.', 'error');
@@ -652,4 +829,4 @@ async function submitPengumuman(e) {
     btn.textContent = 'Terbitkan Pengumuman';
     btn.disabled = false;
   }
-}
+});
