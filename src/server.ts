@@ -21,14 +21,24 @@ const upload = multer({
   limits: { fileSize: 15 * 1024 * 1024 } // Maksimal 15 MB
 });
 
-// Autentikasi Google API menggunakan Environment Variables Vercel (KODE AMAN)
+// Autentikasi Google API menggunakan GOOGLE_CREDENTIALS_JSON dari Vercel
 const SCOPES = [
   'https://www.googleapis.com/auth/spreadsheets',
   'https://www.googleapis.com/auth/drive.file'
 ];
 
+let googleCredentials = undefined;
+try {
+  const rawCreds = process.env.GOOGLE_CREDENTIALS_JSON || process.env.GOOGLE_CREDENTIALS;
+  if (rawCreds) {
+    googleCredentials = JSON.parse(rawCreds);
+  }
+} catch (error) {
+  console.error('Gagal mengurai GOOGLE_CREDENTIALS_JSON:', error);
+}
+
 const auth = new google.auth.GoogleAuth({
-  credentials: {
+  credentials: googleCredentials || {
     client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
     private_key: process.env.GOOGLE_PRIVATE_KEY ? process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n') : undefined,
   },
@@ -46,30 +56,25 @@ const getWaktuWIB = (): string => {
   return new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
 };
 
-// Daftar Akun Khusus (Langsung terdaftar di kode sistem)
-const AKUN_KHUSUS = [
-  {
-    nip: '133715',
-    nama: 'Marolo',
-    role: 'Admin Sistem',
-    kelasBinaan: '-',
-    mapelAjar: '-'
-  },
-  {
-    nip: 'ADMINSDRKBT',
-    nama: 'Administrator Utama',
-    role: 'Admin Sistem',
-    kelasBinaan: '-',
-    mapelAjar: '-'
-  },
-  {
-    nip: 'KEPSEK01',
-    nama: 'Kepala Sekolah',
-    role: 'Kepala Sekolah',
-    kelasBinaan: '-',
-    mapelAjar: '-'
+// Mengambil Akun Khusus langsung dari Variabel Lingkungan Vercel (AKUN_KHUSUS_JSON)
+interface AkunKhusus {
+  nip: string;
+  nama: string;
+  role: string;
+  kelasBinaan: string;
+  mapelAjar: string;
+}
+
+const getAkunKhususList = (): AkunKhusus[] => {
+  try {
+    const rawAkun = process.env.AKUN_KHUSUS_JSON || process.env.AKUN_KHUSUS;
+    if (!rawAkun) return [];
+    return JSON.parse(rawAkun);
+  } catch (err) {
+    console.error('Gagal membaca variabel AKUN_KHUSUS_JSON:', err);
+    return [];
   }
-];
+};
 
 // Helper: Fungsi Cek Validitas Token di Sheet "Tokens"
 async function validasiTokenDatabase(tokenInput: string, kategoriTarget: string): Promise<boolean> {
@@ -98,8 +103,9 @@ app.post('/api/login', async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'Nomor Induk Siswa (NIS) wajib diisi!' });
     }
 
-    // 1. BYPASS LOGIN AKUN KHUSUS ADMIN & KEPALA SEKOLAH KE PORTAL SISWA
-    const akunKhusus = AKUN_KHUSUS.find((user) => user.nip === nis);
+    // 1. Bypass login akun khusus admin/kepsek dari Vercel
+    const akunKhususList = getAkunKhususList();
+    const akunKhusus = akunKhususList.find((user) => user.nip === nis);
     if (akunKhusus) {
       return res.json({
         success: true,
@@ -114,7 +120,7 @@ app.post('/api/login', async (req: Request, res: Response) => {
       });
     }
 
-    // 2. PROSES MELALUI GOOGLE SHEET UNTUK SISWA REGULER
+    // 2. Verifikasi data siswa reguler di Sheet
     const getRows = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
       range: 'Siswa!A2:F',
@@ -153,7 +159,7 @@ app.post('/api/login', async (req: Request, res: Response) => {
         return res.status(400).json({ success: false, message: 'Nama lengkap dan Kelas wajib diisi untuk pendaftaran!' });
       }
 
-      // Validasi Token Pendaftaran Siswa Berdasarkan Kelas (misal: "Kelas 1", "Kelas 2", dll)
+      // Validasi Token Pendaftaran Siswa Berdasarkan Kelas
       const kategoriToken = `Kelas ${kelas.replace(/[^0-9]/g, '')}`; 
       const isTokenValid = await validasiTokenDatabase(token, kategoriToken) || await validasiTokenDatabase(token, kelas);
       
@@ -192,8 +198,9 @@ app.post('/api/guru/login', async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'NIP / ID Guru wajib diisi!' });
     }
 
-    // 1. BYPASS AKUN KHUSUS (ADMIN & KEPALA SEKOLAH)
-    const akunKhusus = AKUN_KHUSUS.find((user) => user.nip === nip);
+    // 1. Bypass login akun khusus admin/kepsek dari Vercel
+    const akunKhususList = getAkunKhususList();
+    const akunKhusus = akunKhususList.find((user) => user.nip === nip);
     if (akunKhusus) {
       return res.json({
         success: true,
@@ -201,7 +208,7 @@ app.post('/api/guru/login', async (req: Request, res: Response) => {
       });
     }
 
-    // 2. PROSES MELALUI GOOGLE SHEET UNTUK GURU REGULER
+    // 2. Verifikasi data guru reguler di Sheet
     const getRows = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
       range: 'Guru!A2:E',
@@ -239,7 +246,7 @@ app.post('/api/guru/login', async (req: Request, res: Response) => {
         return res.status(400).json({ success: false, message: 'Nama lengkap dan Peran (Role) wajib diisi!' });
       }
 
-      // Validasi Token Berdasarkan Role Pendaftar (Kepala Sekolah, Guru, atau Operator)
+      // Validasi Token Berdasarkan Role Pendaftar
       const isTokenValid = await validasiTokenDatabase(token, role);
       if (!isTokenValid) {
         return res.status(400).json({ 
@@ -293,7 +300,7 @@ app.post('/api/absen', async (req: Request, res: Response) => {
   }
 });
 
-// 4. ENDPOINT PENGUMPULAN TUGAS (UPLOAD DRIVE + CATAT DI SHEET) (Menggunakan NIS)
+// 4. ENDPOINT PENGUMPULAN TUGAS (UPLOAD DRIVE + CATAT DI SHEET)
 app.post('/api/tugas', upload.single('fileTugas'), async (req: Request, res: Response) => {
   try {
     const { nis, nama, kelas, mapel, judulTugas } = req.body;
@@ -473,13 +480,15 @@ app.get('/api/guru/tugas', async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'Parameter kelas wajib diisi!' });
     }
 
-    const [siswaRes, tugasRes] = await Promise.all([
+    const [siswaRes, tugasRes, daftarSoalRes] = await Promise.all([
       sheets.spreadsheets.values.get({ spreadsheetId: SPREADSHEET_ID, range: 'Siswa!A2:F' }),
-      sheets.spreadsheets.values.get({ spreadsheetId: SPREADSHEET_ID, range: 'Tugas!A2:G' }),
+      sheets.spreadsheets.values.get({ spreadsheetId: SPREADSHEET_ID, range: 'Tugas!A2:I' }),
+      sheets.spreadsheets.values.get({ spreadsheetId: SPREADSHEET_ID, range: 'DaftarTugas!A2:H' }).catch(() => ({ data: { values: [] } })),
     ]);
 
     const allSiswa = siswaRes.data.values || [];
     const allTugas = tugasRes.data.values || [];
+    const allSoal = daftarSoalRes.data.values || [];
 
     const siswaKelas = allSiswa
       .filter((row) => row[2] === kelas)
@@ -491,13 +500,24 @@ app.get('/api/guru/tugas', async (req: Request, res: Response) => {
         nohp: row[5] || '-',
       }));
 
-    const daftarTugas = allTugas
-      .filter((row) => {
-        const matchKelas = row[3] === kelas;
-        const matchMapel = !mapel || mapel === 'SEMUA' || row[4] === mapel;
-        return matchKelas && matchMapel;
-      })
+    // Daftar soal yang diterbitkan guru untuk kelas ini
+    const daftarSoalKelas = allSoal
+      .filter((row) => row[1] === kelas && (!mapel || mapel === 'SEMUA' || row[2] === mapel))
       .map((row) => ({
+        waktu: row[0] || '-',
+        kelas: row[1] || '-',
+        mapel: row[2] || '-',
+        judul: row[3] || '-',
+        deskripsi: row[4] || '-',
+        link: row[5] || '#',
+        deadline: row[6] || '-',
+        pembuat: row[7] || 'Guru',
+      }))
+      .reverse();
+
+    const daftarTugas = allTugas
+      .map((row, index) => ({
+        rowIndex: index + 2,
         waktu: row[0] || '-',
         nis: row[1] || '-',
         nama: row[2] || '-',
@@ -505,7 +525,14 @@ app.get('/api/guru/tugas', async (req: Request, res: Response) => {
         mapel: row[4] || '-',
         judul: row[5] || '-',
         link: row[6] || '#',
+        nilai: row[7] || '',
+        catatan: row[8] || '',
       }))
+      .filter((item) => {
+        const matchKelas = item.kelas === kelas;
+        const matchMapel = !mapel || mapel === 'SEMUA' || item.mapel === mapel;
+        return matchKelas && matchMapel;
+      })
       .reverse();
 
     const nisSudahKumpul = new Set(daftarTugas.map((t) => t.nis));
@@ -519,6 +546,7 @@ app.get('/api/guru/tugas', async (req: Request, res: Response) => {
       jumlahSiswaBelum: belumKumpul.length,
       daftarTugas,
       belumKumpul,
+      daftarSoal: daftarSoalKelas
     });
   } catch (error: any) {
     console.error('Error Guru Tugas:', error.message);
@@ -685,7 +713,6 @@ app.get('/api/pengumuman', async (req: Request, res: Response) => {
         pembuat: row[6] || 'Pengelola',
         isGlobal: (row[1] || 'SEMUA') === 'SEMUA'
       }))
-      // Urutkan: Pengumuman Global di atas, lalu berdasarkan waktu terbaru
       .sort((a, b) => {
         if (a.isGlobal && !b.isGlobal) return -1;
         if (!a.isGlobal && b.isGlobal) return 1;
@@ -732,11 +759,7 @@ app.post('/api/admin/generate-token', async (req: Request, res: Response) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Server SiBintang berjalan di http://localhost:${PORT}`);
-});
-
-// 14. ENDPOINT GURU: BUAT TUGAS / PR BARU (Mendukung Teks Instruksi & Upload File Soal)
+// 14. ENDPOINT GURU: BUAT TUGAS / PR BARU
 app.post('/api/guru/buat-tugas', upload.single('fileSoal'), async (req: Request, res: Response) => {
   try {
     const { mapel, kelas, judul, deskripsi, deadline, pembuat } = req.body;
@@ -749,7 +772,6 @@ app.post('/api/guru/buat-tugas', upload.single('fileSoal'), async (req: Request,
     const waktu = getWaktuWIB();
     let fileSoalLink = '-';
 
-    // Jika guru mengunggah file lampiran soal ke Google Drive
     if (file) {
       const cleanJudul = judul.replace(/[^a-zA-Z0-9]/g, '_');
       const customFileName = `[SOAL_TUGAS]_${kelas}_${mapel}_${cleanJudul}_${file.originalname}`;
@@ -773,10 +795,9 @@ app.post('/api/guru/buat-tugas', upload.single('fileSoal'), async (req: Request,
       fileSoalLink = driveResponse.data.webViewLink || `https://drive.google.com/file/d/${driveResponse.data.id}/view`;
     }
 
-    // Simpan data tugas ke Google Sheets pada Tab "DaftarTugas"
     await sheets.spreadsheets.values.append({
       spreadsheetId: SPREADSHEET_ID,
-      range: 'DaftarTugas!A:G',
+      range: 'DaftarTugas!A:H',
       valueInputOption: 'USER_ENTERED',
       requestBody: {
         values: [[waktu, kelas, mapel, judul, deskripsi || '-', fileSoalLink, deadline, pembuat || 'Guru']],
@@ -785,11 +806,15 @@ app.post('/api/guru/buat-tugas', upload.single('fileSoal'), async (req: Request,
 
     return res.json({ 
       success: true, 
-      message: 'Tugas berhasil dipublikasikan ke siswa!',
+      message: 'Tugas berhasil dipublikasikan ke siswa!', 
       fileSoalLink 
     });
   } catch (error: any) {
     console.error('Error Buat Tugas Guru:', error.message);
     return res.status(500).json({ success: false, message: 'Gagal mempublikasikan tugas baru.' });
   }
+});
+
+app.listen(PORT, () => {
+  console.log(`Server SiBintang berjalan di http://localhost:${PORT}`);
 });
