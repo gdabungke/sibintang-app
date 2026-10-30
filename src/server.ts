@@ -628,49 +628,72 @@ app.get('/api/izin/:nis', async (req: Request, res: Response) => {
   }
 });
 
-// 11. ENDPOINT TAMBAH PENGUMUMAN OLEH GURU
+// 11. ENDPOINT TAMBAH PENGUMUMAN DENGAN TARGET & MASA TAYANG
 app.post('/api/guru/pengumuman', async (req: Request, res: Response) => {
   try {
-    const { judul, isi, pembuat } = req.body;
-    if (!judul || !isi) {
-      return res.status(400).json({ success: false, message: 'Judul dan isi pengumuman wajib diisi!' });
+    const { target, kategori, tglBerakhir, judul, isi, pembuat } = req.body;
+    if (!target || !tglBerakhir || !judul || !isi) {
+      return res.status(400).json({ success: false, message: 'Target, masa tayang, judul, dan isi wajib diisi!' });
     }
 
     const waktu = getWaktuWIB();
     await sheets.spreadsheets.values.append({
       spreadsheetId: SPREADSHEET_ID,
-      range: 'Pengumuman!A:D',
+      range: 'Pengumuman!A:G',
       valueInputOption: 'USER_ENTERED',
       requestBody: {
-        values: [[waktu, judul, isi, pembuat || 'Dewan Guru']],
+        values: [[waktu, target, kategori || 'Umum', tglBerakhir, judul, isi, pembuat || 'Pengelola']],
       },
     });
 
-    return res.json({ success: true, message: 'Pengumuman berhasil diterbitkan ke portal siswa!' });
+    return res.json({ success: true, message: 'Pengumuman berhasil diterbitkan!' });
   } catch (error: any) {
     console.error('Error Pengumuman:', error.message);
     return res.status(500).json({ success: false, message: 'Gagal menerbitkan pengumuman.' });
   }
 });
 
-// 12. ENDPOINT AMBIL PENGUMUMAN UNTUK SISWA & GURU
+// 12. ENDPOINT AMBIL PENGUMUMAN (DIFILTER BERDASARKAN KELAS SISWA & TANGGAL AKTIF)
 app.get('/api/pengumuman', async (req: Request, res: Response) => {
   try {
+    const { kelas } = req.query; // Dikirim oleh siswa, misal: '1A'
+    const today = new Date().toISOString().split('T')[0];
+
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: 'Pengumuman!A2:D',
+      range: 'Pengumuman!A2:G',
     });
 
-    const rows = (response.data.values || [])
+    const rows = response.data.values || [];
+    
+    // Filter: Belum kedaluwarsa DAN (Target SEMUA atau Target sama dengan Kelas Siswa)
+    const validRows = rows
+      .filter((row) => {
+        const tglExpired = row[3] || '9999-12-31';
+        const target = row[1] || 'SEMUA';
+        const isNotExpired = tglExpired >= today;
+        const isTargetMatch = !kelas || target === 'SEMUA' || target === kelas;
+        return isNotExpired && isTargetMatch;
+      })
       .map((row) => ({
         waktu: row[0] || '',
-        judul: row[1] || '',
-        isi: row[2] || '',
-        pembuat: row[3] || 'Dewan Guru',
+        target: row[1] || 'SEMUA',
+        kategori: row[2] || 'Umum',
+        tglBerakhir: row[3] || '',
+        judul: row[4] || '',
+        isi: row[5] || '',
+        pembuat: row[6] || 'Pengelola',
+        isGlobal: (row[1] || 'SEMUA') === 'SEMUA'
       }))
+      // Urutkan: Pengumuman Global di atas, lalu berdasarkan waktu terbaru
+      .sort((a, b) => {
+        if (a.isGlobal && !b.isGlobal) return -1;
+        if (!a.isGlobal && b.isGlobal) return 1;
+        return 0;
+      })
       .reverse();
 
-    return res.json({ success: true, pengumuman: rows });
+    return res.json({ success: true, pengumuman: validRows });
   } catch (error: any) {
     return res.status(500).json({ success: false, message: 'Gagal memuat pengumuman.' });
   }
