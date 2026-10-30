@@ -547,9 +547,6 @@ app.get('/api/guru/tugas', async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'Parameter kelas wajib diisi!' });
     }
 
-    // Pastikan tab DaftarTugas siap dibaca
-    await pastikanSheetAda('DaftarTugas', ['Waktu', 'Kelas', 'Mapel', 'Judul', 'Deskripsi', 'FileSoal', 'Deadline', 'Pembuat']);
-
     const [siswaRes, tugasRes, daftarSoalRes] = await Promise.all([
       sheets.spreadsheets.values.get({ spreadsheetId: SPREADSHEET_ID, range: 'Siswa!A2:F' }),
       sheets.spreadsheets.values.get({ spreadsheetId: SPREADSHEET_ID, range: 'Tugas!A2:I' }),
@@ -837,9 +834,6 @@ app.post('/api/guru/buat-tugas', upload.single('fileSoal'), async (req: Request,
     if (!mapel || !kelas || !judul || !deadline) {
       return res.status(400).json({ success: false, message: 'Mata pelajaran, kelas, judul, dan deadline wajib diisi!' });
     }
-
-    // Pastikan sheet DaftarTugas sudah ada
-    await pastikanSheetAda('DaftarTugas', ['Waktu', 'Kelas', 'Mapel', 'Judul', 'Deskripsi', 'FileSoal', 'Deadline', 'Pembuat']);
 
     const waktu = getWaktuWIB();
     let fileSoalLink = '-';
