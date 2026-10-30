@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/gdabungke/sibintang-app/main/public/icon.svg" alt="Logo SiBintang" width="96" height="96" style="border-radius: 20px; box-shadow: 0 4px 14px rgba(0,0,0,0.12); margin-bottom: 12px;" />
+<img src="https://github.com/gdabungke/sibintang-app/blob/main/public/icon.png" alt="Logo SiBintang" width="96" height="96" style="border-radius: 20px; box-shadow: 0 4px 14px rgba(0,0,0,0.12); margin-bottom: 12px;" />
 
 # SiBintang (Sistem Informasi Bintang Timur)
 ### Platform Manajemen Sekolah Terpadu Berbasis PWA (Progressive Web App)
