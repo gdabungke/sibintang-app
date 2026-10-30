@@ -525,27 +525,55 @@ async function loadPengumumanSiswa() {
     const container = document.getElementById('listPengumumanSiswa');
     if (!container) return;
 
+    if (!currentStudent) {
+        container.innerHTML = `<p class="text-xs text-slate-400 text-center py-2">Silakan masuk untuk melihat pengumuman.</p>`;
+        return;
+    }
+
     try {
-        const res = await fetch('/api/pengumuman');
+        const res = await fetch(`/api/pengumuman?kelas=${encodeURIComponent(currentStudent.kelas)}`);
         const result = await res.json();
 
-        if (!result.success || result.pengumuman.length === 0) {
-            container.innerHTML = `<p class="text-xs text-slate-500 text-center py-2">Belum ada pengumuman dari guru.</p>`;
+        if (!result.success || !result.pengumuman || result.pengumuman.length === 0) {
+            container.innerHTML = `<p class="text-xs text-slate-500 text-center py-3">Tidak ada pengumuman aktif saat ini.</p>`;
             return;
         }
 
-        container.innerHTML = result.pengumuman.map(p => `
-            <div class="bg-white p-3.5 rounded-xl border border-amber-100 shadow-sm space-y-1">
-                <div class="flex items-center justify-between">
-                    <h4 class="font-bold text-xs md:text-sm text-slate-800">${p.judul}</h4>
-                    <span class="text-[10px] text-slate-400">${p.waktu}</span>
+        container.innerHTML = result.pengumuman.map(p => {
+            const isGlobal = p.target === 'SEMUA';
+
+            // Styling pembeda: Global Sekolah vs Info Kelas
+            const cardBg = isGlobal 
+                ? 'bg-gradient-to-r from-amber-50 to-orange-50 border-amber-300 border-l-4 border-l-amber-500' 
+                : 'bg-white border-slate-200 border-l-4 border-l-blue-500';
+
+            const badgeRole = isGlobal
+                ? `<span class="bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded text-[10px] font-bold inline-flex items-center gap-1">
+                     <svg class="w-3 h-3 text-amber-700" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"/></svg>
+                     Pengumuman Resmi Sekolah
+                   </span>`
+                : `<span class="bg-blue-100 text-blue-800 border border-blue-200 px-2 py-0.5 rounded text-[10px] font-bold inline-flex items-center gap-1">
+                     <svg class="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                     Info Kelas ${p.target} (${p.kategori})
+                   </span>`;
+
+            return `
+                <div class="${cardBg} p-4 rounded-xl shadow-sm space-y-2 transition hover:shadow-md">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                        <div>${badgeRole}</div>
+                        <span class="text-[10px] text-slate-500 font-medium">Berlaku s/d: ${p.tglBerakhir}</span>
+                    </div>
+                    <h4 class="font-bold text-sm text-slate-900">${p.judul}</h4>
+                    <p class="text-xs text-slate-700 whitespace-pre-line leading-relaxed">${p.isi}</p>
+                    <div class="pt-1 flex items-center justify-between text-[11px] text-slate-500 border-t border-slate-200/60 mt-2">
+                        <span>Diterbitkan: <b>${p.pembuat}</b></span>
+                        <span class="text-[10px] text-slate-400">${p.waktu}</span>
+                    </div>
                 </div>
-                <p class="text-xs text-slate-600 whitespace-pre-line leading-relaxed">${p.isi}</p>
-                <p class="text-[10px] text-indigo-600 font-semibold pt-1">Dari: ${p.pembuat}</p>
-            </div>
-        `).join('');
+            `;
+        }).join('');
     } catch (err) {
-        container.innerHTML = `<p class="text-xs text-red-500 text-center py-2">Gagal memuat pengumuman.</p>`;
+        container.innerHTML = `<p class="text-xs text-red-500 text-center py-2">Gagal memuat pengumuman terbaru.</p>`;
     }
 }
 
