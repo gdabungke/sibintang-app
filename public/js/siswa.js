@@ -38,7 +38,10 @@ window.addEventListener('DOMContentLoaded', () => {
       showDashboard();
     } catch (e) {
       localStorage.removeItem('sibintang_siswa');
+      updateHeaderUI(false);
     }
+  } else {
+    updateHeaderUI(false);
   }
 });
 
@@ -193,9 +196,8 @@ function showDashboard() {
   document.getElementById('loginSection')?.classList.add('hidden');
   document.getElementById('appSection')?.classList.remove('hidden');
 
-  // Sinkronisasi status Header
-  document.getElementById('headerGuestBadge')?.classList.add('hidden');
-  document.getElementById('btnLogout')?.classList.remove('hidden');
+  // Panggil fungsi header terpadu
+  updateHeaderUI(true);
 
   document.getElementById('profileNama').textContent = currentStudent.nama;
   document.getElementById('profileDetail').textContent = `NIS: ${currentStudent.nis} | Kelas: ${currentStudent.kelas}`;
@@ -216,9 +218,8 @@ function logout() {
   document.getElementById('appSection')?.classList.add('hidden');
   document.getElementById('loginSection')?.classList.remove('hidden');
 
-  // Kembalikan Header ke kondisi Guest
-  document.getElementById('btnLogout')?.classList.add('hidden');
-  document.getElementById('headerGuestBadge')?.classList.remove('hidden');
+  // Kembalikan posisi header ke tengah
+  updateHeaderUI(false);
 
   showToast('Berhasil keluar dari sesi.', 'info');
 }
