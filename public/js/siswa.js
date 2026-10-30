@@ -45,6 +45,10 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+// Isi Dropdown dari constan.js
+isiDropdown('regKelas', DAFTAR_KELAS, 'Pilih Kelas');
+isiDropdown('mapel', DAFTAR_MAPEL, 'Pilih Mata Pelajaran');
+
 // Pendaftaran Seluruh Event Listener Elemen DOM
 function initEventListeners() {
   // Tombol Header & Autentikasi
