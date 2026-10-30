@@ -373,6 +373,14 @@ document.getElementById('tugasForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   const btn = document.getElementById('btnSubmitTugas');
   const alertBox = document.getElementById('tugasAlert');
+  const fileInput = document.getElementById('fileTugas')?.files?.[0];
+  const judulVal = document.getElementById('judulTugas').value.trim();
+
+  if (!fileInput) {
+    showToast('Harap pilih berkas/file tugas Anda!', 'error');
+    return;
+  }
+
   btn.textContent = 'Mengupload ke Google Drive...';
   btn.disabled = true;
   alertBox.classList.add('hidden');
@@ -382,8 +390,9 @@ document.getElementById('tugasForm')?.addEventListener('submit', async (e) => {
   formData.append('nama', currentStudent.nama);
   formData.append('kelas', currentStudent.kelas);
   formData.append('mapel', document.getElementById('mapel').value);
-  formData.append('judulTugas', document.getElementById('judulTugas').value.trim());
-  formData.append('fileTugas', document.getElementById('fileTugas').files[0]);
+  formData.append('judulTugas', judulVal);
+  formData.append('judul', judulVal); // Dukungan fallback jika backend membaca properti 'judul'
+  formData.append('fileTugas', fileInput);
 
   try {
     const res = await fetch('/api/tugas', {
@@ -403,11 +412,11 @@ document.getElementById('tugasForm')?.addEventListener('submit', async (e) => {
       document.getElementById('tugasKelas').value = `Kelas ${currentStudent.kelas}`;
       loadRiwayat();
     } else {
-      throw new Error(result.message);
+      throw new Error(result.message || result.error);
     }
   } catch (err) {
     alertBox.className = 'mt-4 p-3 rounded-xl text-xs font-semibold text-center bg-red-100 text-red-700 flex items-center justify-center gap-1.5';
-    alertBox.innerHTML = `${ICONS.error}<span>Gagal mengupload tugas.</span>`;
+    alertBox.innerHTML = `${ICONS.error}<span>Gagal mengupload tugas: ${err.message || 'Kesalahan jaringan'}</span>`;
     alertBox.classList.remove('hidden');
     showToast('Gagal mengupload tugas.', 'error');
   } finally {
