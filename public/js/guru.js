@@ -105,6 +105,22 @@ window.addEventListener('DOMContentLoaded', () => {
     updateGuruHeaderUI(false);
   }
 });
+// 5a. Isi Dropdown dari constans.js
+isiDropdown('regRoleGuru', DAFTAR_ROLE_GURU, 'Pilih Status / Peran (Role)');
+isiDropdown('regKelasBinaan', DAFTAR_KELAS, 'Pilih Kelas Binaan');
+isiDropdown('regMapelAjar', DAFTAR_MAPEL, 'Pilih Mata Pelajaran');
+isiDropdownGrup('tokenTarget', DAFTAR_TARGET_TOKEN);
+
+isiDropdown('filterKelas', DAFTAR_KELAS);
+isiDropdown('filterKelasTugas', DAFTAR_KELAS);
+isiDropdown('filterMapelTugas', DAFTAR_MAPEL, '', { val: 'SEMUA', label: 'Semua Mata Pelajaran' });
+
+isiDropdown('buatTugasKelas', DAFTAR_KELAS, 'Pilih Kelas Sasaran');
+isiDropdown('buatTugasMapel', DAFTAR_MAPEL, 'Pilih Mata Pelajaran');
+
+isiDropdown('p_target', DAFTAR_TARGET_PENGUMUMAN);
+isiDropdown('p_kategori', DAFTAR_KATEGORI_PENGUMUMAN);
+isiDropdown('p_template', DAFTAR_TEMPLATE_PENGUMUMAN);
 
 // 6. Sinkronisasi Header Guru Sesuai Status Login
 function updateGuruHeaderUI(isLoggedIn) {
