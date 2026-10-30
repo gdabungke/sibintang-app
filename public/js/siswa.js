@@ -33,6 +33,9 @@ window.addEventListener('DOMContentLoaded', () => {
   // Isi Dropdown dari constan.js
 isiDropdown('regKelas', DAFTAR_KELAS, 'Pilih Kelas');
 isiDropdown('mapel', DAFTAR_MAPEL, 'Pilih Mata Pelajaran');
+  // Render footer dinamis
+  renderFooter();
+  
   initEventListeners();
   const saved = localStorage.getItem('sibintang_siswa');
   if (saved) {
