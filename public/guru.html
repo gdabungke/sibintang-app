@@ -121,11 +121,11 @@
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1">Status / Peran (Role) *</label>
                         <select id="regRoleGuru" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-indigo-600 focus:outline-none bg-white">
-                            <option value="">Pilih Peran</option>
-                            <option value="Wali Kelas">Wali Kelas</option>
-                            <option value="Guru Mapel">Guru Mata Pelajaran</option>
-                            <option value="Admin">Admin Sistem</option>
+                            <option value="" disabled selected>Pilih Peran Anda</option>
+                            <option value="Guru Kelas">Guru Kelas</option>
+                            <option value="Guru Mata Pelajaran">Guru Mata Pelajaran</option>
                             <option value="Kepala Sekolah">Kepala Sekolah</option>
+                            <option value="Operator">Operator</option>
                         </select>
                     </div>
 
@@ -214,19 +214,20 @@
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">Pilih Kategori / Target Token</label>
                             <select id="tokenKategori" required class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-indigo-600 focus:outline-none bg-white">
-                                <optgroup label="Kategori Staf / Pengelola">
-                                    <option value="Kepala Sekolah">Kepala Sekolah</option>
-                                    <option value="Guru">Guru</option>
-                                    <option value="Operator">Operator</option>
-                                </optgroup>
-                                <optgroup label="Kategori Siswa per Kelas">
-                                    <option value="Kelas 1">Siswa - Kelas 1</option>
-                                    <option value="Kelas 2">Siswa - Kelas 2</option>
-                                    <option value="Kelas 3">Siswa - Kelas 3</option>
-                                    <option value="Kelas 4">Siswa - Kelas 4</option>
-                                    <option value="Kelas 5">Siswa - Kelas 5</option>
-                                    <option value="Kelas 6">Siswa - Kelas 6</option>
-                                </optgroup>
+                                <optgroup label="Staf & Pengelola">
+                                <option value="Guru Kelas">Guru Kelas</option>
+                                <option value="Guru Mata Pelajaran">Guru Mata Pelajaran</option>
+                                <option value="Kepala Sekolah">Kepala Sekolah</option>
+                                <option value="Operator">Operator / Tata Usaha</option>
+                            </optgroup>
+                            <optgroup label="Siswa per Kelas">
+                                <option value="Siswa - Kelas 1">Siswa - Kelas 1</option>
+                                <option value="Siswa - Kelas 2">Siswa - Kelas 2</option>
+                                <option value="Siswa - Kelas 3">Siswa - Kelas 3</option>
+                                <option value="Siswa - Kelas 4">Siswa - Kelas 4</option>
+                                <option value="Siswa - Kelas 5">Siswa - Kelas 5</option>
+                                <option value="Siswa - Kelas 6">Siswa - Kelas 6</option>
+                            </optgroup>
                             </select>
                         </div>
                         <div>
