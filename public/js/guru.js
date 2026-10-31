@@ -127,6 +127,8 @@ function updateGuruHeaderUI(isLoggedIn) {
     if (linkSiswa) linkSiswa.classList.remove('hidden');
     if (btnLogout) btnLogout.classList.add('hidden');
   }
+  // SINKRONISASI PWA (Banner bawah saat logout / Tombol pasang header saat login)
+  aturTampilanPasangPWA(isLoggedIn, 'guruHeaderRight', 'Pengelola');
 }
 
 // Pendaftaran Event Listener Elemen DOM
