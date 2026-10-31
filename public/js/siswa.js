@@ -188,7 +188,8 @@ function updateHeaderUI(isLoggedIn) {
 
   if (isLoggedIn) {
     if (container) {
-      container.className = "w-full max-w-4xl mx-auto px-4 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between gap-3 transition-all duration-300";
+      // SETELAH LOGIN: Samakan persis dengan <main> dashboard (max-w-6xl mx-auto px-4 md:px-6)
+      container.className = "w-full max-w-6xl mx-auto px-4 md:px-6 py-2.5 sm:py-3 flex items-center justify-between gap-3 transition-all duration-300";
     }
     if (spacer) spacer.classList.add('hidden');
     if (brand) brand.classList.remove('mx-auto');
@@ -196,10 +197,11 @@ function updateHeaderUI(isLoggedIn) {
     if (btnLogout) btnLogout.classList.remove('hidden');
   } else {
     if (container) {
-      container.className = "w-full max-w-xl mx-auto px-4 sm:px-0 py-2.5 sm:py-3 flex items-center justify-between gap-3 transition-all duration-300";
+      // SEBELUM LOGIN: Samakan persis dengan kotak form login (max-w-md mx-auto px-4 sm:px-0)
+      container.className = "w-full max-w-md mx-auto px-4 sm:px-0 py-2.5 sm:py-3 flex items-center justify-between gap-3 transition-all duration-300";
     }
     if (spacer) spacer.classList.remove('hidden');
-    if (brand) brand.classList.add('mx-auto');
+    if (brand) brand.classList.remove('mx-auto'); // Jangan beri mx-auto jika ada guestBadge di kanan agar tetap flex justify-between
     if (guestBadge) guestBadge.classList.remove('hidden');
     if (btnLogout) btnLogout.classList.add('hidden');
   }
