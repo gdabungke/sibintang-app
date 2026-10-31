@@ -136,9 +136,9 @@
                         <input type="tel" id="regNohp" placeholder="0812xxxxxxxx" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-blue-600 focus:outline-none" />
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">Token Pendaftaran Resmi (Dari Sekolah) *</label>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Token Pendaftaran dari Sekolah *</label>
                         <div class="relative">
-                            <input type="text" id="regToken" required placeholder="Masukkan token kelas Anda" class="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-blue-600 focus:outline-none" />
+                            <input type="text" id="regToken" required placeholder="Masukkan token" class="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-blue-600 focus:outline-none" />
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
                             </div>
@@ -195,7 +195,7 @@
                 </button>
                 <button id="tabBtn-tugas" type="button" class="py-2.5 text-xs font-bold rounded-lg text-slate-600 hover:bg-slate-100 transition flex items-center justify-center gap-1.5">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                    <span>Kumpul PR / Tugas</span>
+                    <span>Kumpul Tugas / PR</span>
                 </button>
                 <button id="tabBtn-izin" type="button" class="py-2.5 text-xs font-bold rounded-lg text-slate-600 hover:bg-slate-100 transition flex items-center justify-center gap-1.5">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
@@ -232,21 +232,21 @@
                     <div class="flex items-center justify-between mb-3">
                         <h3 class="font-bold text-base text-slate-800 flex items-center gap-2">
                             <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-                            <span>Daftar Tugas & PR dari Guru</span>
+                            <span>Daftar Tugas / PR dari Guru</span>
                         </h3>
                         <button id="btnPerbaruiTugasGuru" type="button" class="text-xs text-blue-600 font-semibold hover:underline flex items-center gap-1">
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                            <span>Perbarui Tugas</span>
+                            <span>Perbarui Tugas/ PR</span>
                         </button>
                     </div>
                     <div id="containerDaftarTugasGuru" class="space-y-3">
-                        <p class="text-xs text-slate-500 text-center py-2">Memuat daftar tugas...</p>
+                        <p class="text-xs text-slate-500 text-center py-2">Memuat daftar tugas / PR...</p>
                     </div>
                 </div>
 
                 <!-- Bagian 2: Form Pengumpulan Tugas Siswa -->
                 <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
-                    <h3 class="font-bold text-base mb-1">Form Pengumpulan PR & Tugas Sekolah</h3>
+                    <h3 class="font-bold text-base mb-1">Form Pengumpulan Tugas / PR Sekolah</h3>
                     <p class="text-xs text-slate-500 mb-4">File tugas akan otomatis tersimpan ke Google Drive sekolah dan tercatat di Sheet Guru.</p>
                     <form id="tugasForm" class="space-y-4">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -260,16 +260,16 @@
                             </div>
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">Judul / Keterangan Tugas atau PR *</label>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Judul / Keterangan Tugas / PR *</label>
                             <input type="text" id="judulTugas" required placeholder="Contoh: PR Matematika Halaman 45 Pecahan" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-blue-600 focus:outline-none" />
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">Upload Foto / Dokumen Tugas (Foto, PDF, Word) *</label>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Upload Foto / Dokumen Tugas / PR (Foto, PDF, Word) *</label>
                             <input type="file" id="fileTugas" required accept="image/*,.pdf,.doc,.docx" class="w-full text-xs text-slate-600 file:mr-3 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 border border-slate-300 rounded-xl p-1.5" />
                         </div>
                         <button type="submit" id="btnSubmitTugas" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow transition text-sm flex items-center justify-center gap-2">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-                            <span>Kirim Tugas ke Google Drive</span>
+                            <span>Kirim Tugas / PR ke Google Drive</span>
                         </button>
                     </form>
                     <div id="tugasAlert" class="hidden mt-4 p-3 rounded-xl text-xs font-semibold text-center"></div>
@@ -313,7 +313,7 @@
 
                 <!-- Riwayat Izin -->
                 <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
-                    <h3 class="font-bold text-sm md:text-base mb-3">Riwayat Pengajuan Izin & Sakit</h3>
+                    <h3 class="font-bold text-sm md:text-base mb-3">Riwayat Pengajuan Izin / Sakit</h3>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse text-xs">
                             <thead>
@@ -326,7 +326,7 @@
                                 </tr>
                             </thead>
                             <tbody id="tableRiwayatIzin" class="divide-y divide-slate-200">
-                                <tr><td colspan="5" class="p-4 text-center text-slate-400">Belum ada riwayat izin.</td></tr>
+                                <tr><td colspan="5" class="p-4 text-center text-slate-400">Belum ada riwayat izin /sakit.</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -341,7 +341,7 @@
                         <h3 class="font-bold text-sm md:text-base">Riwayat Absensi Kehadiran</h3>
                         <button id="btnSegarkanRiwayat" type="button" class="text-xs text-blue-600 font-semibold hover:underline flex items-center gap-1">
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                            <span>Segarkan</span>
+                            <span>Refresh</span>
                         </button>
                     </div>
                     <div class="overflow-x-auto">
@@ -363,7 +363,7 @@
 
                 <!-- Log Tugas -->
                 <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
-                    <h3 class="font-bold text-sm md:text-base mb-3">Riwayat Pengumpulan PR / Tugas</h3>
+                    <h3 class="font-bold text-sm md:text-base mb-3">Riwayat Pengumpulan Tugas / PR</h3>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse text-xs">
                             <thead>
@@ -375,7 +375,7 @@
                                 </tr>
                             </thead>
                             <tbody id="tableTugas" class="divide-y divide-slate-200">
-                                <tr><td colspan="4" class="p-4 text-center text-slate-400">Belum ada tugas yang dikumpulkan.</td></tr>
+                                <tr><td colspan="4" class="p-4 text-center text-slate-400">Belum ada Tugas / PR yang dikumpulkan.</td></tr>
                             </tbody>
                         </table>
                     </div>
