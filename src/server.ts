@@ -22,18 +22,21 @@ const FOLDER_IZIN_SISWA = (process.env.DRIVE_FOLDER_IZIN_SISWA || process.env.DR
 
 // HELPER: BUAT SUB-FOLDER OTOMATIS
 async function buatSubFolderDrive(namaFolder: string, parentFolderId?: string): Promise<string> {
-  const folderMetadata: any = {
-    name: namaFolder,
-    mimeType: 'application/vnd.google-apps.folder',
-  };
-
   const cleanParent = (parentFolderId || '').trim();
-  if (cleanParent && cleanParent !== '-' && cleanParent !== '') {
-    folderMetadata.parents = [cleanParent];
+
+  // Cegah pembuatan folder di root Service Account (karena kuota service account 0 byte)
+  if (!cleanParent || cleanParent === '-' || cleanParent === '') {
+    console.warn('ID folder induk tidak ditemukan, melewati pembuatan subfolder.');
+    return '';
   }
 
   const folder = await drive.files.create({
-    requestBody: folderMetadata,
+    supportsAllDrives: true,
+    requestBody: {
+      name: namaFolder,
+      mimeType: 'application/vnd.google-apps.folder',
+      parents: [cleanParent], // Wajib agar subfolder masuk ke Drive pemilik asli
+    },
     fields: 'id',
   });
 
@@ -47,26 +50,33 @@ async function uploadKeDriveDenganSubFolder(
   namaSubFolder: string,
   customNamaFile: string
 ): Promise<string> {
-  let targetFolderId = parentFolderId;
+  const cleanParent = (parentFolderId || '').trim();
+
+  if (!cleanParent || cleanParent === '-' || cleanParent === '') {
+    throw new Error('ID Folder Google Drive belum dikonfigurasi di Environment Variables!');
+  }
+
+  // 1. Buat sub-folder di dalam folder induk
+  let targetFolderId = cleanParent;
   try {
-    const newSubFolderId = await buatSubFolderDrive(namaSubFolder, parentFolderId);
+    const newSubFolderId = await buatSubFolderDrive(namaSubFolder, cleanParent);
     if (newSubFolderId) {
       targetFolderId = newSubFolderId;
     }
   } catch (err: any) {
-    console.warn('Gagal buat sub-folder, file masuk folder induk:', err.message);
+    console.warn('Gagal membuat sub-folder khusus, berkas dialihkan ke folder induk:', err.message);
   }
 
-  const drivePayload: any = { name: customNamaFile };
-  const cleanTarget = (targetFolderId || '').trim();
-  if (cleanTarget && cleanTarget !== '-' && cleanTarget !== '') {
-    drivePayload.parents = [cleanTarget];
-  }
-
+  // 2. Siapkan readable stream dari buffer memori multer
   const bufferStream = Readable.from(file.buffer);
 
+  // 3. Upload file ke Google Drive
   const driveResponse = await drive.files.create({
-    requestBody: drivePayload,
+    supportsAllDrives: true,
+    requestBody: {
+      name: customNamaFile,
+      parents: [targetFolderId], // Selalu simpan di dalam folder target
+    },
     media: {
       mimeType: file.mimetype || 'application/octet-stream',
       body: bufferStream,
@@ -74,7 +84,10 @@ async function uploadKeDriveDenganSubFolder(
     fields: 'id, webViewLink',
   });
 
-  return driveResponse.data.webViewLink || `https://drive.google.com/file/d/${driveResponse.data.id}/view`;
+  return (
+    driveResponse.data.webViewLink ||
+    `https://drive.google.com/file/d/${driveResponse.data.id}/view`
+  );
 }
 
 // Konfigurasi Multer (Simpan file sementara di memori sebelum diupload ke Drive)
