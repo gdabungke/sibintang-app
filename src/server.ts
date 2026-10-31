@@ -680,12 +680,13 @@ app.post('/api/izin', upload.single('fileBukti'), async (req: Request, res: Resp
       fileLink = driveResponse.data.webViewLink || `https://drive.google.com/file/d/${driveResponse.data.id}/view`;
     }
 
+    // Default status verifikasi: 'Menunggu', verifikator: '-'
     await sheets.spreadsheets.values.append({
       spreadsheetId: SPREADSHEET_ID,
-      range: 'Izin!A:H',
+      range: 'Izin!A:J',
       valueInputOption: 'USER_ENTERED',
       requestBody: {
-        values: [[waktu, nis, nama, kelas, statusIzin, keterangan || '-', tanggalMulai, fileLink]],
+        values: [[waktu, nis, nama, kelas, statusIzin, keterangan || '-', tanggalMulai, fileLink, 'Menunggu', '-']],
       },
     });
 
@@ -696,13 +697,13 @@ app.post('/api/izin', upload.single('fileBukti'), async (req: Request, res: Resp
   }
 });
 
-// 10. ENDPOINT AMBIL RIWAYAT IZIN SISWA (Berdasarkan NIS)
+// 10a. ENDPOINT AMBIL RIWAYAT IZIN SISWA (Berdasarkan NIS)
 app.get('/api/izin/:nis', async (req: Request, res: Response) => {
   try {
     const { nis } = req.params;
     const izinRes = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: 'Izin!A2:H',
+      range: 'Izin!A2:J',
     });
 
     const rows = (izinRes.data.values || [])
@@ -713,12 +714,123 @@ app.get('/api/izin/:nis', async (req: Request, res: Response) => {
         keterangan: row[5],
         tanggal: row[6],
         link: row[7],
+        verifikasi: row[8] || 'Menunggu',
+        verifikator: row[9] || '-',
       }))
       .reverse();
 
     return res.json({ success: true, izin: rows });
   } catch (error: any) {
     return res.status(500).json({ success: false, message: 'Gagal memuat riwayat izin.' });
+  }
+});
+
+// 10b. ENDPOINT AMBIL DAFTAR PENGAJUAN IZIN UNTUK GURU (Berdasarkan Kelas)
+app.get('/api/guru/verifikasi-izin', async (req: Request, res: Response) => {
+  try {
+    const kelas = req.query.kelas as string;
+    if (!kelas) {
+      return res.status(400).json({ success: false, message: 'Parameter kelas wajib disertakan!' });
+    }
+
+    const izinRes = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: 'Izin!A2:J',
+    });
+
+    const allRows = izinRes.data.values || [];
+    const daftarIzin: any[] = [];
+
+    allRows.forEach((row, index) => {
+      const rowKelas = row[3] || '';
+      if (rowKelas.trim().toUpperCase() === kelas.trim().toUpperCase()) {
+        daftarIzin.push({
+          rowIndex: index + 2, // Posisi baris riil di Google Sheets
+          waktuPengajuan: row[0] || '-',
+          nis: row[1] || '-',
+          nama: row[2] || '-',
+          kelas: row[3] || '-',
+          status: row[4] || 'Izin',
+          keterangan: row[5] || '-',
+          tanggalMulai: row[6] || '-',
+          link: row[7] || '-',
+          statusVerifikasi: row[8] || 'Menunggu',
+          verifikator: row[9] || '-',
+        });
+      }
+    });
+
+    // Urutkan dari pengajuan paling terbaru
+    daftarIzin.reverse();
+
+    return res.json({ success: true, daftarIzin });
+  } catch (error: any) {
+    console.error('Error get izin guru:', error.message);
+    return res.status(500).json({ success: false, message: 'Gagal memuat daftar izin siswa.' });
+  }
+});
+
+// 10c. ENDPOINT AKSI VERIFIKASI IZIN / SAKIT OLEH GURU (ACC / Tolak)
+app.post('/api/guru/verifikasi-izin', async (req: Request, res: Response) => {
+  try {
+    const { rowIndex, tindakan, verifikator } = req.body;
+
+    if (!rowIndex || !tindakan) {
+      return res.status(400).json({ success: false, message: 'Data verifikasi tidak lengkap!' });
+    }
+
+    // 1. Ambil data baris tersebut untuk dibaca nilainya
+    const rowRes = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `Izin!A${rowIndex}:J${rowIndex}`,
+    });
+
+    const rowData = rowRes.data.values?.[0];
+    if (!rowData) {
+      return res.status(404).json({ success: false, message: 'Data pengajuan izin tidak ditemukan.' });
+    }
+
+    const nis = rowData[1];
+    const nama = rowData[2];
+    const kelas = rowData[3];
+    const statusIzin = rowData[4]; // 'Sakit' atau 'Izin'
+    const keterangan = rowData[5];
+    const tanggalMulai = rowData[6];
+
+    // 2. Perbarui kolom status verifikasi (Kolom I) dan nama guru pemeriksa (Kolom J)
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `Izin!I${rowIndex}:J${rowIndex}`,
+      valueInputOption: 'USER_ENTERED',
+      requestBody: {
+        values: [[tindakan, verifikator || 'Wali Kelas']],
+      },
+    });
+
+    // 3. JIKA DISETUJUI (ACC): Otomatis catat ke sheet Absensi agar statusnya resmi tercatat Sakit/Izin
+    if (tindakan === 'Disetujui') {
+      const waktuSekarang = getWaktuWIB();
+      const jamOnly = waktuSekarang.includes(' ') ? waktuSekarang.split(' ')[1] : waktuSekarang;
+      const waktuAbsen = `${tanggalMulai} ${jamOnly}`;
+      const keteranganAbsen = `Surat ${statusIzin} disetujui ${verifikator || 'Guru'} (${keterangan})`;
+
+      await sheets.spreadsheets.values.append({
+        spreadsheetId: SPREADSHEET_ID,
+        range: 'Absensi!A:F',
+        valueInputOption: 'USER_ENTERED',
+        requestBody: {
+          values: [[waktuAbsen, `'${nis}`, nama, kelas, statusIzin, keteranganAbsen]],
+        },
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: `Pengajuan ${nama} berhasil ditandai sebagai: ${tindakan}`,
+    });
+  } catch (error: any) {
+    console.error('Error aksi verifikasi izin:', error.message);
+    return res.status(500).json({ success: false, message: 'Gagal memproses verifikasi izin.' });
   }
 });
 
