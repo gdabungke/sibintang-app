@@ -276,22 +276,24 @@ function startScanner() {
     html5QrCode = new Html5Qrcode('reader');
   }
 
-  html5QrCode.start(
-    { facingMode: 'environment' },
-    { fps: 10, qrbox: { width: 230, height: 230 } },
-    async (decodedText) => {
-      await stopScanner();
-      kirimAbsensi(decodedText);
-    },
-    () => {}
-  )
-  .then(() => {
-    document.getElementById('btnStartScan')?.classList.add('hidden');
-    document.getElementById('btnStopScan')?.classList.remove('hidden');
-  })
-  .catch(() => {
-    showToast('Tidak dapat mengakses kamera. Pastikan izin kamera aktif.', 'error');
-  });
+  html5QrCode
+    .start(
+      { facingMode: 'environment' },
+      { fps: 10, qrbox: { width: 230, height: 230 } },
+      async (decodedText) => {
+        await stopScanner();
+        kirimAbsensi(decodedText);
+      },
+      () => {}
+    )
+    .then(() => {
+      document.getElementById('btnStartScan')?.classList.add('hidden');
+      document.getElementById('btnStopScan')?.classList.remove('hidden');
+    })
+    .catch(() => {
+      bunyikanBeep('error');
+      showToast('Tidak dapat mengakses kamera. Pastikan izin kamera aktif.', 'error');
+    });
 }
 
 async function stopScanner() {
@@ -307,11 +309,24 @@ async function stopScanner() {
 
 async function kirimAbsensi(qrCodeData) {
   const alertBox = document.getElementById('absenAlert');
-  alertBox.className = 'mt-4 p-3 rounded-xl text-xs font-semibold text-center bg-blue-50 text-blue-700 flex items-center justify-center gap-2';
+  alertBox.className =
+    'mt-4 p-3 rounded-xl text-xs font-semibold text-center bg-blue-50 text-blue-700 flex items-center justify-center gap-2 transition-all';
   alertBox.innerHTML = `${ICONS.info}<span>Mencatat kehadiran ke Google Sheet...</span>`;
   alertBox.classList.remove('hidden');
 
   try {
+    // 1. Validasi format awal & kelas di sisi browser
+    if (typeof qrCodeData === 'string' && qrCodeData.startsWith('ABSEN-SIBINTANG')) {
+      const qrParts = qrCodeData.split('|').map((p) => p.trim());
+      const kelasQR = (qrParts[1] || '').toUpperCase();
+      const kelasSiswa = (currentStudent?.kelas || '').trim().toUpperCase();
+
+      if (kelasQR && kelasSiswa && kelasQR !== kelasSiswa) {
+        throw new Error(`QR ini khusus Kelas ${kelasQR}. Anda terdaftar di Kelas ${kelasSiswa}.`);
+      }
+    }
+
+    // 2. Kirim permintaan pencatatan ke backend
     const res = await fetch('/api/absen', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -322,19 +337,31 @@ async function kirimAbsensi(qrCodeData) {
         qrCodeData,
       }),
     });
+
     const result = await res.json();
+
     if (result.success) {
-      alertBox.className = 'mt-4 p-3 rounded-xl text-xs font-semibold text-center bg-green-100 text-green-800 flex items-center justify-center gap-2';
+      // Bunyikan nada sukses
+      bunyikanBeep('success');
+
+      alertBox.className =
+        'mt-4 p-3 rounded-xl text-xs font-semibold text-center bg-green-100 text-green-800 flex items-center justify-center gap-2 transition-all';
       alertBox.innerHTML = `${ICONS.check}<span>${result.message} (${result.waktu})</span>`;
-      showToast('Absensi berhasil dicatat!', 'success');
+      
+      showToast(result.message || 'Absensi berhasil dicatat!', 'success');
       loadRiwayat();
     } else {
-      throw new Error(result.message);
+      throw new Error(result.message || 'Gagal memproses absensi.');
     }
   } catch (err) {
-    alertBox.className = 'mt-4 p-3 rounded-xl text-xs font-semibold text-center bg-red-100 text-red-700 flex items-center justify-center gap-2';
+    // Bunyikan nada peringatan
+    bunyikanBeep('error');
+
+    alertBox.className =
+      'mt-4 p-3 rounded-xl text-xs font-semibold text-center bg-red-100 text-red-700 flex items-center justify-center gap-2 transition-all';
     alertBox.innerHTML = `${ICONS.error}<span>Gagal mencatat absensi: ${err.message || 'Kesalahan server'}</span>`;
-    showToast('Gagal mencatat absensi.', 'error');
+    
+    showToast(err.message || 'Gagal mencatat absensi.', 'error');
   }
 }
 
