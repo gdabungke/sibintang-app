@@ -129,17 +129,24 @@ isiDropdown('p_template', DAFTAR_TEMPLATE_PENGUMUMAN);
 
 // 6. Sinkronisasi Header Guru Sesuai Status Login
 function updateGuruHeaderUI(isLoggedIn) {
+  const container = document.getElementById('headerGuruContainer');
   const spacer = document.getElementById('guruHeaderSpacer');
   const brand = document.getElementById('guruBrandSection');
   const linkSiswa = document.getElementById('linkPortalSiswa');
   const btnLogout = document.getElementById('btnLogoutGuru');
 
   if (isLoggedIn) {
+    if (container) {
+      container.className = "w-full max-w-5xl mx-auto px-4 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between gap-3 transition-all duration-300";
+    }
     if (spacer) spacer.classList.add('hidden');
     if (brand) brand.classList.remove('mx-auto');
     if (linkSiswa) linkSiswa.classList.add('hidden');
     if (btnLogout) btnLogout.classList.remove('hidden');
   } else {
+    if (container) {
+      container.className = "w-full max-w-xl mx-auto px-4 sm:px-0 py-2.5 sm:py-3 flex items-center justify-between gap-3 transition-all duration-300";
+    }
     if (spacer) spacer.classList.remove('hidden');
     if (brand) brand.classList.add('mx-auto');
     if (linkSiswa) linkSiswa.classList.remove('hidden');
