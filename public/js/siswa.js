@@ -196,7 +196,7 @@ function updateHeaderUI(isLoggedIn) {
     if (btnLogout) btnLogout.classList.remove('hidden');
   } else {
     if (container) {
-      container.className = "w-full max-w-md mx-auto px-4 sm:px-0 py-2.5 sm:py-3 flex items-center justify-between gap-3 transition-all duration-300";
+      container.className = "w-full max-w-xl mx-auto px-4 sm:px-0 py-2.5 sm:py-3 flex items-center justify-between gap-3 transition-all duration-300";
     }
     if (spacer) spacer.classList.remove('hidden');
     if (brand) brand.classList.add('mx-auto');
