@@ -399,7 +399,7 @@ window.deferredPrompt = deferredPrompt;
  * @param {string} pesan - Pesan yang ingin disampaikan
  * @param {'success' | 'error' | 'warning' | 'info'} tipe - Jenis notifikasi
  */
-function tampilkanToast(pesan, tipe = 'info') {
+function showToast(pesan, tipe = 'info') {
   // 1. Cari atau buat kontainer penampung toast di body
   let container = document.getElementById('toastContainerGlobal');
   if (!container) {
