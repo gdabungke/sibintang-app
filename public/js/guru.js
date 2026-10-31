@@ -4,23 +4,6 @@ let cacheDaftarTugas = [];
 let cacheRekapAbsen = null;
 let cacheRekapTugasFull = null;
 
-// Fungsi Global Toast Notification dengan Ikon SVG
-function showToast(message, type = 'success') {
-  const container = document.getElementById('toastContainer');
-  if (!container) return;
-  const iconSvg = type === 'success' ? ICONS.check : type === 'error' ? ICONS.error : ICONS.info;
-  const toast = document.createElement('div');
-  toast.className = `toast-item ${type === 'success' ? 'toast-success' : type === 'error' ? 'toast-error' : 'toast-info'} flex items-center gap-2.5`;
-  toast.innerHTML = `${iconSvg}<span>${message}</span>`;
-  container.appendChild(toast);
-  setTimeout(() => {
-    toast.style.opacity = '0';
-    toast.style.transform = 'translateY(15px)';
-    toast.style.transition = 'all 0.3s ease';
-    setTimeout(() => toast.remove(), 300);
-  }, 3500);
-}
-
 // Inisialisasi saat Halaman Dimuat
 window.addEventListener('DOMContentLoaded', () => {
 
