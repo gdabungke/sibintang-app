@@ -15,6 +15,68 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
 
+// Ambil ID folder khusus (jika belum diset di .env/Vercel, akan otomatis memakai DRIVE_FOLDER_ID default)
+const FOLDER_TUGAS_SISWA = (process.env.DRIVE_FOLDER_TUGAS_SISWA || process.env.DRIVE_FOLDER_ID || '').trim();
+const FOLDER_SOAL_GURU = (process.env.DRIVE_FOLDER_SOAL_GURU || process.env.DRIVE_FOLDER_ID || '').trim();
+const FOLDER_IZIN_SISWA = (process.env.DRIVE_FOLDER_IZIN_SISWA || process.env.DRIVE_FOLDER_ID || '').trim();
+
+// HELPER: BUAT SUB-FOLDER OTOMATIS
+async function buatSubFolderDrive(namaFolder: string, parentFolderId?: string): Promise<string> {
+  const folderMetadata: any = {
+    name: namaFolder,
+    mimeType: 'application/vnd.google-apps.folder',
+  };
+
+  const cleanParent = (parentFolderId || '').trim();
+  if (cleanParent && cleanParent !== '-' && cleanParent !== '') {
+    folderMetadata.parents = [cleanParent];
+  }
+
+  const folder = await drive.files.create({
+    requestBody: folderMetadata,
+    fields: 'id',
+  });
+
+  return folder.data.id || '';
+}
+
+// HELPER: UPLOAD FILE KE DALAM SUB-FOLDER KHUSUS
+async function uploadKeDriveDenganSubFolder(
+  file: Express.Multer.File,
+  parentFolderId: string,
+  namaSubFolder: string,
+  customNamaFile: string
+): Promise<string> {
+  let targetFolderId = parentFolderId;
+  try {
+    const newSubFolderId = await buatSubFolderDrive(namaSubFolder, parentFolderId);
+    if (newSubFolderId) {
+      targetFolderId = newSubFolderId;
+    }
+  } catch (err: any) {
+    console.warn('Gagal buat sub-folder, file masuk folder induk:', err.message);
+  }
+
+  const drivePayload: any = { name: customNamaFile };
+  const cleanTarget = (targetFolderId || '').trim();
+  if (cleanTarget && cleanTarget !== '-' && cleanTarget !== '') {
+    drivePayload.parents = [cleanTarget];
+  }
+
+  const bufferStream = Readable.from(file.buffer);
+
+  const driveResponse = await drive.files.create({
+    requestBody: drivePayload,
+    media: {
+      mimeType: file.mimetype || 'application/octet-stream',
+      body: bufferStream,
+    },
+    fields: 'id, webViewLink',
+  });
+
+  return driveResponse.data.webViewLink || `https://drive.google.com/file/d/${driveResponse.data.id}/view`;
+}
+
 // Konfigurasi Multer (Simpan file sementara di memori sebelum diupload ke Drive)
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -367,7 +429,7 @@ app.post('/api/absen', async (req: Request, res: Response) => {
   }
 });
 
-// 4. ENDPOINT PENGUMPULAN TUGAS (UPLOAD DRIVE + CATAT DI SHEET)
+// 4. ENDPOINT PENGUMPULAN TUGAS SISWA
 app.post('/api/tugas', upload.single('fileTugas'), async (req: Request, res: Response) => {
   try {
     const { nis, nama, kelas, mapel, judulTugas, judul } = req.body;
@@ -379,37 +441,29 @@ app.post('/api/tugas', upload.single('fileTugas'), async (req: Request, res: Res
     }
 
     const waktu = getWaktuWIB();
-    const cleanNama = (nama || 'Siswa').replace(/[^a-zA-Z0-9]/g, '_');
-    const customFileName = `[Kelas_${kelas}]_${mapel}_${cleanNama}_${nis}_${file.originalname}`;
 
-    // Pastikan folder ID bersih dari spasi
-    const cleanFolderId = DRIVE_FOLDER_ID ? DRIVE_FOLDER_ID.trim() : '';
+    // Format sub-folder: andre_kelas1a_ppkn_123456
+    const cleanNama = (nama || 'siswa').toLowerCase().replace(/[^a-z0-9]/g, '_');
+    const cleanKelas = (kelas || 'kelas').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const cleanMapel = (mapel || 'mapel').toLowerCase().replace(/[^a-z0-9]/g, '_');
+    const timeStampCode = Date.now().toString().slice(-6);
+    const namaSubFolder = `${cleanNama}_${cleanKelas}_${cleanMapel}_${timeStampCode}`;
 
-    const drivePayload: any = {
-      name: customFileName,
-    };
-    if (cleanFolderId && cleanFolderId !== '' && cleanFolderId !== '-') {
-      drivePayload.parents = [cleanFolderId];
-    }
+    const customFileName = `[TUGAS]_${cleanNama}_${file.originalname}`;
 
-    // Gunakan Readable.from untuk stream buffer yang stabil
-    const bufferStream = Readable.from(file.buffer);
+    // Upload ke Drive dengan sub-folder otomatis
+    const fileLink = await uploadKeDriveDenganSubFolder(
+      file,
+      FOLDER_TUGAS_SISWA,
+      namaSubFolder,
+      customFileName
+    );
 
-    const driveResponse = await drive.files.create({
-      requestBody: drivePayload,
-      media: {
-        mimeType: file.mimetype || 'application/octet-stream',
-        body: bufferStream,
-      },
-      fields: 'id, webViewLink',
-    });
+    // Simpan ke Google Sheet "Tugas"
+    await pastikanSheetAda('Tugas', [
+      'Waktu Upload', 'NIS', 'Nama Siswa', 'Kelas', 'Mata Pelajaran', 'Judul / Ket. Tugas', 'Link File Drive', 'Nilai', 'Catatan Guru'
+    ]);
 
-    const fileLink = driveResponse.data.webViewLink || `https://drive.google.com/file/d/${driveResponse.data.id}/view`;
-
-    // Pastikan tab Tugas ada
-    await pastikanSheetAda('Tugas', ['Waktu', 'NIS', 'Nama', 'Kelas', 'Mapel', 'Judul', 'Link', 'Nilai', 'Catatan']);
-
-    // Simpan data ke Sheet Tugas
     await sheets.spreadsheets.values.append({
       spreadsheetId: SPREADSHEET_ID,
       range: 'Tugas!A:G',
@@ -421,18 +475,14 @@ app.post('/api/tugas', upload.single('fileTugas'), async (req: Request, res: Res
 
     return res.json({
       success: true,
-      message: 'Tugas berhasil diupload ke Google Drive & tercatat di Sheet!',
+      message: 'Tugas berhasil diunggah ke Google Drive & tercatat di Sheet!',
       fileLink,
       waktu,
     });
   } catch (error: any) {
-    // Tampilkan log error spesifik dari Google API
-    console.error('Error Upload Tugas Detail:', error.response?.data || error.message);
+    console.error('Error Upload Tugas:', error.response?.data || error.message);
     const detailError = error.response?.data?.error?.message || error.message;
-    return res.status(500).json({ 
-      success: false, 
-      message: `Gagal mengupload tugas: ${detailError}` 
-    });
+    return res.status(500).json({ success: false, message: `Gagal mengupload tugas: ${detailError}` });
   }
 });
 
@@ -637,17 +687,75 @@ app.get('/api/guru/tugas', async (req: Request, res: Response) => {
   }
 });
 
-// 8. ENDPOINT SIMPAN NILAI & CATATAN TUGAS OLEH GURU
+// 8a. ENDPOINT GURU: BUAT TUGAS / SOAL BARU
+app.post('/api/guru/buat-tugas', upload.single('fileSoal'), async (req: Request, res: Response) => {
+  try {
+    const { mapel, kelas, judul, deskripsi, deadline, pembuat } = req.body;
+    const file = req.file;
+
+    if (!mapel || !kelas || !judul || !deadline) {
+      return res.status(400).json({ success: false, message: 'Mata pelajaran, kelas, judul, dan deadline wajib diisi!' });
+    }
+
+    const waktu = getWaktuWIB();
+    let fileSoalLink = '-';
+
+    if (file) {
+      // Format sub-folder soal guru: soal_kelas1a_matematika_123456
+      const cleanKelas = (kelas || 'kelas').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const cleanMapel = (mapel || 'mapel').toLowerCase().replace(/[^a-z0-9]/g, '_');
+      const timeStampCode = Date.now().toString().slice(-6);
+      const namaSubFolder = `soal_${cleanKelas}_${cleanMapel}_${timeStampCode}`;
+
+      const customFileName = `[SOAL]_${file.originalname}`;
+
+      fileSoalLink = await uploadKeDriveDenganSubFolder(
+        file,
+        FOLDER_SOAL_GURU,
+        namaSubFolder,
+        customFileName
+      );
+    }
+
+    await pastikanSheetAda('DaftarTugas', [
+      'Waktu Dibuat', 'Kelas', 'Mata Pelajaran', 'Judul Tugas', 'Deskripsi / Instruksi', 'Link File Soal (Drive)', 'Deadline', 'Pembuat'
+    ]);
+
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: SPREADSHEET_ID,
+      range: 'DaftarTugas!A:H',
+      valueInputOption: 'USER_ENTERED',
+      requestBody: {
+        values: [[waktu, kelas, mapel, judul, deskripsi || '-', fileSoalLink, deadline, pembuat || 'Guru']],
+      },
+    });
+
+    return res.json({
+      success: true,
+      message: 'Tugas berhasil dipublikasikan ke siswa!',
+      fileSoalLink,
+    });
+  } catch (error: any) {
+    console.error('Error Buat Tugas Guru:', error.response?.data || error.message);
+    const detailError = error.response?.data?.error?.message || error.message;
+    return res.status(500).json({ success: false, message: `Gagal mempublikasikan tugas: ${detailError}` });
+  }
+});
+
+// 8b. ENDPOINT SIMPAN NILAI & CATATAN TUGAS OLEH GURU
 app.post('/api/guru/nilai', async (req: Request, res: Response) => {
   try {
     const { rowIndex, nilai, catatan } = req.body;
-    if (!rowIndex || isNaN(rowIndex)) {
+    const targetRow = Number(rowIndex);
+
+    // Validasi rowIndex harus angka dan minimal baris ke-2 (karena baris 1 adalah header)
+    if (!targetRow || isNaN(targetRow) || targetRow < 2) {
       return res.status(400).json({ success: false, message: 'Nomor baris data tugas tidak valid!' });
     }
 
     await sheets.spreadsheets.values.update({
       spreadsheetId: SPREADSHEET_ID,
-      range: `Tugas!H${rowIndex}:I${rowIndex}`,
+      range: `Tugas!H${targetRow}:I${targetRow}`,
       valueInputOption: 'USER_ENTERED',
       requestBody: {
         values: [[nilai !== undefined && nilai !== '' ? nilai : '', catatan || '']],
@@ -953,62 +1061,7 @@ app.post('/api/admin/generate-token', async (req: Request, res: Response) => {
   }
 });
 
-// 14. ENDPOINT GURU: BUAT TUGAS / PR BARU
-app.post('/api/guru/buat-tugas', upload.single('fileSoal'), async (req: Request, res: Response) => {
-  try {
-    const { mapel, kelas, judul, deskripsi, deadline, pembuat } = req.body;
-    const file = req.file;
-
-    if (!mapel || !kelas || !judul || !deadline) {
-      return res.status(400).json({ success: false, message: 'Mata pelajaran, kelas, judul, dan deadline wajib diisi!' });
-    }
-
-    const waktu = getWaktuWIB();
-    let fileSoalLink = '-';
-
-    if (file) {
-      const cleanJudul = judul.replace(/[^a-zA-Z0-9]/g, '_');
-      const customFileName = `[SOAL_TUGAS]_${kelas}_${mapel}_${cleanJudul}_${file.originalname}`;
-
-      const bufferStream = new Readable();
-      bufferStream.push(file.buffer);
-      bufferStream.push(null);
-
-      const driveResponse = await drive.files.create({
-        requestBody: {
-          name: customFileName,
-          parents: DRIVE_FOLDER_ID ? [DRIVE_FOLDER_ID] : undefined,
-        },
-        media: {
-          mimeType: file.mimetype,
-          body: bufferStream,
-        },
-        fields: 'id, webViewLink',
-      });
-
-      fileSoalLink = driveResponse.data.webViewLink || `https://drive.google.com/file/d/${driveResponse.data.id}/view`;
-    }
-
-    await sheets.spreadsheets.values.append({
-      spreadsheetId: SPREADSHEET_ID,
-      range: 'DaftarTugas!A:H',
-      valueInputOption: 'USER_ENTERED',
-      requestBody: {
-        values: [[waktu, kelas, mapel, judul, deskripsi || '-', fileSoalLink, deadline, pembuat || 'Guru']],
-      },
-    });
-
-    return res.json({
-      success: true,
-      message: 'Tugas berhasil dipublikasikan ke siswa!',
-      fileSoalLink,
-    });
-  } catch (error: any) {
-    console.error('Error Buat Tugas Guru:', error.message);
-    return res.status(500).json({ success: false, message: 'Gagal mempublikasikan tugas baru.' });
-  }
-});
-
+// PENTUTUP PORT
 app.listen(PORT, () => {
   console.log(`Server SiBintang berjalan di http://localhost:${PORT}`);
 });
