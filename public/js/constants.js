@@ -445,3 +445,84 @@ function tampilkanToast(pesan, tipe = 'info') {
   // Otomatis hilang setelah 3.5 detik
   setTimeout(tutupToast, 3500);
 }
+
+// ==========================================
+// EFEK SUARA SCANNER (Web Audio API)
+// ==========================================
+
+let audioCtxSiBintang = null;
+
+function dapatkanAudioContext() {
+  if (!audioCtxSiBintang) {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (AudioContextClass) {
+      audioCtxSiBintang = new AudioContextClass();
+    }
+  }
+  if (audioCtxSiBintang && audioCtxSiBintang.state === 'suspended') {
+    audioCtxSiBintang.resume();
+  }
+  return audioCtxSiBintang;
+}
+
+/**
+ * Memutar efek suara beep
+ * @param {'success' | 'error'} tipe - Jenis suara yang ingin diputar
+ */
+function bunyikanBeep(tipe = 'success') {
+  try {
+    const ctx = dapatkanAudioContext();
+    if (!ctx) return;
+
+    const sekarang = ctx.currentTime;
+
+    if (tipe === 'success') {
+      // NADA SUKSES: 2 nada berurutan cepat (880Hz -> 1320Hz)
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'sine';
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      // Nada 1: 880 Hz (A5)
+      osc.frequency.setValueAtTime(880, sekarang);
+      gain.gain.setValueAtTime(0.15, sekarang);
+
+      // Nada 2: 1320 Hz (E6)
+      osc.frequency.setValueAtTime(1320, sekarang + 0.08);
+      gain.gain.setValueAtTime(0.15, sekarang + 0.08);
+
+      // Fade out cepat
+      gain.gain.exponentialRampToValueAtTime(0.001, sekarang + 0.25);
+
+      osc.start(sekarang);
+      osc.stop(sekarang + 0.25);
+
+    } else {
+      // NADA GAGAL: 2 nada rendah (300Hz -> 200Hz)
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'sawtooth'; // Nada lebih tegas untuk peringatan
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      // Nada rendah 1: 300 Hz
+      osc.frequency.setValueAtTime(300, sekarang);
+      gain.gain.setValueAtTime(0.2, sekarang);
+
+      // Nada rendah 2: 200 Hz
+      osc.frequency.setValueAtTime(200, sekarang + 0.12);
+      gain.gain.setValueAtTime(0.2, sekarang + 0.12);
+
+      // Fade out
+      gain.gain.exponentialRampToValueAtTime(0.001, sekarang + 0.35);
+
+      osc.start(sekarang);
+      osc.stop(sekarang + 0.35);
+    }
+  } catch (err) {
+    console.warn('Gagal memutar audio beep:', err);
+  }
+}
