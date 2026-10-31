@@ -128,30 +128,30 @@ isiDropdown('p_template', DAFTAR_TEMPLATE_PENGUMUMAN);
 });
 
 // 6. Sinkronisasi Header Guru Sesuai Status Login
-function updateHeaderUI(isLoggedIn) {
-  const container = document.getElementById('headerSiswaContainer');
-  const spacer = document.getElementById('headerBalanceSpacer');
-  const brand = document.getElementById('headerBrandSection');
-  const guestBadge = document.getElementById('headerGuestBadge');
-  const btnLogout = document.getElementById('btnLogout');
+function updateGuruHeaderUI(isLoggedIn) {
+  const container = document.getElementById('headerGuruContainer');
+  const spacer = document.getElementById('guruHeaderSpacer');
+  const brand = document.getElementById('guruBrandSection');
+  const linkSiswa = document.getElementById('linkPortalSiswa');
+  const btnLogout = document.getElementById('btnLogoutGuru');
 
   if (isLoggedIn) {
     if (container) {
-      // SETELAH LOGIN: Samakan persis dengan <main> dashboard (max-w-6xl mx-auto px-4 md:px-6)
+      // SETELAH LOGIN: SEJAJAR DENGAN BODY MAIN (max-w-6xl mx-auto px-4 md:px-6)
       container.className = "w-full max-w-6xl mx-auto px-4 md:px-6 py-2.5 sm:py-3 flex items-center justify-between gap-3 transition-all duration-300";
     }
     if (spacer) spacer.classList.add('hidden');
     if (brand) brand.classList.remove('mx-auto');
-    if (guestBadge) guestBadge.classList.add('hidden');
+    if (linkSiswa) linkSiswa.classList.add('hidden');
     if (btnLogout) btnLogout.classList.remove('hidden');
   } else {
     if (container) {
-      // SEBELUM LOGIN: Samakan persis dengan kotak form login (max-w-md mx-auto px-4 sm:px-0)
+      // SEBELUM LOGIN: SEJAJAR DENGAN FORM LOGIN (max-w-md mx-auto px-4 sm:px-0)
       container.className = "w-full max-w-md mx-auto px-4 sm:px-0 py-2.5 sm:py-3 flex items-center justify-between gap-3 transition-all duration-300";
     }
     if (spacer) spacer.classList.remove('hidden');
-    if (brand) brand.classList.remove('mx-auto'); // Jangan beri mx-auto jika ada guestBadge di kanan agar tetap flex justify-between
-    if (guestBadge) guestBadge.classList.remove('hidden');
+    if (brand) brand.classList.add('mx-auto');
+    if (linkSiswa) linkSiswa.classList.remove('hidden');
     if (btnLogout) btnLogout.classList.add('hidden');
   }
 }
