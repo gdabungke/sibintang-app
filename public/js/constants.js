@@ -377,3 +377,71 @@ async function jalankanInstalasiPWA() {
     alert('Aplikasi sudah terpasang atau gunakan menu browser (titik tiga) lalu pilih "Tambahkan ke Layar Utama" / "Install Aplikasi".');
   }
 }
+
+/**
+ * Menampilkan Toast Notification interaktif
+ * @param {string} pesan - Pesan yang ingin disampaikan
+ * @param {'success' | 'error' | 'warning' | 'info'} tipe - Jenis notifikasi
+ */
+function tampilkanToast(pesan, tipe = 'info') {
+  // 1. Cari atau buat kontainer penampung toast di body
+  let container = document.getElementById('toastContainerGlobal');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toastContainerGlobal';
+    container.className = 'fixed top-5 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 w-[92%] max-w-sm pointer-events-none no-print';
+    document.body.appendChild(container);
+  }
+
+  // 2. Skema warna dan ikon SVG berdasarkan tipe
+  const skema = {
+    success: {
+      bg: 'bg-emerald-600/95 border-emerald-500/40 text-white',
+      icon: `<svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>`
+    },
+    error: {
+      bg: 'bg-rose-600/95 border-rose-500/40 text-white',
+      icon: `<svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>`
+    },
+    warning: {
+      bg: 'bg-amber-600/95 border-amber-500/40 text-white',
+      icon: `<svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>`
+    },
+    info: {
+      bg: 'bg-slate-900/95 border-slate-700/50 text-white',
+      icon: `<svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`
+    }
+  };
+
+  const config = skema[tipe] || skema.info;
+
+  // 3. Elemen Toast Card dengan animasi transisi
+  const toast = document.createElement('div');
+  toast.className = `pointer-events-auto flex items-center justify-between gap-3 px-4 py-3 rounded-2xl shadow-2xl backdrop-blur-md border ${config.bg} transform transition-all duration-300 translate-y-[-20px] opacity-0`;
+  toast.innerHTML = `
+    <div class="flex items-center gap-2.5 overflow-hidden">
+      ${config.icon}
+      <span class="text-xs font-medium leading-snug">${pesan}</span>
+    </div>
+    <button type="button" class="text-white/70 hover:text-white p-1 text-xs font-bold transition">✕</button>
+  `;
+
+  container.appendChild(toast);
+
+  // Animasi masuk (Fade In & Slide Down)
+  requestAnimationFrame(() => {
+    toast.classList.remove('translate-y-[-20px]', 'opacity-0');
+    toast.classList.add('translate-y-0', 'opacity-100');
+  });
+
+  const tutupToast = () => {
+    toast.classList.add('translate-y-[-20px]', 'opacity-0');
+    setTimeout(() => toast.remove(), 300);
+  };
+
+  // Tombol close manual
+  toast.querySelector('button').addEventListener('click', tutupToast);
+
+  // Otomatis hilang setelah 3.5 detik
+  setTimeout(tutupToast, 3500);
+}
