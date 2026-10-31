@@ -205,6 +205,8 @@ function updateHeaderUI(isLoggedIn) {
     if (guestBadge) guestBadge.classList.remove('hidden');
     if (btnLogout) btnLogout.classList.add('hidden');
   }
+  // Panggil fungsi PWA untuk Siswa:
+  aturTampilanPasangPWA(isLoggedIn, 'siswaHeaderRight', 'Siswa');
 }
 
 function showDashboard() {
