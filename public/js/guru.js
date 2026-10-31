@@ -419,6 +419,7 @@ function sinkronKelas(source) {
 function updateDashboardAbsen() {
   generateQR();
   loadRekapKelas();
+  loadVerifikasiIzinGuru();
 }
 
 // 4. Generate QR Code Absensi
@@ -513,6 +514,98 @@ async function loadRekapKelas() {
     }
   } catch (err) {
     console.error('Gagal mengambil rekap absen:', err);
+  }
+}
+
+// 5a. Memuat Data Pengajuan Izin Siswa Khusus Kelas yang Dipilih
+async function loadVerifikasiIzinGuru() {
+  const kelas = document.getElementById('filterKelas')?.value;
+  const tbody = document.getElementById('tbodyVerifikasiIzin');
+  if (!kelas || !tbody) return;
+
+  try {
+    const res = await fetch(`/api/guru/verifikasi-izin?kelas=${encodeURIComponent(kelas)}`);
+    const data = await res.json();
+
+    if (!data.success || !data.daftarIzin || data.daftarIzin.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-slate-400">Tidak ada pengajuan izin/sakit untuk Kelas ${kelas}.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = data.daftarIzin.map((item) => {
+      // Link Surat Lampiran
+      const linkSurat = (item.link && item.link !== '-' && item.link !== '#')
+        ? `<a href="${item.link}" target="_blank" class="bg-blue-50 hover:bg-blue-100 text-blue-700 px-2.5 py-1 rounded-lg font-bold inline-flex items-center text-[11px] gap-1">Berkas ${ICONS.external}</a>`
+        : `<span class="text-slate-400 italic">Tanpa Berkas</span>`;
+
+      // Status Badge
+      let badgeStatus = `<span class="bg-amber-100 text-amber-800 px-2.5 py-0.5 rounded-full font-bold text-[10px]">Menunggu</span>`;
+      if (item.statusVerifikasi === 'Disetujui') {
+        badgeStatus = `<span class="bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full font-bold text-[10px]">✓ Disetujui</span>`;
+      } else if (item.statusVerifikasi === 'Ditolak') {
+        badgeStatus = `<span class="bg-rose-100 text-rose-800 px-2.5 py-0.5 rounded-full font-bold text-[10px]">✕ Ditolak</span>`;
+      }
+
+      // Tombol Aksi Verifikasi
+      const aksiBtn = (item.statusVerifikasi === 'Disetujui' || item.statusVerifikasi === 'Ditolak')
+        ? `<span class="text-[11px] text-slate-400 font-medium">Oleh: ${item.verifikator || '-'}</span>`
+        : `
+          <div class="inline-flex items-center gap-1.5">
+            <button type="button" onclick="responIzinSiswa(${item.rowIndex}, 'Disetujui')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded-lg font-bold text-xs inline-flex items-center gap-1 shadow-sm transition">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              <span>ACC</span>
+            </button>
+            <button type="button" onclick="responIzinSiswa(${item.rowIndex}, 'Ditolak')" class="bg-rose-600 hover:bg-rose-700 text-white px-2.5 py-1 rounded-lg font-bold text-xs inline-flex items-center gap-1 shadow-sm transition">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+              <span>Tolak</span>
+            </button>
+          </div>
+        `;
+
+      return `
+        <tr class="hover:bg-slate-50 transition">
+          <td class="p-3 text-slate-500 whitespace-nowrap">${item.waktuPengajuan}</td>
+          <td class="p-3">
+            <div class="font-bold text-slate-800">${item.nama}</div>
+            <div class="text-[11px] font-mono text-slate-400">NIS: ${item.nis}</div>
+          </td>
+          <td class="p-3 font-semibold text-slate-700">${item.status}</td>
+          <td class="p-3 font-medium text-slate-800 whitespace-nowrap">${item.tanggalMulai}</td>
+          <td class="p-3 text-slate-600 max-w-xs truncate" title="${item.keterangan}">${item.keterangan}</td>
+          <td class="p-3 whitespace-nowrap">${linkSurat}</td>
+          <td class="p-3 text-center whitespace-nowrap">${badgeStatus}</td>
+          <td class="p-3 text-right whitespace-nowrap">${aksiBtn}</td>
+        </tr>
+      `;
+    }).join('');
+  } catch (err) {
+    console.error('Gagal mengambil daftar izin siswa:', err);
+  }
+}
+
+// 5b. Handler Kirim Putusan Verifikasi Guru (ACC / Tolak)
+async function responIzinSiswa(rowIndex, tindakan) {
+  const konfirmasi = confirm(`Tandai permohonan izin ini sebagai "${tindakan}"?`);
+  if (!konfirmasi) return;
+
+  const verifikator = currentGuru ? `${currentGuru.nama} (${currentGuru.role})` : 'Wali Kelas';
+
+  try {
+    const res = await fetch('/api/guru/verifikasi-izin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rowIndex, tindakan, verifikator }),
+    });
+    const result = await res.json();
+    if (result.success) {
+      showToast(result.message, 'success');
+      loadVerifikasiIzinGuru();
+      loadRekapKelas(); // Otomatis refresh rekap kehadiran harian
+    } else {
+      showToast(result.message || 'Gagal memproses permohonan izin.', 'error');
+    }
+  } catch (err) {
+    showToast('Gagal terhubung ke server.', 'error');
   }
 }
 
