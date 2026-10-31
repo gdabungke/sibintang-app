@@ -885,39 +885,24 @@ function exportTugasCSV() {
 }
 
 // 11. Kelola Pengumuman Sekolah
-const templatePengumumanData = {
-  libur: {
-    judul: 'Jadwal Libur Sekolah dan Cuti Bersama',
-    isi: 'Diberitahukan kepada seluruh siswa dan orang tua murid SD RK Bintang Timur Rantauprapat bahwa kegiatan belajar mengajar diliburkan mulai tanggal ... sampai dengan ... dalam rangka libur semester. Kegiatan sekolah akan aktif kembali seperti biasa pada hari ...',
-  },
-  rapor: {
-    judul: 'Jadwal Pengambilan Rapor / Buku Laporan Hasil Belajar',
-    isi: 'Kepada Bapak/Ibu Orang Tua/Wali murid, diundang untuk hadir pada pengambilan Buku Laporan Hasil Belajar (Rapor) semester ini yang akan dilaksanakan pada hari ..., tanggal ..., pukul ... bertempat di ruang kelas masing-masing.',
-  },
-  tugas: {
-    judul: 'Peringatan Pengumpulan Tugas dan PR Sekolah',
-    isi: 'Diingatkan kepada seluruh siswa untuk segera menyelesaikan dan mengumpulkan PR atau tugas sekolah yang belum diserahkan melalui aplikasi SiBintang sebelum batas waktu yang telah ditentukan oleh guru mata pelajaran.',
-  },
-  upacara: {
-    judul: 'Pemberitahuan Kegiatan Upacara / Ekstrakurikuler Wajib',
-    isi: 'Diberitahukan kepada seluruh siswa agar hadir tepat waktu pada kegiatan sekolah yang akan dilaksanakan pada hari ... pukul ... dengan mengenakan pakaian seragam lengkap sesuai ketentuan sekolah.',
-  },
-};
-
 function pilihTemplatePengumuman() {
   const kunci = document.getElementById('p_template')?.value;
+  const inputKategori = document.getElementById('p_kategori');
   const inputJudul = document.getElementById('p_judul');
   const inputIsi = document.getElementById('p_isi');
 
-  if (templatePengumumanData[kunci]) {
-    inputJudul.value = templatePengumumanData[kunci].judul;
-    inputIsi.value = templatePengumumanData[kunci].isi;
+  if (TEMPLATE_PENGUMUMAN_DATA && TEMPLATE_PENGUMUMAN_DATA[kunci]) {
+    const data = TEMPLATE_PENGUMUMAN_DATA[kunci];
+    if (inputKategori) inputKategori.value = data.kategori;
+    if (inputJudul) inputJudul.value = data.judul;
+    if (inputIsi) inputIsi.value = data.isi;
   } else {
-    inputJudul.value = '';
-    inputIsi.value = '';
+    if (inputJudul) inputJudul.value = '';
+    if (inputIsi) inputIsi.value = '';
   }
 }
 
+// Handler Submit Penerbitan Pengumuman
 document.getElementById('formPengumuman')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   const target = document.getElementById('p_target')?.value;
