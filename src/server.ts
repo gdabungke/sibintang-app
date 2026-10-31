@@ -382,15 +382,23 @@ app.post('/api/tugas', upload.single('fileTugas'), async (req: Request, res: Res
     const cleanNama = (nama || 'Siswa').replace(/[^a-zA-Z0-9]/g, '_');
     const customFileName = `[Kelas_${kelas}]_${mapel}_${cleanNama}_${nis}_${file.originalname}`;
 
+    // Pastikan folder ID bersih dari spasi
+    const cleanFolderId = DRIVE_FOLDER_ID ? DRIVE_FOLDER_ID.trim() : '';
+
+    const drivePayload: any = {
+      name: customFileName,
+    };
+    if (cleanFolderId && cleanFolderId !== '' && cleanFolderId !== '-') {
+      drivePayload.parents = [cleanFolderId];
+    }
+
+    // Gunakan Readable.from untuk stream buffer yang stabil
     const bufferStream = Readable.from(file.buffer);
 
     const driveResponse = await drive.files.create({
-      requestBody: {
-        name: customFileName,
-        parents: DRIVE_FOLDER_ID ? [DRIVE_FOLDER_ID] : undefined,
-      },
+      requestBody: drivePayload,
       media: {
-        mimeType: file.mimetype,
+        mimeType: file.mimetype || 'application/octet-stream',
         body: bufferStream,
       },
       fields: 'id, webViewLink',
@@ -398,12 +406,16 @@ app.post('/api/tugas', upload.single('fileTugas'), async (req: Request, res: Res
 
     const fileLink = driveResponse.data.webViewLink || `https://drive.google.com/file/d/${driveResponse.data.id}/view`;
 
+    // Pastikan tab Tugas ada
+    await pastikanSheetAda('Tugas', ['Waktu', 'NIS', 'Nama', 'Kelas', 'Mapel', 'Judul', 'Link', 'Nilai', 'Catatan']);
+
+    // Simpan data ke Sheet Tugas
     await sheets.spreadsheets.values.append({
       spreadsheetId: SPREADSHEET_ID,
       range: 'Tugas!A:G',
       valueInputOption: 'USER_ENTERED',
       requestBody: {
-        values: [[waktu, nis, nama, kelas, mapel, finalJudul, fileLink]],
+        values: [[waktu, `'${nis}`, nama || '-', kelas || '-', mapel || '-', finalJudul, fileLink]],
       },
     });
 
@@ -414,8 +426,13 @@ app.post('/api/tugas', upload.single('fileTugas'), async (req: Request, res: Res
       waktu,
     });
   } catch (error: any) {
-    console.error('Error Upload Tugas:', error.message);
-    return res.status(500).json({ success: false, message: 'Gagal mengupload tugas.' });
+    // Tampilkan log error spesifik dari Google API
+    console.error('Error Upload Tugas Detail:', error.response?.data || error.message);
+    const detailError = error.response?.data?.error?.message || error.message;
+    return res.status(500).json({ 
+      success: false, 
+      message: `Gagal mengupload tugas: ${detailError}` 
+    });
   }
 });
 
