@@ -299,13 +299,23 @@ async function stopScanner() {
 
 async function kirimAbsensi(qrCodeData) {
   const alertBox = document.getElementById('absenAlert');
-  alertBox.className =
-    'mt-4 p-3 rounded-xl text-xs font-semibold text-center bg-blue-50 text-blue-700 flex items-center justify-center gap-2 transition-all';
-  alertBox.innerHTML = `${ICONS.info}<span>Mencatat kehadiran ke Google Sheet...</span>`;
-  alertBox.classList.remove('hidden');
+  if (alertBox) {
+    alertBox.className =
+      'mt-4 p-3 rounded-xl text-xs font-semibold text-center bg-blue-50 text-blue-700 flex items-center justify-center gap-2 transition-all';
+    alertBox.innerHTML = `${ICONS.info}<span>Mencatat kehadiran...</span>`;
+    alertBox.classList.remove('hidden');
+  }
+
+  // Siapkan objek data kehadiran siswa
+  const payload = {
+    nis: currentStudent?.nis,
+    nama: currentStudent?.nama,
+    kelas: currentStudent?.kelas,
+    qrCodeData,
+  };
 
   try {
-    // 1. Validasi format awal & kelas di sisi browser
+    // 1. Validasi format string QR & kesesuaian kelas langsung di sisi browser
     if (typeof qrCodeData === 'string' && qrCodeData.startsWith('ABSEN-SIBINTANG')) {
       const qrParts = qrCodeData.split('|').map((p) => p.trim());
       const kelasQR = (qrParts[1] || '').toUpperCase();
@@ -316,41 +326,77 @@ async function kirimAbsensi(qrCodeData) {
       }
     }
 
-    // 2. Kirim permintaan pencatatan ke backend
+    // 2. Jika perangkat sedang offline murni saat scan, amankan langsung ke antrean
+    if (!navigator.onLine) {
+      if (typeof simpanKeAntreanOffline === 'function') {
+        simpanKeAntreanOffline(payload);
+      }
+      bunyikanBeep('success'); // Tetap beri nada positif agar siswa tidak panik
+
+      if (alertBox) {
+        alertBox.className =
+          'mt-4 p-3 rounded-xl text-xs font-semibold text-center bg-amber-100 text-amber-800 flex items-center justify-center gap-2 transition-all';
+        alertBox.innerHTML = `${ICONS.info}<span>Tersimpan di antrean offline. Akan terkirim otomatis saat online.</span>`;
+      }
+      showToast('Koneksi offline: Data kehadiran disimpan di HP.', 'warning');
+      return;
+    }
+
+    // 3. Kirim permintaan pencatatan ke server backend
     const res = await fetch('/api/absen', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        nis: currentStudent.nis,
-        nama: currentStudent.nama,
-        kelas: currentStudent.kelas,
-        qrCodeData,
-      }),
+      body: JSON.stringify(payload),
     });
 
     const result = await res.json();
 
     if (result.success) {
-      // Bunyikan nada sukses
       bunyikanBeep('success');
 
-      alertBox.className =
-        'mt-4 p-3 rounded-xl text-xs font-semibold text-center bg-green-100 text-green-800 flex items-center justify-center gap-2 transition-all';
-      alertBox.innerHTML = `${ICONS.check}<span>${result.message} (${result.waktu})</span>`;
-      
+      if (alertBox) {
+        alertBox.className =
+          'mt-4 p-3 rounded-xl text-xs font-semibold text-center bg-green-100 text-green-800 flex items-center justify-center gap-2 transition-all';
+        alertBox.innerHTML = `${ICONS.check}<span>${result.message} (${result.waktu})</span>`;
+      }
+
       showToast(result.message || 'Absensi berhasil dicatat!', 'success');
-      loadRiwayat();
+      if (typeof loadRiwayat === 'function') loadRiwayat();
     } else {
       throw new Error(result.message || 'Gagal memproses absensi.');
     }
   } catch (err) {
-    // Bunyikan nada peringatan
+    // 4. Tangani jika kegagalan disebabkan oleh gangguan jaringan mendadak / timeout
+    const isNetworkError =
+      !navigator.onLine ||
+      err.name === 'TypeError' ||
+      (err.message && err.message.toLowerCase().includes('failed to fetch'));
+
+    if (isNetworkError) {
+      if (typeof simpanKeAntreanOffline === 'function') {
+        simpanKeAntreanOffline(payload);
+      }
+      bunyikanBeep('success');
+
+      if (alertBox) {
+        alertBox.className =
+          'mt-4 p-3 rounded-xl text-xs font-semibold text-center bg-amber-100 text-amber-800 flex items-center justify-center gap-2 transition-all';
+        alertBox.innerHTML = `${ICONS.info}<span>Jaringan terputus. Data disimpan di antrean offline.</span>`;
+      }
+
+      showToast('Koneksi terputus: Disimpan ke antrean offline.', 'warning');
+      return;
+    }
+
+    // 5. Kesalahan validasi logika (misal: salah kelas atau ditolak oleh server)
     bunyikanBeep('error');
 
-    alertBox.className =
-      'mt-4 p-3 rounded-xl text-xs font-semibold text-center bg-red-100 text-red-700 flex items-center justify-center gap-2 transition-all';
-    alertBox.innerHTML = `${ICONS.error}<span>Gagal mencatat absensi: ${err.message || 'Kesalahan server'}</span>`;
-    
+    if (alertBox) {
+      alertBox.className =
+        'mt-4 p-3 rounded-xl text-xs font-semibold text-center bg-red-100 text-red-700 flex items-center justify-center gap-2 transition-all';
+      alertBox.innerHTML = `${ICONS.error}<span>Gagal mencatat absensi: ${err.message || 'Kesalahan server'}</span>`;
+    }
+
     showToast(err.message || 'Gagal mencatat absensi.', 'error');
   }
 }
