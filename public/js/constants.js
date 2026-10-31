@@ -378,6 +378,22 @@ async function jalankanInstalasiPWA() {
   }
 }
 
+// ==========================================
+// PWA INSTALL PROMPT HANDLER (Global)
+// ==========================================
+let deferredPrompt = null;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  if (typeof tampilkanBannerInstallPWA === 'function') {
+    tampilkanBannerInstallPWA();
+  }
+});
+
+// Daftarkan variabel global agar bisa dipicu tombol "Pasang"
+window.deferredPrompt = deferredPrompt;
+
 /**
  * Menampilkan Toast Notification interaktif
  * @param {string} pesan - Pesan yang ingin disampaikan
