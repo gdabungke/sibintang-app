@@ -24,6 +24,7 @@ const upload = multer({
 // Autentikasi Google API menggunakan GOOGLE_CREDENTIALS_JSON di Vercel
 const SCOPES = [
   'https://www.googleapis.com/auth/spreadsheets',
+  'https://www.googleapis.com/auth/drive',
   'https://www.googleapis.com/auth/drive.file',
 ];
 
@@ -381,9 +382,7 @@ app.post('/api/tugas', upload.single('fileTugas'), async (req: Request, res: Res
     const cleanNama = (nama || 'Siswa').replace(/[^a-zA-Z0-9]/g, '_');
     const customFileName = `[Kelas_${kelas}]_${mapel}_${cleanNama}_${nis}_${file.originalname}`;
 
-    const bufferStream = new Readable();
-    bufferStream.push(file.buffer);
-    bufferStream.push(null);
+    const bufferStream = Readable.from(file.buffer);
 
     const driveResponse = await drive.files.create({
       requestBody: {
