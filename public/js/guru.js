@@ -19,33 +19,6 @@ const ICONS = {
   send: `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>`
 };
 
-// PWA: Handler Tombol Pasang Aplikasi Guru
-let deferredPromptGuru = null;
-const btnInstallGuru = document.getElementById('btnInstallAppGuru');
-
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredPromptGuru = e;
-  if (btnInstallGuru) {
-    btnInstallGuru.classList.remove('hidden');
-  }
-});
-
-btnInstallGuru?.addEventListener('click', async () => {
-  if (!deferredPromptGuru) return;
-  deferredPromptGuru.prompt();
-  const { outcome } = await deferredPromptGuru.userChoice;
-  if (outcome === 'accepted' && btnInstallGuru) {
-    btnInstallGuru.classList.add('hidden');
-  }
-  deferredPromptGuru = null;
-});
-
-window.addEventListener('appinstalled', () => {
-  if (btnInstallGuru) btnInstallGuru.classList.add('hidden');
-  showToast('Aplikasi Guru SiBintang berhasil dipasang!', 'success');
-});
-
 // Fungsi Global Toast Notification dengan Ikon SVG
 function showToast(message, type = 'success') {
   const container = document.getElementById('toastContainer');
