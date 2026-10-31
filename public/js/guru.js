@@ -399,7 +399,7 @@ function updateDashboardAbsen() {
   loadVerifikasiIzinGuru();
 }
 
-// 4. Generate QR Code Absensi
+// 4. Generate QR Code Absensi (Dengan Logo SiBintang di Tengah)
 function generateQR() {
   const kelas = document.getElementById('filterKelas')?.value || '1A';
   const tanggal = document.getElementById('filterTanggal')?.value || new Date().toISOString().split('T')[0];
@@ -417,14 +417,61 @@ function generateQR() {
   const container = document.getElementById('qrcodeContainer');
   if (!container) return;
   container.innerHTML = '';
+
+  // 1. Render QR Code dengan Koreksi Error Level H (30%)
   qrGenerator = new QRCode(container, {
     text: qrDataString,
     width: 210,
     height: 210,
-    colorDark: '#1e1b4b',
+    colorDark: '#1e3a8a', // Menggunakan warna biru khas SiBintang
     colorLight: '#ffffff',
     correctLevel: QRCode.CorrectLevel.H,
   });
+
+  // 2. Tempelkan Logo SiBintang di Bagian Tengah Canvas
+  // Gunakan jeda singkat (setTimeout) agar elemen canvas selesai dirender oleh qrcodejs
+  setTimeout(() => {
+    const canvas = container.querySelector('canvas');
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    const imgLogo = new Image();
+    imgLogo.src = 'assets/logo.png'; // Pastikan path file logo Anda sesuai
+
+    imgLogo.onload = () => {
+      const size = canvas.width;
+      const logoSize = size * 0.22; // Ukuran logo proporsional 22%
+      const center = size / 2;
+      const pos = (size - logoSize) / 2;
+
+      ctx.save();
+
+      // Buat bulatan putih di tengah agar titik-titik QR tidak menabrak logo
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(center, center, (logoSize / 2) + 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Beri lis/border lingkaran kuning emas
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#f59e0b';
+      ctx.stroke();
+
+      // Potong lingkaran dan gambar logo di tengahnya
+      ctx.beginPath();
+      ctx.arc(center, center, logoSize / 2, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.drawImage(imgLogo, pos, pos, logoSize, logoSize);
+
+      ctx.restore();
+
+      // Sinkronkan juga ke tag <img> jika library membuat tag img fallback
+      const fallbackImg = container.querySelector('img');
+      if (fallbackImg) {
+        fallbackImg.src = canvas.toDataURL();
+      }
+    };
+  }, 50);
 }
 
 // 5. Rekap Absensi Siswa
