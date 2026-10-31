@@ -263,3 +263,117 @@ function isiDropdownGrup(selectId, dataGrup) {
     el.appendChild(groupEl);
   });
 }
+
+/**
+ * SiBintang - Shared Constants & PWA Manager
+ * SD Swasta RK Bintang Timur Rantauprapat
+ */
+
+let deferredPromptSiBintang = null;
+
+// Tangkap event instalasi browser secara global
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPromptSiBintang = e;
+});
+
+/**
+ * Mengatur banner melayang di bawah (saat form login)
+ * dan menyisipkan tombol pasang di header sebelah kiri tombol logout (setelah login)
+ * 
+ * @param {boolean} isLoggedIn - Status login user (true/false)
+ * @param {string} containerTargetId - ID container tombol kanan header tempat tombol logout berada
+ * @param {string} teksPeran - 'Siswa' atau 'Pengelola'
+ */
+function aturTampilanPasangPWA(isLoggedIn, containerTargetId, teksPeran = 'Siswa') {
+  let banner = document.getElementById('pwaInstallBanner');
+  let btnHeader = document.getElementById('btnDynamicInstallHeader');
+  const targetParent = document.getElementById(containerTargetId);
+
+  if (isLoggedIn) {
+    // 1. SETELAH LOGIN:
+    // Hapus banner bawah agar dashboard tidak tertutup
+    if (banner) {
+      banner.remove();
+    }
+
+    // Buat elemen tombol pasang hijau jika belum ada
+    if (!btnHeader && targetParent) {
+      btnHeader = document.createElement('button');
+      btnHeader.id = 'btnDynamicInstallHeader';
+      btnHeader.type = 'button';
+      btnHeader.title = 'Pasang Aplikasi SiBintang';
+      // Styling emerald pill sejajar dengan tombol logout merah
+      btnHeader.className = 'inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm border border-emerald-500/30 transition-all duration-200 cursor-pointer';
+      btnHeader.innerHTML = `
+        <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+        </svg>
+        <span class="hidden sm:inline">Pasang</span>
+      `;
+      btnHeader.onclick = jalankanInstalasiPWA;
+
+      // Disisipkan di elemen pertama sebelum tombol logout (posisi di sebelah kiri tombol logout)
+      targetParent.insertBefore(btnHeader, targetParent.firstChild);
+    } else if (btnHeader) {
+      btnHeader.classList.remove('hidden');
+      btnHeader.classList.add('inline-flex');
+    }
+
+  } else {
+    // 2. SEBELUM LOGIN (FORM LOGIN):
+    // Hapus tombol pasang dari header agar header tetap bersih
+    if (btnHeader) {
+      btnHeader.remove();
+    }
+
+    // Tampilkan banner melayang di bawah
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'pwaInstallBanner';
+      banner.className = 'fixed bottom-4 left-4 right-4 max-w-md mx-auto bg-slate-900/95 backdrop-blur text-white p-3.5 rounded-2xl shadow-2xl flex items-center justify-between z-50 border border-slate-700/50 no-print transition-all duration-300';
+      banner.innerHTML = `
+        <div class="flex items-center space-x-3 overflow-hidden">
+          <div class="bg-blue-600 text-white font-bold rounded-xl w-9 h-9 flex items-center justify-center text-sm shadow shrink-0">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+            </svg>
+          </div>
+          <div class="truncate">
+            <p class="text-xs font-bold leading-tight truncate">Pasang Aplikasi SiBintang</p>
+            <p class="text-[11px] text-slate-300 truncate">Akses portal ${teksPeran} langsung dari layar utama</p>
+          </div>
+        </div>
+        <div class="flex items-center space-x-1.5 shrink-0">
+          <button id="btnKonfirmasiPasangBanner" type="button" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition cursor-pointer">
+            Pasang
+          </button>
+          <button id="btnTutupBannerPwa" type="button" class="text-slate-400 hover:text-white px-2 py-1 text-sm font-bold cursor-pointer">
+            ✕
+          </button>
+        </div>
+      `;
+      document.body.appendChild(banner);
+
+      document.getElementById('btnKonfirmasiPasangBanner')?.addEventListener('click', jalankanInstalasiPWA);
+      document.getElementById('btnTutupBannerPwa')?.addEventListener('click', () => {
+        banner.remove();
+      });
+    }
+  }
+}
+
+// Fungsi eksekusi dialog instalasi PWA
+async function jalankanInstalasiPWA() {
+  if (deferredPromptSiBintang) {
+    deferredPromptSiBintang.prompt();
+    const { outcome } = await deferredPromptSiBintang.userChoice;
+    if (outcome === 'accepted') {
+      document.getElementById('pwaInstallBanner')?.remove();
+      document.getElementById('btnDynamicInstallHeader')?.remove();
+    }
+    deferredPromptSiBintang = null;
+  } else {
+    alert('Aplikasi sudah terpasang atau gunakan menu browser (titik tiga) lalu pilih "Tambahkan ke Layar Utama" / "Install Aplikasi".');
+  }
+}
