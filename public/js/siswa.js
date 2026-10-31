@@ -662,11 +662,3 @@ async function loadPengumumanSiswa() {
     container.innerHTML = `<p class="text-xs text-red-500 text-center py-2">Gagal memuat pengumuman terbaru.</p>`;
   }
 }
-
-// 9. PWA Prompt
-let deferredPrompt = null;
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
-  tampilkanBannerInstallPWA();
-});
