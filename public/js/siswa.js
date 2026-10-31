@@ -180,17 +180,24 @@ document.getElementById('formDaftar')?.addEventListener('submit', async (e) => {
 
 // 1 C. Di dalam fungsi yang menangani status login/logout:
 function updateHeaderUI(isLoggedIn) {
+  const container = document.getElementById('headerSiswaContainer');
   const spacer = document.getElementById('headerBalanceSpacer');
   const brand = document.getElementById('headerBrandSection');
   const guestBadge = document.getElementById('headerGuestBadge');
   const btnLogout = document.getElementById('btnLogout');
 
   if (isLoggedIn) {
+    if (container) {
+      container.className = "w-full max-w-4xl mx-auto px-4 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between gap-3 transition-all duration-300";
+    }
     if (spacer) spacer.classList.add('hidden');
     if (brand) brand.classList.remove('mx-auto');
     if (guestBadge) guestBadge.classList.add('hidden');
     if (btnLogout) btnLogout.classList.remove('hidden');
   } else {
+    if (container) {
+      container.className = "w-full max-w-md mx-auto px-4 sm:px-0 py-2.5 sm:py-3 flex items-center justify-between gap-3 transition-all duration-300";
+    }
     if (spacer) spacer.classList.remove('hidden');
     if (brand) brand.classList.add('mx-auto');
     if (guestBadge) guestBadge.classList.remove('hidden');
@@ -259,8 +266,12 @@ function switchTab(tab) {
 // 3. Fungsi Kamera QR Scanner
 function startScanner() {
   const alertBox = document.getElementById('absenAlert');
-  alertBox.classList.add('hidden');
-  html5QrCode = new Html5Qrcode('reader');
+  if (alertBox) alertBox.classList.add('hidden');
+
+  if (!html5QrCode) {
+    html5QrCode = new Html5Qrcode('reader');
+  }
+
   html5QrCode.start(
     { facingMode: 'environment' },
     { fps: 10, qrbox: { width: 230, height: 230 } },
@@ -271,8 +282,8 @@ function startScanner() {
     () => {}
   )
   .then(() => {
-    document.getElementById('btnStartScan').classList.add('hidden');
-    document.getElementById('btnStopScan').classList.remove('hidden');
+    document.getElementById('btnStartScan')?.classList.add('hidden');
+    document.getElementById('btnStopScan')?.classList.remove('hidden');
   })
   .catch(() => {
     showToast('Tidak dapat mengakses kamera. Pastikan izin kamera aktif.', 'error');
