@@ -3,50 +3,38 @@ let html5QrCode = null;
 
 // Inisialisasi saat Halaman Dimuat
 window.addEventListener('DOMContentLoaded', () => {
-  // Isi Dropdown dari constan.js
-isiDropdown('regKelas', DAFTAR_KELAS, 'Pilih Kelas');
-isiDropdown('mapel', DAFTAR_MAPEL, 'Pilih Mata Pelajaran');
-  // Render footer dinamis
+  isiDropdown('regKelas', DAFTAR_KELAS, 'Pilih Kelas');
+  isiDropdown('mapel', DAFTAR_MAPEL, 'Pilih Mata Pelajaran');
   renderFooter();
-  
   initEventListeners();
-  const saved = localStorage.getItem('sibintang_siswa');
-  if (saved) {
-    try {
-      currentStudent = JSON.parse(saved);
-      showDashboard();
-    } catch (e) {
-      localStorage.removeItem('sibintang_siswa');
-      updateHeaderUI(false);
-    }
+
+  // Cek Sesi Siswa via Auth.js
+  currentStudent = Auth.getSiswa();
+  if (currentStudent) {
+    showDashboard();
   } else {
     updateHeaderUI(false);
   }
 });
 
-// Pendaftaran Seluruh Event Listener Elemen DOM
+// Pendaftaran Event Listener Elemen DOM
 function initEventListeners() {
-  // Tombol Header & Autentikasi
   document.getElementById('btnLogout')?.addEventListener('click', logout);
   document.getElementById('authTabBtn-masuk')?.addEventListener('click', () => switchAuthTab('masuk'));
   document.getElementById('authTabBtn-daftar')?.addEventListener('click', () => switchAuthTab('daftar'));
 
-  // Navigasi Tab Menu Siswa
   document.getElementById('tabBtn-absen')?.addEventListener('click', () => switchTab('absen'));
   document.getElementById('tabBtn-tugas')?.addEventListener('click', () => switchTab('tugas'));
   document.getElementById('tabBtn-izin')?.addEventListener('click', () => switchTab('izin'));
   document.getElementById('tabBtn-riwayat')?.addEventListener('click', () => switchTab('riwayat'));
 
-  // Kontrol Tombol Kamera QR
   document.getElementById('btnStartScan')?.addEventListener('click', startScanner);
   document.getElementById('btnStopScan')?.addEventListener('click', stopScanner);
 
-  // Tombol Segarkan / Perbarui Data
   document.getElementById('btnPerbaruiPengumuman')?.addEventListener('click', loadPengumumanSiswa);
   document.getElementById('btnPerbaruiTugasGuru')?.addEventListener('click', loadDaftarTugasGuru);
   document.getElementById('btnSegarkanRiwayat')?.addEventListener('click', loadRiwayat);
 
-  // Banner iOS
   const isIos = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
   const isInStandaloneMode = ('standalone' in window.navigator) && (window.navigator.standalone);
   const iosBanner = document.getElementById('ios-install-banner');
@@ -58,7 +46,6 @@ function initEventListeners() {
   });
 }
 
-// Fungsi Switch Tab Auth (Masuk vs Registrasi)
 function switchAuthTab(type) {
   const formMasuk = document.getElementById('formMasuk');
   const formDaftar = document.getElementById('formDaftar');
@@ -79,7 +66,7 @@ function switchAuthTab(type) {
   }
 }
 
-// 1A. Proses Masuk (Login) Siswa Berdasarkan NIS
+// 1A. Proses Masuk Siswa
 document.getElementById('formMasuk')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   const nis = document.getElementById('loginNis').value.trim();
@@ -96,7 +83,7 @@ document.getElementById('formMasuk')?.addEventListener('submit', async (e) => {
     const result = await res.json();
     if (result.success) {
       currentStudent = result.data;
-      localStorage.setItem('sibintang_siswa', JSON.stringify(currentStudent));
+      Auth.setSiswa(currentStudent);
       showToast('Berhasil masuk ke portal!', 'success');
       showDashboard();
     } else {
@@ -110,7 +97,7 @@ document.getElementById('formMasuk')?.addEventListener('submit', async (e) => {
   }
 });
 
-// 1B. Proses Registrasi (Daftar Baru) Siswa dengan Token Kelas
+// 1B. Proses Registrasi Siswa
 document.getElementById('formDaftar')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   const btn = document.getElementById('btnSubmitDaftar');
@@ -137,7 +124,7 @@ document.getElementById('formDaftar')?.addEventListener('submit', async (e) => {
     const result = await res.json();
     if (result.success) {
       currentStudent = result.data;
-      localStorage.setItem('sibintang_siswa', JSON.stringify(currentStudent));
+      Auth.setSiswa(currentStudent);
       showToast('Registrasi berhasil! Selamat datang.', 'success');
       showDashboard();
     } else {
@@ -151,7 +138,6 @@ document.getElementById('formDaftar')?.addEventListener('submit', async (e) => {
   }
 });
 
-// 1 C. Di dalam fungsi yang menangani status login/logout:
 function updateHeaderUI(isLoggedIn) {
   const container = document.getElementById('headerSiswaContainer');
   const spacer = document.getElementById('headerBalanceSpacer');
@@ -161,7 +147,6 @@ function updateHeaderUI(isLoggedIn) {
 
   if (isLoggedIn) {
     if (container) {
-      // SETELAH LOGIN: Samakan persis dengan <main> dashboard (max-w-6xl mx-auto px-4 md:px-6)
       container.className = "w-full max-w-6xl mx-auto px-4 md:px-6 py-2.5 sm:py-3 flex items-center justify-between gap-3 transition-all duration-300";
     }
     if (spacer) spacer.classList.add('hidden');
@@ -170,23 +155,19 @@ function updateHeaderUI(isLoggedIn) {
     if (btnLogout) btnLogout.classList.remove('hidden');
   } else {
     if (container) {
-      // SEBELUM LOGIN: Samakan persis dengan kotak form login (max-w-md mx-auto px-4 sm:px-0)
       container.className = "w-full max-w-md mx-auto px-4 sm:px-0 py-2.5 sm:py-3 flex items-center justify-between gap-3 transition-all duration-300";
     }
     if (spacer) spacer.classList.remove('hidden');
-    if (brand) brand.classList.remove('mx-auto'); // Jangan beri mx-auto jika ada guestBadge di kanan agar tetap flex justify-between
+    if (brand) brand.classList.remove('mx-auto');
     if (guestBadge) guestBadge.classList.remove('hidden');
     if (btnLogout) btnLogout.classList.add('hidden');
   }
-  // Panggil fungsi PWA untuk Siswa:
   aturTampilanPasangPWA(isLoggedIn, 'siswaHeaderRight', 'Siswa');
 }
 
 function showDashboard() {
   document.getElementById('loginSection')?.classList.add('hidden');
   document.getElementById('appSection')?.classList.remove('hidden');
-
-  // Panggil fungsi header terpadu
   updateHeaderUI(true);
 
   document.getElementById('profileNama').textContent = currentStudent.nama;
@@ -200,18 +181,22 @@ function showDashboard() {
   loadDaftarTugasGuru();
 }
 
-function logout() {
+async function logout() {
+  const yakin = await konfirmasiModal({
+    judul: 'Keluar Portal Siswa',
+    pesan: 'Apakah Anda yakin ingin keluar dari akun ini?',
+    teksKonfirmasi: 'Keluar',
+    tipe: 'warning'
+  });
+  if (!yakin) return;
+
   stopScanner();
-  localStorage.removeItem('sibintang_siswa');
+  Auth.logoutSiswa();
   currentStudent = null;
 
   document.getElementById('appSection')?.classList.add('hidden');
   document.getElementById('loginSection')?.classList.remove('hidden');
-
-  // Kembalikan posisi header ke tengah
   updateHeaderUI(false);
-
-  showToast('Berhasil keluar dari sesi.', 'info');
 }
 
 // 2. Navigasi Antar Menu Siswa
@@ -240,7 +225,7 @@ function switchTab(tab) {
   if (tab === 'riwayat') loadRiwayat();
 }
 
-// 3. Fungsi Kamera QR Scanner
+// 3. Fungsi Kamera QR Scanner & Absensi
 function startScanner() {
   const alertBox = document.getElementById('absenAlert');
   if (alertBox) alertBox.classList.add('hidden');
@@ -289,7 +274,6 @@ async function kirimAbsensi(qrCodeData) {
     alertBox.classList.remove('hidden');
   }
 
-  // Siapkan objek data kehadiran siswa
   const payload = {
     nis: currentStudent?.nis,
     nama: currentStudent?.nama,
@@ -298,7 +282,6 @@ async function kirimAbsensi(qrCodeData) {
   };
 
   try {
-    // 1. Validasi format string QR & kesesuaian kelas langsung di sisi browser
     if (typeof qrCodeData === 'string' && qrCodeData.startsWith('ABSEN-SIBINTANG')) {
       const qrParts = qrCodeData.split('|').map((p) => p.trim());
       const kelasQR = (qrParts[1] || '').toUpperCase();
@@ -309,12 +292,11 @@ async function kirimAbsensi(qrCodeData) {
       }
     }
 
-    // 2. Jika perangkat sedang offline murni saat scan, amankan langsung ke antrean
     if (!navigator.onLine) {
       if (typeof simpanKeAntreanOffline === 'function') {
         simpanKeAntreanOffline(payload);
       }
-      bunyikanBeep('success'); // Tetap beri nada positif agar siswa tidak panik
+      bunyikanBeep('success');
 
       if (alertBox) {
         alertBox.className =
@@ -325,7 +307,6 @@ async function kirimAbsensi(qrCodeData) {
       return;
     }
 
-    // 3. Kirim permintaan pencatatan ke server backend
     const res = await fetch('/api/absen', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -349,7 +330,6 @@ async function kirimAbsensi(qrCodeData) {
       throw new Error(result.message || 'Gagal memproses absensi.');
     }
   } catch (err) {
-    // 4. Tangani jika kegagalan disebabkan oleh gangguan jaringan mendadak / timeout
     const isNetworkError =
       !navigator.onLine ||
       err.name === 'TypeError' ||
@@ -371,7 +351,6 @@ async function kirimAbsensi(qrCodeData) {
       return;
     }
 
-    // 5. Kesalahan validasi logika (misal: salah kelas atau ditolak oleh server)
     bunyikanBeep('error');
 
     if (alertBox) {
@@ -384,7 +363,7 @@ async function kirimAbsensi(qrCodeData) {
   }
 }
 
-// 4. Memuat Daftar Tugas / PR yang Diberikan Guru
+// 4. Memuat Daftar Tugas Guru
 async function loadDaftarTugasGuru() {
   if (!currentStudent) return;
   const container = document.getElementById('containerDaftarTugasGuru');
@@ -417,7 +396,7 @@ async function loadDaftarTugasGuru() {
           <p class="text-xs text-slate-600 leading-relaxed">${t.deskripsi || '-'}</p>
           <div class="pt-2 flex items-center justify-between gap-2 flex-wrap">
             ${fileLinkBtn}
-            <button type="button" onclick="pilihTugas('${safeJudul}', '${safeMapel}')" class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 rounded-lg transition ml-auto">Kumpul Tugas Ini</button>
+            <button type="button" onclick="pilihTugas('${safeJudul}', '${safeMapel}')" class="cursor-pointer text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 rounded-lg transition ml-auto">Kumpul Tugas Ini</button>
           </div>
         </div>
       `;
@@ -435,7 +414,7 @@ function pilihTugas(judul, mapel) {
   inputJudul?.scrollIntoView({ behavior: 'smooth' });
 }
 
-// 5. Proses Upload Jawaban Tugas ke Google Drive & Sheet
+// 5. Upload Tugas Siswa
 document.getElementById('tugasForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   const btn = document.getElementById('btnSubmitTugas');
@@ -458,7 +437,7 @@ document.getElementById('tugasForm')?.addEventListener('submit', async (e) => {
   formData.append('kelas', currentStudent.kelas);
   formData.append('mapel', document.getElementById('mapel').value);
   formData.append('judulTugas', judulVal);
-  formData.append('judul', judulVal); // Dukungan fallback jika backend membaca properti 'judul'
+  formData.append('judul', judulVal);
   formData.append('fileTugas', fileInput);
 
   try {
@@ -547,7 +526,7 @@ async function loadRiwayat() {
   }
 }
 
-// 7. Handler Submit Form Izin / Sakit
+// 7. Pengajuan Izin Siswa
 document.getElementById('izinForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   const btn = document.getElementById('btnSubmitIzin');
@@ -605,9 +584,7 @@ async function loadRiwayatIzin() {
     }
 
     tbody.innerHTML = result.izin.map((item) => {
-      // Badge Status Verifikasi Guru
       let badgeVerifikasi = `<span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-semibold text-[11px] inline-flex items-center gap-1">Menunggu</span>`;
-      
       if (item.verifikasi === 'Disetujui') {
         badgeVerifikasi = `<span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold text-[11px] inline-flex items-center gap-1">✓ Disetujui</span>`;
       } else if (item.verifikasi === 'Ditolak') {
@@ -634,7 +611,7 @@ async function loadRiwayatIzin() {
   }
 }
 
-// 8. Papan Pengumuman Sekolah
+// 8. Pengumuman Sekolah
 async function loadPengumumanSiswa() {
   const container = document.getElementById('listPengumumanSiswa');
   if (!container) return;
@@ -686,16 +663,8 @@ async function loadPengumumanSiswa() {
   }
 }
 
-// 9. PWA Service Worker & Banner Instalasi
+// 9. PWA Prompt
 let deferredPrompt = null;
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker
-      .register('/sw.js')
-      .catch((err) => console.error('Gagal mendaftarkan Service Worker:', err));
-  });
-}
-
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredPrompt = e;
