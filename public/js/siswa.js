@@ -547,21 +547,38 @@ async function loadRiwayatIzin() {
     const res = await fetch(`/api/izin/${currentStudent.nis}`);
     const result = await res.json();
     const tbody = document.getElementById('tableRiwayatIzin');
+    if (!tbody) return;
 
-    if (!result.success || result.izin.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">Belum ada riwayat izin.</td></tr>`;
+    if (!result.success || !result.izin || result.izin.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400">Belum ada riwayat izin / sakit.</td></tr>`;
       return;
     }
 
-    tbody.innerHTML = result.izin.map((item) => `
-      <tr class="hover:bg-slate-50">
-        <td class="p-2.5">${item.waktu}</td>
-        <td class="p-2.5"><span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-bold">${item.status}</span></td>
-        <td class="p-2.5">${item.tanggal}</td>
-        <td class="p-2.5">${item.keterangan}</td>
-        <td class="p-2.5">${item.link !== '-' ? `<a href="${item.link}" target="_blank" class="text-blue-600 font-bold underline inline-flex items-center">Lihat Surat ${ICONS.external}</a>` : 'Tanpa Lampiran'}</td>
-      </tr>
-    `).join('');
+    tbody.innerHTML = result.izin.map((item) => {
+      // Badge Status Verifikasi Guru
+      let badgeVerifikasi = `<span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-semibold text-[11px] inline-flex items-center gap-1">Menunggu</span>`;
+      
+      if (item.verifikasi === 'Disetujui') {
+        badgeVerifikasi = `<span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold text-[11px] inline-flex items-center gap-1">✓ Disetujui</span>`;
+      } else if (item.verifikasi === 'Ditolak') {
+        badgeVerifikasi = `<span class="bg-rose-100 text-rose-800 px-2 py-0.5 rounded font-bold text-[11px] inline-flex items-center gap-1">✕ Ditolak</span>`;
+      }
+
+      const lampiranLink = (item.link && item.link !== '-' && item.link !== '#')
+        ? `<a href="${item.link}" target="_blank" class="text-blue-600 font-bold underline inline-flex items-center">Lihat Surat ${ICONS.external}</a>`
+        : '<span class="text-slate-400">Tanpa Lampiran</span>';
+
+      return `
+        <tr class="hover:bg-slate-50">
+          <td class="p-2.5 text-slate-500 whitespace-nowrap">${item.waktu}</td>
+          <td class="p-2.5"><span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-semibold">${item.status}</span></td>
+          <td class="p-2.5 font-medium text-slate-800 whitespace-nowrap">${item.tanggal}</td>
+          <td class="p-2.5 text-slate-600">${item.keterangan}</td>
+          <td class="p-2.5 whitespace-nowrap">${lampiranLink}</td>
+          <td class="p-2.5 whitespace-nowrap">${badgeVerifikasi}</td>
+        </tr>
+      `;
+    }).join('');
   } catch (err) {
     console.error('Gagal memuat riwayat izin:', err);
   }
