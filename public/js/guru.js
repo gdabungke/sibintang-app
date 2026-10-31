@@ -137,7 +137,7 @@ function updateGuruHeaderUI(isLoggedIn) {
 
   if (isLoggedIn) {
     if (container) {
-      container.className = "w-full max-w-5xl mx-auto px-4 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between gap-3 transition-all duration-300";
+      container.className = "w-full max-w-6xl mx-auto px-4 md:px-6 py-2.5 sm:py-3 flex items-center justify-between gap-3 transition-all duration-300";
     }
     if (spacer) spacer.classList.add('hidden');
     if (brand) brand.classList.remove('mx-auto');
