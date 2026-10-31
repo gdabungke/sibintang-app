@@ -554,3 +554,120 @@ const ICONS = {
 
 // Pastikan tersedia secara global di window
 window.ICONS = ICONS;
+
+// ==========================================
+// OFFLINE QUEUE MANAGER (SiBintang)
+// ==========================================
+
+const KUNCI_ANTREAN_OFFLINE = 'sibintang_offline_queue';
+
+/**
+ * Mengambil seluruh daftar antrean absensi yang belum terkirim
+ * @returns {Array}
+ */
+function dapatkanAntreanOffline() {
+  try {
+    return JSON.parse(localStorage.getItem(KUNCI_ANTREAN_OFFLINE) || '[]');
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Menyimpan data scan ke antrean lokal saat offline
+ * @param {Object} dataAbsen
+ */
+function simpanKeAntreanOffline(dataAbsen) {
+  const antrean = dapatkanAntreanOffline();
+  
+  // Cegah duplikasi data yang sama persis di antrean lokal
+  const sudahAda = antrean.some(
+    (item) => item.nis === dataAbsen.nis && item.qrCodeData === dataAbsen.qrCodeData
+  );
+
+  if (!sudahAda) {
+    antrean.push({
+      ...dataAbsen,
+      waktuScanLokal: new Date().toLocaleTimeString('id-ID'),
+      dibuatPada: Date.now()
+    });
+    localStorage.setItem(KUNCI_ANTREAN_OFFLINE, JSON.stringify(antrean));
+  }
+}
+
+/**
+ * Menghapus satu item dari antrean setelah berhasil disinkronisasi
+ * @param {number} timestamp
+ */
+function hapusDariAntreanOffline(timestamp) {
+  let antrean = dapatkanAntreanOffline();
+  antrean = antrean.filter((item) => item.dibuatPada !== timestamp);
+  localStorage.setItem(KUNCI_ANTREAN_OFFLINE, JSON.stringify(antrean));
+}
+
+/**
+ * Sinkronisasi otomatis data antrean ke server saat online
+ */
+async function prosesSinkronisasiAntrean() {
+  if (!navigator.onLine) return;
+
+  const antrean = dapatkanAntreanOffline();
+  if (antrean.length === 0) return;
+
+  showToast(`Menghubungkan... Mengirim ${antrean.length} absensi tertunda.`, 'info');
+
+  for (const item of antrean) {
+    try {
+      const res = await fetch('/api/absen', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nis: item.nis,
+          nama: item.nama,
+          kelas: item.kelas,
+          qrCodeData: item.qrCodeData
+        })
+      });
+
+      const result = await res.json();
+
+      if (res.ok && result.success) {
+        hapusDariAntreanOffline(item.dibuatPada);
+      } else if (result.message && result.message.includes('sudah')) {
+        // Jika di server ternyata sudah tercatat, keluarkan dari antrean
+        hapusDariAntreanOffline(item.dibuatPada);
+      }
+    } catch {
+      // Jika jaringan masih bermasalah saat looping, hentikan sementara
+      break;
+    }
+  }
+
+  const sisa = dapatkanAntreanOffline().length;
+  if (sisa === 0) {
+    bunyikanBeep('success');
+    showToast('Semua absensi offline berhasil disinkronkan!', 'success');
+    if (typeof loadRiwayat === 'function') loadRiwayat();
+  }
+}
+
+// Pantau status jaringan peramban secara otomatis
+window.addEventListener('online', () => {
+  showToast('Koneksi internet kembali aktif.', 'info');
+  prosesSinkronisasiAntrean();
+});
+
+window.addEventListener('offline', () => {
+  showToast('Koneksi terputus. Sistem beralih ke Mode Offline.', 'warning');
+});
+
+// Jalankan pengecekan antrean saat pertama kali aplikasi dibuka
+window.addEventListener('DOMContentLoaded', () => {
+  if (navigator.onLine) {
+    prosesSinkronisasiAntrean();
+  }
+});
+
+// Daftarkan ke scope global window
+window.simpanKeAntreanOffline = simpanKeAntreanOffline;
+window.prosesSinkronisasiAntrean = prosesSinkronisasiAntrean;
