@@ -303,8 +303,8 @@ function aturTampilanPasangPWA(isLoggedIn, containerTargetId, teksPeran = 'Siswa
       btnHeader.id = 'btnDynamicInstallHeader';
       btnHeader.type = 'button';
       btnHeader.title = 'Pasang Aplikasi SiBintang';
-      // Styling emerald pill sejajar dengan tombol logout merah
-      btnHeader.className = 'inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm border border-emerald-500/30 transition-all duration-200 cursor-pointer';
+      // Styling emerald pill sejajar dan kembar persis dengan tombol logout merah
+      btnHeader.className = 'inline-flex items-center gap-1.5 bg-emerald-600/90 hover:bg-emerald-600 active:scale-95 text-white text-xs font-semibold px-3 py-1.5 rounded-xl transition shadow-sm border border-emerald-500/40 whitespace-nowrap cursor-pointer';
       btnHeader.innerHTML = `
         <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
