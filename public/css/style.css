@@ -86,17 +86,32 @@ select {
 }
 
 /* ==========================================================================
-   5. ATURAN CETAK (PRINT-SAFE QR CODE & LAPORAN)
+   5. ATURAN CETAK (PRINT-SAFE POSTER QR CODE & LAPORAN)
    ========================================================================== */
 @media print {
+  /* Kunci ukuran kertas A4 Portrait dengan margin 1 cm */
+  @page {
+    size: A4 portrait;
+    margin: 1cm;
+  }
+
+  /* Hilangkan elemen yang memiliki kelas .no-print */
   .no-print {
     display: none !important;
   }
 
+  /* Sembunyikan semua elemen dashboard */
   body * {
     visibility: hidden;
   }
 
+  /* Pastikan warna latar & border tercetak akurat (tidak pudar) */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Tampilkan kartu QR di tengah halaman cetak */
   #printArea,
   #printArea * {
     visibility: visible;
@@ -104,25 +119,17 @@ select {
 
   #printArea {
     position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    box-shadow: none !important;
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: 100% !important;
+    max-width: 440px !important;
+    margin: 0 auto !important;
+    padding: 24px !important;
     border: 3px solid var(--logo-blue) !important;
+    border-radius: 20px !important;
+    box-shadow: none !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
-}
-
-/* Stroke otomatis mengikuti lekuk luar logo PNG */
-.logo-contour-stroke {
-  filter: drop-shadow(0 0 2px #fde047) 
-          drop-shadow(0 0 5px #f59e0b) 
-          drop-shadow(0 3px 6px rgba(0, 0, 0, 0.45));
-  transition: transform 0.2s ease, filter 0.2s ease;
-}
-
-.logo-contour-stroke:hover {
-  transform: scale(1.05);
-  filter: drop-shadow(0 0 4px #fef08a) 
-          drop-shadow(0 0 8px #f59e0b) 
-          drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5));
 }
