@@ -1,4 +1,21 @@
-credentials.json
+# ==========================================
+# LOCAL DEVELOPMENT & MOCK DATA (PRIVATE)
+# ==========================================
+
+# Sembunyikan skrip simulator API lokal jika tidak ingin dipublikasi ke GitHub
+public/js/mock-local.js
+
+# Data cache/antrean offline & berkas sementara
+*.log
+.DS_Store
+Thumbs.db
+
+# Lingkungan & Kredensial
 .env
+.env.local
+.env.*.local
+
+# Dependensi & Build
 node_modules/
 dist/
+build/

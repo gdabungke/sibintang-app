@@ -1,17 +1,19 @@
-const CACHE_NAME = 'sibintang-pwa-v2';
+const CACHE_NAME = 'sibintang-pwa-v3';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/guru.html',
   '/css/style.css',
-  '/js/constants.js',
-  '/js/siswa.js',
-  '/js/guru.js',
+  '/js/app.js',         
+  '/js/constants.js',   
+  '/js/auth.js',        
+  '/js/siswa.js',       
+  '/js/guru.js',        
   '/manifest.json',
-  '/icon.png' 
+  '/icon.png'
 ];
 
-// 1. Install Service Worker & Simpan Aset Statis
+// 1. Install Service Worker & Simpan Aset Statis ke Cache
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
@@ -35,12 +37,12 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// 3. Strategi Fetch: API selalu ambil data terbaru dari server, aset statis gunakan Cache bila offline
+// 3. Strategi Fetch (Network First, Cache Fallback untuk aset statis)
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   const url = new URL(req.url);
 
-  // Jangan pernah men-cache request API ke Google Sheet / Drive
+  // Jangan pernah men-cache request API dinamis (ke server / Google Sheets / Drive)
   if (url.pathname.startsWith('/api/') || req.method !== 'GET') {
     return;
   }
@@ -48,13 +50,13 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(req)
       .then((networkRes) => {
-        // Hanya simpan respon yang valid (status 200) ke cache
+        // Simpan salinan respon yang valid ke cache untuk penggunaan offline berikutnya
         if (networkRes && networkRes.status === 200) {
           const resClone = networkRes.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(req, resClone));
         }
         return networkRes;
       })
-      .catch(() => caches.match(req))
+      .catch(() => caches.match(req)) // Jika internet mati/gagal fetch, ambil dari cache
   );
 });

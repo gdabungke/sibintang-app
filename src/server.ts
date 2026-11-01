@@ -417,13 +417,73 @@ app.post('/api/guru/login', async (req: Request, res: Response) => {
   }
 });
 
-// 3. ENDPOINT ABSENSI QR CODE (Menggunakan NIS)
+// 3. ENDPOINT ABSENSI QR CODE (Dengan Validasi Kelas & Anti Duplikasi)
 app.post('/api/absen', async (req: Request, res: Response) => {
   try {
     const { nis, nama, kelas, qrCodeData } = req.body;
+
     if (!nis) {
       return res.status(400).json({ success: false, message: 'NIS siswa tidak valid.' });
     }
+
+    if (!qrCodeData || typeof qrCodeData !== 'string') {
+      return res.status(400).json({ success: false, message: 'Data QR Code tidak terbaca.' });
+    }
+
+    // 1. Parsing QR Code: Format ABSEN-SIBINTANG | KELAS | TANGGAL | SESI
+    const qrParts = qrCodeData.split('|').map((item: string) => item.trim());
+
+    if (qrParts.length < 4 || !qrParts[0].startsWith('ABSEN-SIBINTANG')) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Kode QR tidak valid atau format tidak sesuai.' 
+      });
+    }
+
+    const kelasQR = qrParts[1].toUpperCase();
+    const tanggalQR = qrParts[2]; // Contoh: 31/10/2026 atau 2026-10-31
+    const sesiQR = qrParts[3].toLowerCase(); // Contoh: absen pagi / absen siang
+    const kelasSiswa = (kelas || '').trim().toUpperCase();
+
+    // 2. Validasi Kecocokan Kelas
+    if (kelasSiswa !== kelasQR) {
+      return res.status(403).json({
+        success: false,
+        message: `Gagal Absen! QR Code ini untuk Kelas ${kelasQR}, Anda terdaftar di Kelas ${kelasSiswa || '-'}.`
+      });
+    }
+
+    // 3. Validasi Anti-Duplikasi: Baca sheet Absensi
+    // Kolom: A=Waktu, B=NIS, C=Nama, D=Kelas, E=Status, F=qrCodeData
+    const sheetData = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: 'Absensi!B:F',
+    });
+
+    const rows = sheetData.data.values || [];
+    
+    // Periksa apakah NIS sudah tercatat pada qrCodeData atau tanggal & sesi yang sama
+    const sudahAbsen = rows.some((row) => {
+      const rowNis = (row[0] || '').toString().trim();
+      const rowQrData = (row[4] || '').toString().trim().toLowerCase();
+
+      if (rowNis !== nis.toString().trim()) return false;
+
+      // Cek apakah string QR sama persis atau mengandung tanggal & sesi yang sama
+      return (
+        rowQrData === qrCodeData.trim().toLowerCase() ||
+        (rowQrData.includes(tanggalQR.toLowerCase()) && rowQrData.includes(sesiQR))
+      );
+    });
+
+    if (sudahAbsen) {
+      return res.status(409).json({
+        success: false,
+        message: `Anda sudah melakukan ${qrParts[3]} hari ini!`
+      });
+    }
+
+    // 4. Jika belum pernah absen, simpan ke sheet
     const waktu = getWaktuWIB();
 
     await sheets.spreadsheets.values.append({
@@ -431,14 +491,19 @@ app.post('/api/absen', async (req: Request, res: Response) => {
       range: 'Absensi!A:F',
       valueInputOption: 'USER_ENTERED',
       requestBody: {
-        values: [[waktu, nis, nama, kelas, 'Hadir', qrCodeData]],
+        values: [[waktu, nis, nama, kelasSiswa, 'Hadir', qrCodeData]],
       },
     });
 
-    return res.json({ success: true, message: 'Absensi berhasil dicatat!', waktu });
+    return res.json({ 
+      success: true, 
+      message: `Absensi ${qrParts[3]} Kelas ${kelasSiswa} berhasil dicatat!`, 
+      waktu 
+    });
+
   } catch (error: any) {
     console.error('Error Absen:', error.message);
-    return res.status(500).json({ success: false, message: 'Gagal menyimpan absensi.' });
+    return res.status(500).json({ success: false, message: 'Gagal memproses absensi.' });
   }
 });
 
