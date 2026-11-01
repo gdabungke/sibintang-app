@@ -552,7 +552,8 @@ async function submitTugasSiswa(e) {
   const btn = document.getElementById('btnSubmitTugas');
   const alertBox = document.getElementById('tugasAlert');
   const fileInput = document.getElementById('fileTugas')?.files?.[0];
-  const judulVal = document.getElementById('judulTugas').value.trim();
+  const judulVal = document.getElementById('judulTugas')?.value.trim();
+  const mapelVal = document.getElementById('mapel')?.value || 'Tugas';
 
   if (!fileInput) {
     showToast('Harap pilih berkas/file tugas Anda!', 'error');
@@ -563,33 +564,56 @@ async function submitTugasSiswa(e) {
   btn.disabled = true;
   alertBox.classList.add('hidden');
 
-  const formData = new FormData();
-  formData.append('nis', currentStudent.nis);
-  formData.append('nama', currentStudent.nama);
-  formData.append('kelas', currentStudent.kelas);
-  formData.append('mapel', document.getElementById('mapel').value);
-  formData.append('judulTugas', judulVal);
-  formData.append('judul', judulVal);
-  formData.append('fileTugas', fileInput);
-
   try {
+    // 1. Format nama berkas: nama_kelas_matapelajaran_timestamp
+    const cleanNama = (currentStudent?.nama || 'Siswa').replace(/\s+/g, '_');
+    const cleanKelas = (currentStudent?.kelas || 'Kelas').replace(/\s+/g, '_');
+    const cleanMapel = mapelVal.replace(/\s+/g, '_');
+    const timestamp = Math.floor(Date.now() / 1000);
+
+    const namaFileKustom = `${cleanNama}_${cleanKelas}_${cleanMapel}_${timestamp}`;
+    const namaSubFolder = `Tugas_${cleanKelas}_${cleanMapel}`;
+
+    // Unggah berkas langsung ke Google Drive via Apps Script
+    showToast('Mengunggah file ke Google Drive...', 'info');
+    const linkDrive = await uploadFileKeDrivePribadi(fileInput, namaFileKustom, namaSubFolder);
+
+    if (!linkDrive) {
+      throw new Error('Gagal mendapatkan tautan file dari Google Drive.');
+    }
+
+    // 2. Kirim metadata tugas beserta link Google Drive ke backend Vercel
+    btn.textContent = 'Menyimpan data tugas...';
     const res = await fetch('/api/tugas', {
       method: 'POST',
-      body: formData,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nis: currentStudent.nis,
+        nama: currentStudent.nama,
+        kelas: currentStudent.kelas,
+        mapel: mapelVal,
+        judulTugas: judulVal,
+        judul: judulVal,
+        link: linkDrive,
+        fileLink: linkDrive
+      }),
     });
+
     const result = await res.json();
 
     if (result.success) {
       alertBox.className = 'mt-3 p-2.5 rounded-xl text-xs font-bold text-center bg-emerald-100 text-emerald-800';
       alertBox.innerHTML = `
-        <div class="flex items-center justify-center gap-1.5 font-bold mb-1">${ICONS.check}<span>${result.message}</span></div>
-        <a href="${result.fileLink}" target="_blank" class="underline font-bold inline-flex items-center text-blue-700">Lihat File di Google Drive ${ICONS.external}</a>
+        <div class="flex items-center justify-center gap-1.5 font-bold mb-1">${ICONS.check}<span>${result.message || 'Tugas berhasil disimpan!'}</span></div>
+        <a href="${linkDrive}" target="_blank" class="underline font-bold inline-flex items-center text-blue-700">Lihat File di Google Drive ${ICONS.external}</a>
       `;
       alertBox.classList.remove('hidden');
       showToast('Tugas berhasil diupload!', 'success');
       document.getElementById('tugasForm').reset();
       loadRiwayat();
-      muatUlangNotifikasiSiswa();
+      if (typeof muatUlangNotifikasiSiswa === 'function') {
+        muatUlangNotifikasiSiswa();
+      }
     } else {
       throw new Error(result.message || result.error);
     }
@@ -597,7 +621,7 @@ async function submitTugasSiswa(e) {
     alertBox.className = 'mt-3 p-2.5 rounded-xl text-xs font-bold text-center bg-rose-100 text-rose-700 flex items-center justify-center gap-1.5';
     alertBox.innerHTML = `${ICONS.error}<span>Gagal mengupload tugas: ${err.message || 'Kesalahan jaringan'}</span>`;
     alertBox.classList.remove('hidden');
-    showToast('Gagal mengupload tugas.', 'error');
+    showToast('Gagal mengupload tugas: ' + (err.message || ''), 'error');
   } finally {
     btn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg><span>Kirim ke Google Drive</span>`;
     btn.disabled = false;
@@ -612,40 +636,75 @@ async function submitIzinSiswa(e) {
   e.preventDefault();
   const btn = document.getElementById('btnSubmitIzin');
   const alertBox = document.getElementById('izinAlert');
-  btn.textContent = 'Mengirim...';
+  const fileInput = document.getElementById('fileBukti')?.files?.[0];
+  const statusIzinVal = document.getElementById('statusIzin')?.value || 'Izin';
+
+  btn.textContent = 'Memproses berkas...';
   btn.disabled = true;
   alertBox.classList.add('hidden');
 
-  const formData = new FormData();
-  formData.append('nis', currentStudent.nis);
-  formData.append('nama', currentStudent.nama);
-  formData.append('kelas', currentStudent.kelas);
-  formData.append('statusIzin', document.getElementById('statusIzin').value);
-  formData.append('tanggalMulai', document.getElementById('tanggalMulai').value);
-  formData.append('keterangan', document.getElementById('keteranganIzin').value.trim());
-
-  const fileInput = document.getElementById('fileBukti').files[0];
-  if (fileInput) formData.append('fileBukti', fileInput);
-
   try {
-    const res = await fetch('/api/izin', { method: 'POST', body: formData });
+    let linkBukti = '-';
+
+    // 1. Jika ada lampiran surat dokter/bukti izin, upload langsung ke Google Drive via Apps Script
+    if (fileInput) {
+      if (typeof showToast === 'function') {
+        showToast('Mengunggah bukti surat izin ke Google Drive...', 'info');
+      }
+      btn.textContent = 'Mengunggah ke Drive...';
+
+      // Format nama berkas: SuratIzin_nama_kelas_timestamp
+      const cleanNama = (currentStudent?.nama || 'Siswa').replace(/\s+/g, '_');
+      const cleanKelas = (currentStudent?.kelas || 'Kelas').replace(/\s+/g, '_');
+      const cleanStatus = statusIzinVal.replace(/\s+/g, '_');
+      const timestamp = Math.floor(Date.now() / 1000);
+
+      const namaFileKustom = `Surat${cleanStatus}_${cleanNama}_${cleanKelas}_${timestamp}`;
+      const namaSubFolder = `Surat_Izin_${cleanKelas}`;
+
+      linkBukti = await uploadFileKeDrivePribadi(fileInput, namaFileKustom, namaSubFolder);
+    }
+
+    // 2. Kirim data izin beserta tautan Google Drive ke backend Vercel
+    btn.textContent = 'Mengirim permohonan...';
+    const res = await fetch('/api/izin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nis: currentStudent.nis,
+        nama: currentStudent.nama,
+        kelas: currentStudent.kelas,
+        statusIzin: statusIzinVal,
+        tanggalMulai: document.getElementById('tanggalMulai').value,
+        keterangan: document.getElementById('keteranganIzin').value.trim(),
+        link: linkBukti,
+        linkBukti: linkBukti
+      }),
+    });
+
     const result = await res.json();
 
     if (result.success) {
       alertBox.className = 'mt-3 p-2.5 rounded-xl text-xs font-bold text-center bg-emerald-100 text-emerald-800 flex items-center justify-center gap-1.5';
-      alertBox.innerHTML = `${ICONS.check}<span>${result.message}</span>`;
+      alertBox.innerHTML = `${ICONS.check}<span>${result.message || 'Pengajuan izin berhasil terkirim!'}</span>`;
       alertBox.classList.remove('hidden');
-      showToast('Pengajuan izin terkirim!', 'success');
+      if (typeof showToast === 'function') {
+        showToast('Pengajuan izin terkirim!', 'success');
+      }
       document.getElementById('izinForm').reset();
-      loadRiwayatIzin();
+      if (typeof loadRiwayatIzin === 'function') {
+        loadRiwayatIzin();
+      }
     } else {
-      throw new Error(result.message);
+      throw new Error(result.message || result.error);
     }
-  } catch {
+  } catch (err) {
     alertBox.className = 'mt-3 p-2.5 rounded-xl text-xs font-bold text-center bg-rose-100 text-rose-700 flex items-center justify-center gap-1.5';
-    alertBox.innerHTML = `${ICONS.error}<span>Gagal mengirim izin.</span>`;
+    alertBox.innerHTML = `${ICONS.error}<span>Gagal mengirim izin: ${err.message || 'Kesalahan jaringan'}</span>`;
     alertBox.classList.remove('hidden');
-    showToast('Gagal mengirim izin.', 'error');
+    if (typeof showToast === 'function') {
+      showToast('Gagal mengirim izin.', 'error');
+    }
   } finally {
     btn.innerHTML = `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg><span>Kirim Permohonan Izin</span>`;
     btn.disabled = false;
