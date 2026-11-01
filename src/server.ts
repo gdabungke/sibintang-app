@@ -1,10 +1,8 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
-import multer from 'multer';
 import { google } from 'googleapis';
 import dotenv from 'dotenv';
 import path from 'path';
-import { Readable } from 'stream';
 
 dotenv.config();
 
@@ -14,87 +12,6 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
-
-// Ambil ID folder khusus (jika belum diset di .env/Vercel, akan otomatis memakai DRIVE_FOLDER_ID default)
-const FOLDER_TUGAS_SISWA = (process.env.DRIVE_FOLDER_TUGAS_SISWA || process.env.DRIVE_FOLDER_ID || '').trim();
-const FOLDER_SOAL_GURU = (process.env.DRIVE_FOLDER_SOAL_GURU || process.env.DRIVE_FOLDER_ID || '').trim();
-const FOLDER_IZIN_SISWA = (process.env.DRIVE_FOLDER_IZIN_SISWA || process.env.DRIVE_FOLDER_ID || '').trim();
-
-// HELPER: BUAT SUB-FOLDER OTOMATIS
-async function buatSubFolderDrive(namaFolder: string, parentFolderId?: string): Promise<string> {
-  const cleanParent = (parentFolderId || '').trim();
-
-  // Cegah pembuatan folder di root Service Account (karena kuota service account 0 byte)
-  if (!cleanParent || cleanParent === '-' || cleanParent === '') {
-    console.warn('ID folder induk tidak ditemukan, melewati pembuatan subfolder.');
-    return '';
-  }
-
-  const folder = await drive.files.create({
-    supportsAllDrives: true,
-    requestBody: {
-      name: namaFolder,
-      mimeType: 'application/vnd.google-apps.folder',
-      parents: [cleanParent], // Wajib agar subfolder masuk ke Drive pemilik asli
-    },
-    fields: 'id',
-  });
-
-  return folder.data.id || '';
-}
-
-// HELPER: UPLOAD FILE KE DALAM SUB-FOLDER KHUSUS
-async function uploadKeDriveDenganSubFolder(
-  file: Express.Multer.File,
-  parentFolderId: string,
-  namaSubFolder: string,
-  customNamaFile: string
-): Promise<string> {
-  const cleanParent = (parentFolderId || '').trim();
-
-  if (!cleanParent || cleanParent === '-' || cleanParent === '') {
-    throw new Error('ID Folder Google Drive belum dikonfigurasi di Environment Variables!');
-  }
-
-  // 1. Buat sub-folder di dalam folder induk
-  let targetFolderId = cleanParent;
-  try {
-    const newSubFolderId = await buatSubFolderDrive(namaSubFolder, cleanParent);
-    if (newSubFolderId) {
-      targetFolderId = newSubFolderId;
-    }
-  } catch (err: any) {
-    console.warn('Gagal membuat sub-folder khusus, berkas dialihkan ke folder induk:', err.message);
-  }
-
-  // 2. Siapkan readable stream dari buffer memori multer
-  const bufferStream = Readable.from(file.buffer);
-
-  // 3. Upload file ke Google Drive
-  const driveResponse = await drive.files.create({
-    supportsAllDrives: true,
-    requestBody: {
-      name: customNamaFile,
-      parents: [targetFolderId], // Selalu simpan di dalam folder target
-    },
-    media: {
-      mimeType: file.mimetype || 'application/octet-stream',
-      body: bufferStream,
-    },
-    fields: 'id, webViewLink',
-  });
-
-  return (
-    driveResponse.data.webViewLink ||
-    `https://drive.google.com/file/d/${driveResponse.data.id}/view`
-  );
-}
-
-// Konfigurasi Multer (Simpan file sementara di memori sebelum diupload ke Drive)
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 15 * 1024 * 1024 }, // Maksimal 15 MB
-});
 
 // Autentikasi Google API menggunakan GOOGLE_CREDENTIALS_JSON di Vercel
 const SCOPES = [
@@ -118,10 +35,7 @@ if (process.env.GOOGLE_CREDENTIALS_JSON) {
 }
 
 const sheets = google.sheets({ version: 'v4', auth });
-const drive = google.drive({ version: 'v3', auth });
-
 const SPREADSHEET_ID = process.env.SPREADSHEET_ID || '';
-const DRIVE_FOLDER_ID = process.env.DRIVE_FOLDER_ID || '';
 
 // Helper Format Waktu WIB
 const getWaktuWIB = (): string => {
@@ -184,7 +98,7 @@ async function pastikanSheetAda(sheetTitle: string, defaultHeaders: string[] = [
   }
 }
 
-// Helper: Fungsi Cek Validitas Token di Sheet "Tokens" (Fleksibel & Case-Insensitive)
+// Helper: Fungsi Cek Validitas Token di Sheet "Tokens"
 async function validasiTokenDatabase(tokenInput: string, roleOrKategori: string): Promise<boolean> {
   try {
     const response = await sheets.spreadsheets.values.get({
@@ -192,7 +106,6 @@ async function validasiTokenDatabase(tokenInput: string, roleOrKategori: string)
       range: 'Tokens!A2:C',
     });
     const rows = response.data.values || [];
-
     const inputClean = (tokenInput || '').trim();
     const roleClean = (roleOrKategori || '').trim().toLowerCase();
 
@@ -205,7 +118,6 @@ async function validasiTokenDatabase(tokenInput: string, roleOrKategori: string)
         return false;
       }
 
-      // 1. Logika Token Guru: Token kategori 'Guru' sah untuk semua jenis guru
       if (roleClean.includes('guru')) {
         return (
           dbKategori === 'guru' ||
@@ -215,7 +127,6 @@ async function validasiTokenDatabase(tokenInput: string, roleOrKategori: string)
         );
       }
 
-      // 2. Logika Token Siswa: Cocokkan nomor tingkat kelas (misal: "Kelas 1" vs "Siswa - Kelas 1")
       if (roleClean.includes('kelas') || roleClean.includes('siswa')) {
         const numTarget = roleClean.replace(/[^0-9]/g, '');
         const numDb = dbKategori.replace(/[^0-9]/g, '');
@@ -224,7 +135,6 @@ async function validasiTokenDatabase(tokenInput: string, roleOrKategori: string)
         }
       }
 
-      // 3. Exact match atau partial match untuk role lain (Kepala Sekolah, Operator, dsb.)
       return dbKategori === roleClean || dbKategori.includes(roleClean) || roleClean.includes(dbKategori);
     });
 
@@ -235,7 +145,7 @@ async function validasiTokenDatabase(tokenInput: string, roleOrKategori: string)
   }
 }
 
-// 1. ENDPOINT LOGIN & REGISTRASI SISWA (Berdasarkan NIS)
+// 1. ENDPOINT LOGIN & REGISTRASI SISWA
 app.post('/api/login', async (req: Request, res: Response) => {
   try {
     const { nis, nama, kelas, jk, ortu, nohp, aksi, token } = req.body;
@@ -243,7 +153,6 @@ app.post('/api/login', async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'Nomor Induk Siswa (NIS) wajib diisi!' });
     }
 
-    // 1. Bypass login akun khusus admin/kepsek dari Vercel
     const akunKhususList = getAkunKhususList();
     const akunKhusus = akunKhususList.find((user) => user.nip === nis);
     if (akunKhusus) {
@@ -260,7 +169,6 @@ app.post('/api/login', async (req: Request, res: Response) => {
       });
     }
 
-    // 2. Verifikasi data siswa reguler di Sheet
     const getRows = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
       range: 'Siswa!A2:F',
@@ -275,7 +183,6 @@ app.post('/api/login', async (req: Request, res: Response) => {
           message: 'NIS belum terdaftar! Silakan lakukan Registrasi terlebih dahulu.',
         });
       }
-
       return res.json({
         success: true,
         data: {
@@ -294,17 +201,12 @@ app.post('/api/login', async (req: Request, res: Response) => {
           message: 'NIS sudah terdaftar di sistem! Silakan gunakan menu Masuk (Login).',
         });
       }
-
       if (!nama || !kelas) {
         return res.status(400).json({ success: false, message: 'Nama lengkap dan Kelas wajib diisi untuk pendaftaran!' });
       }
 
-      // Validasi Token Pendaftaran Siswa Berdasarkan Kelas
       const kategoriToken = `Kelas ${kelas.replace(/[^0-9]/g, '')}`;
-      const isTokenValid =
-        (await validasiTokenDatabase(token, kategoriToken)) ||
-        (await validasiTokenDatabase(token, kelas));
-
+      const isTokenValid = (await validasiTokenDatabase(token, kategoriToken)) || (await validasiTokenDatabase(token, kelas));
       if (!isTokenValid) {
         return res.status(400).json({
           success: false,
@@ -332,7 +234,7 @@ app.post('/api/login', async (req: Request, res: Response) => {
   }
 });
 
-// 2. ENDPOINT LOGIN & REGISTRASI GURU / PENGELOLA (Berdasarkan NIP)
+// 2. ENDPOINT LOGIN & REGISTRASI GURU / PENGELOLA
 app.post('/api/guru/login', async (req: Request, res: Response) => {
   try {
     const { nip, nama, role, kelasBinaan, mapelAjar, aksi, token } = req.body;
@@ -340,7 +242,6 @@ app.post('/api/guru/login', async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'NIP / ID Guru wajib diisi!' });
     }
 
-    // 1. Bypass login akun khusus admin/kepsek dari Vercel
     const akunKhususList = getAkunKhususList();
     const akunKhusus = akunKhususList.find((user) => user.nip === nip);
     if (akunKhusus) {
@@ -350,7 +251,6 @@ app.post('/api/guru/login', async (req: Request, res: Response) => {
       });
     }
 
-    // 2. Verifikasi data guru reguler di Sheet
     const getRows = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
       range: 'Guru!A2:E',
@@ -365,7 +265,6 @@ app.post('/api/guru/login', async (req: Request, res: Response) => {
           message: 'NIP belum terdaftar! Silakan lakukan Registrasi akun pengelola terlebih dahulu.',
         });
       }
-
       return res.json({
         success: true,
         data: {
@@ -383,12 +282,10 @@ app.post('/api/guru/login', async (req: Request, res: Response) => {
           message: 'NIP sudah terdaftar di sistem! Silakan gunakan menu Masuk (Login).',
         });
       }
-
       if (!nama || !role) {
         return res.status(400).json({ success: false, message: 'Nama lengkap dan Peran (Role) wajib diisi!' });
       }
 
-      // Validasi Token Menggunakan Helper Fleksibel
       const isTokenValid = await validasiTokenDatabase(token, role);
       if (!isTokenValid) {
         return res.status(400).json({
@@ -417,59 +314,44 @@ app.post('/api/guru/login', async (req: Request, res: Response) => {
   }
 });
 
-// 3. ENDPOINT ABSENSI QR CODE (Dengan Validasi Kelas & Anti Duplikasi)
+// 3. ENDPOINT ABSENSI QR CODE
 app.post('/api/absen', async (req: Request, res: Response) => {
   try {
     const { nis, nama, kelas, qrCodeData } = req.body;
-
     if (!nis) {
       return res.status(400).json({ success: false, message: 'NIS siswa tidak valid.' });
     }
-
     if (!qrCodeData || typeof qrCodeData !== 'string') {
       return res.status(400).json({ success: false, message: 'Data QR Code tidak terbaca.' });
     }
 
-    // 1. Parsing QR Code: Format ABSEN-SIBINTANG | KELAS | TANGGAL | SESI
     const qrParts = qrCodeData.split('|').map((item: string) => item.trim());
-
     if (qrParts.length < 4 || !qrParts[0].startsWith('ABSEN-SIBINTANG')) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Kode QR tidak valid atau format tidak sesuai.' 
-      });
+      return res.status(400).json({ success: false, message: 'Kode QR tidak valid atau format tidak sesuai.' });
     }
 
     const kelasQR = qrParts[1].toUpperCase();
-    const tanggalQR = qrParts[2]; // Contoh: 31/10/2026 atau 2026-10-31
-    const sesiQR = qrParts[3].toLowerCase(); // Contoh: absen pagi / absen siang
+    const tanggalQR = qrParts[2];
+    const sesiQR = qrParts[3].toLowerCase();
     const kelasSiswa = (kelas || '').trim().toUpperCase();
 
-    // 2. Validasi Kecocokan Kelas
     if (kelasSiswa !== kelasQR) {
       return res.status(403).json({
         success: false,
-        message: `Gagal Absen! QR Code ini untuk Kelas ${kelasQR}, Anda terdaftar di Kelas ${kelasSiswa || '-'}.`
+        message: `Gagal Absen! QR Code ini untuk Kelas ${kelasQR}, Anda terdaftar di Kelas ${kelasSiswa || '-'}.`,
       });
     }
 
-    // 3. Validasi Anti-Duplikasi: Baca sheet Absensi
-    // Kolom: A=Waktu, B=NIS, C=Nama, D=Kelas, E=Status, F=qrCodeData
     const sheetData = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
       range: 'Absensi!B:F',
     });
-
     const rows = sheetData.data.values || [];
-    
-    // Periksa apakah NIS sudah tercatat pada qrCodeData atau tanggal & sesi yang sama
+
     const sudahAbsen = rows.some((row) => {
       const rowNis = (row[0] || '').toString().trim();
       const rowQrData = (row[4] || '').toString().trim().toLowerCase();
-
       if (rowNis !== nis.toString().trim()) return false;
-
-      // Cek apakah string QR sama persis atau mengandung tanggal & sesi yang sama
       return (
         rowQrData === qrCodeData.trim().toLowerCase() ||
         (rowQrData.includes(tanggalQR.toLowerCase()) && rowQrData.includes(sesiQR))
@@ -477,15 +359,10 @@ app.post('/api/absen', async (req: Request, res: Response) => {
     });
 
     if (sudahAbsen) {
-      return res.status(409).json({
-        success: false,
-        message: `Anda sudah melakukan ${qrParts[3]} hari ini!`
-      });
+      return res.status(409).json({ success: false, message: `Anda sudah melakukan ${qrParts[3]} hari ini!` });
     }
 
-    // 4. Jika belum pernah absen, simpan ke sheet
     const waktu = getWaktuWIB();
-
     await sheets.spreadsheets.values.append({
       spreadsheetId: SPREADSHEET_ID,
       range: 'Absensi!A:F',
@@ -495,51 +372,36 @@ app.post('/api/absen', async (req: Request, res: Response) => {
       },
     });
 
-    return res.json({ 
-      success: true, 
-      message: `Absensi ${qrParts[3]} Kelas ${kelasSiswa} berhasil dicatat!`, 
-      waktu 
-    });
-
+    return res.json({ success: true, message: `Absensi ${qrParts[3]} Kelas ${kelasSiswa} berhasil dicatat!`, waktu });
   } catch (error: any) {
     console.error('Error Absen:', error.message);
     return res.status(500).json({ success: false, message: 'Gagal memproses absensi.' });
   }
 });
 
-// 4. ENDPOINT PENGUMPULAN TUGAS SISWA
-app.post('/api/tugas', upload.single('fileTugas'), async (req: Request, res: Response) => {
+// 4. ENDPOINT PENGUMPULAN TUGAS SISWA (KINI JSON MURNI DENGAN LINK DRIVE DARI APPS SCRIPT)
+app.post('/api/tugas', async (req: Request, res: Response) => {
   try {
-    const { nis, nama, kelas, mapel, judulTugas, judul } = req.body;
+    const { nis, nama, kelas, mapel, judulTugas, judul, link, fileLink } = req.body;
     const finalJudul = (judulTugas || judul || 'Tugas').trim();
-    const file = req.file;
+    const urlDrive = link || fileLink || '-';
 
-    if (!file || !nis) {
-      return res.status(400).json({ success: false, message: 'File tugas dan NIS wajib dilampirkan!' });
+    if (!nis) {
+      return res.status(400).json({ success: false, message: 'NIS siswa wajib dilampirkan!' });
     }
 
     const waktu = getWaktuWIB();
 
-    // Format sub-folder: andre_kelas1a_ppkn_123456
-    const cleanNama = (nama || 'siswa').toLowerCase().replace(/[^a-z0-9]/g, '_');
-    const cleanKelas = (kelas || 'kelas').toLowerCase().replace(/[^a-z0-9]/g, '');
-    const cleanMapel = (mapel || 'mapel').toLowerCase().replace(/[^a-z0-9]/g, '_');
-    const timeStampCode = Date.now().toString().slice(-6);
-    const namaSubFolder = `${cleanNama}_${cleanKelas}_${cleanMapel}_${timeStampCode}`;
-
-    const customFileName = `[TUGAS]_${cleanNama}_${file.originalname}`;
-
-    // Upload ke Drive dengan sub-folder otomatis
-    const fileLink = await uploadKeDriveDenganSubFolder(
-      file,
-      FOLDER_TUGAS_SISWA,
-      namaSubFolder,
-      customFileName
-    );
-
-    // Simpan ke Google Sheet "Tugas"
     await pastikanSheetAda('Tugas', [
-      'Waktu Upload', 'NIS', 'Nama Siswa', 'Kelas', 'Mata Pelajaran', 'Judul / Ket. Tugas', 'Link File Drive', 'Nilai', 'Catatan Guru'
+      'Waktu Upload',
+      'NIS',
+      'Nama Siswa',
+      'Kelas',
+      'Mata Pelajaran',
+      'Judul / Ket. Tugas',
+      'Link File Drive',
+      'Nilai',
+      'Catatan Guru',
     ]);
 
     await sheets.spreadsheets.values.append({
@@ -547,28 +409,26 @@ app.post('/api/tugas', upload.single('fileTugas'), async (req: Request, res: Res
       range: 'Tugas!A:G',
       valueInputOption: 'USER_ENTERED',
       requestBody: {
-        values: [[waktu, `'${nis}`, nama || '-', kelas || '-', mapel || '-', finalJudul, fileLink]],
+        values: [[waktu, `'${nis}`, nama || '-', kelas || '-', mapel || '-', finalJudul, urlDrive]],
       },
     });
 
     return res.json({
       success: true,
       message: 'Tugas berhasil diunggah ke Google Drive & tercatat di Sheet!',
-      fileLink,
+      fileLink: urlDrive,
       waktu,
     });
   } catch (error: any) {
-    console.error('Error Upload Tugas:', error.response?.data || error.message);
-    const detailError = error.response?.data?.error?.message || error.message;
-    return res.status(500).json({ success: false, message: `Gagal mengupload tugas: ${detailError}` });
+    console.error('Error Simpan Tugas:', error.message);
+    return res.status(500).json({ success: false, message: `Gagal mencatat tugas: ${error.message}` });
   }
 });
 
-// 5. ENDPOINT RIWAYAT LOG ABSEN & TUGAS PER SISWA (Berdasarkan NIS)
+// 5. ENDPOINT RIWAYAT LOG ABSEN & TUGAS PER SISWA
 app.get('/api/riwayat/:nis', async (req: Request, res: Response) => {
   try {
     const { nis } = req.params;
-
     const [absenRes, tugasRes] = await Promise.all([
       sheets.spreadsheets.values.get({ spreadsheetId: SPREADSHEET_ID, range: 'Absensi!A2:F' }),
       sheets.spreadsheets.values.get({ spreadsheetId: SPREADSHEET_ID, range: 'Tugas!A2:I' }),
@@ -711,7 +571,6 @@ app.get('/api/guru/tugas', async (req: Request, res: Response) => {
         nohp: row[5] || '-',
       }));
 
-    // Daftar soal yang diterbitkan guru untuk kelas ini
     const daftarSoalKelas = allSoal
       .filter((row) => row[1] === kelas && (!mapel || mapel === 'SEMUA' || row[2] === mapel))
       .map((row) => ({
@@ -765,38 +624,27 @@ app.get('/api/guru/tugas', async (req: Request, res: Response) => {
   }
 });
 
-// 8a. ENDPOINT GURU: BUAT TUGAS / SOAL BARU
-app.post('/api/guru/buat-tugas', upload.single('fileSoal'), async (req: Request, res: Response) => {
+// 8a. ENDPOINT GURU: BUAT TUGAS / SOAL BARU (KINI MENGGUNAKAN LINK DRIVE DARI APPS SCRIPT)
+app.post('/api/guru/buat-tugas', async (req: Request, res: Response) => {
   try {
-    const { mapel, kelas, judul, deskripsi, deadline, pembuat } = req.body;
-    const file = req.file;
+    const { mapel, kelas, judul, deskripsi, deadline, pembuat, linkSoal, link } = req.body;
+    const fileSoalLink = linkSoal || link || '-';
 
     if (!mapel || !kelas || !judul || !deadline) {
       return res.status(400).json({ success: false, message: 'Mata pelajaran, kelas, judul, dan deadline wajib diisi!' });
     }
 
     const waktu = getWaktuWIB();
-    let fileSoalLink = '-';
-
-    if (file) {
-      // Format sub-folder soal guru: soal_kelas1a_matematika_123456
-      const cleanKelas = (kelas || 'kelas').toLowerCase().replace(/[^a-z0-9]/g, '');
-      const cleanMapel = (mapel || 'mapel').toLowerCase().replace(/[^a-z0-9]/g, '_');
-      const timeStampCode = Date.now().toString().slice(-6);
-      const namaSubFolder = `soal_${cleanKelas}_${cleanMapel}_${timeStampCode}`;
-
-      const customFileName = `[SOAL]_${file.originalname}`;
-
-      fileSoalLink = await uploadKeDriveDenganSubFolder(
-        file,
-        FOLDER_SOAL_GURU,
-        namaSubFolder,
-        customFileName
-      );
-    }
 
     await pastikanSheetAda('DaftarTugas', [
-      'Waktu Dibuat', 'Kelas', 'Mata Pelajaran', 'Judul Tugas', 'Deskripsi / Instruksi', 'Link File Soal (Drive)', 'Deadline', 'Pembuat'
+      'Waktu Dibuat',
+      'Kelas',
+      'Mata Pelajaran',
+      'Judul Tugas',
+      'Deskripsi / Instruksi',
+      'Link File Soal (Drive)',
+      'Deadline',
+      'Pembuat',
     ]);
 
     await sheets.spreadsheets.values.append({
@@ -814,9 +662,8 @@ app.post('/api/guru/buat-tugas', upload.single('fileSoal'), async (req: Request,
       fileSoalLink,
     });
   } catch (error: any) {
-    console.error('Error Buat Tugas Guru:', error.response?.data || error.message);
-    const detailError = error.response?.data?.error?.message || error.message;
-    return res.status(500).json({ success: false, message: `Gagal mempublikasikan tugas: ${detailError}` });
+    console.error('Error Buat Tugas Guru:', error.message);
+    return res.status(500).json({ success: false, message: `Gagal mempublikasikan tugas: ${error.message}` });
   }
 });
 
@@ -826,7 +673,6 @@ app.post('/api/guru/nilai', async (req: Request, res: Response) => {
     const { rowIndex, nilai, catatan } = req.body;
     const targetRow = Number(rowIndex);
 
-    // Validasi rowIndex harus angka dan minimal baris ke-2 (karena baris 1 adalah header)
     if (!targetRow || isNaN(targetRow) || targetRow < 2) {
       return res.status(400).json({ success: false, message: 'Nomor baris data tugas tidak valid!' });
     }
@@ -847,39 +693,18 @@ app.post('/api/guru/nilai', async (req: Request, res: Response) => {
   }
 });
 
-// 9. ENDPOINT PENGAJUAN IZIN / SAKIT SISWA (Menggunakan Sub-Folder Drive & Helper Universal)
-app.post('/api/izin', upload.single('fileBukti'), async (req: Request, res: Response) => {
+// 9. ENDPOINT PENGAJUAN IZIN / SAKIT SISWA (KINI JSON MURNI DENGAN LINK DRIVE DARI APPS SCRIPT)
+app.post('/api/izin', async (req: Request, res: Response) => {
   try {
-    const { nis, nama, kelas, statusIzin, keterangan, tanggalMulai } = req.body;
-    const file = req.file;
+    const { nis, nama, kelas, statusIzin, keterangan, tanggalMulai, link, linkBukti } = req.body;
+    const fileLink = link || linkBukti || '-';
 
     if (!nis || !nama || !kelas || !statusIzin || !tanggalMulai) {
       return res.status(400).json({ success: false, message: 'Data pengajuan izin belum lengkap!' });
     }
 
     const waktu = getWaktuWIB();
-    let fileLink = '-';
 
-    if (file) {
-      // 1. Format Sub-folder: sakit_andre_kelas1a_123456
-      const cleanNama = (nama || 'siswa').toLowerCase().replace(/[^a-z0-9]/g, '_');
-      const cleanKelas = (kelas || 'kelas').toLowerCase().replace(/[^a-z0-9]/g, '');
-      const cleanStatus = (statusIzin || 'izin').toLowerCase().replace(/[^a-z0-9]/g, '');
-      const timeStampCode = Date.now().toString().slice(-6);
-      const namaSubFolder = `${cleanStatus}_${cleanNama}_${cleanKelas}_${timeStampCode}`;
-
-      const customFileName = `[BUKTI_${statusIzin.toUpperCase()}]_${cleanNama}_${file.originalname}`;
-
-      // 2. Upload menggunakan helper terpusat ke folder khusus izin
-      fileLink = await uploadKeDriveDenganSubFolder(
-        file,
-        FOLDER_IZIN_SISWA,
-        namaSubFolder,
-        customFileName
-      );
-    }
-
-    // 3. Pastikan tab Izin sudah tersedia lengkap 10 kolom (A:J)
     await pastikanSheetAda('Izin', [
       'Waktu Pengajuan',
       'NIS',
@@ -893,24 +718,12 @@ app.post('/api/izin', upload.single('fileBukti'), async (req: Request, res: Resp
       'Verifikator',
     ]);
 
-    // 4. Catat ke Google Sheet Izin (Kolom I default: Menunggu, Kolom J: -)
     await sheets.spreadsheets.values.append({
       spreadsheetId: SPREADSHEET_ID,
       range: 'Izin!A:J',
       valueInputOption: 'USER_ENTERED',
       requestBody: {
-        values: [[
-          waktu,
-          `'${nis}`,
-          nama,
-          kelas,
-          statusIzin,
-          keterangan || '-',
-          tanggalMulai,
-          fileLink,
-          'Menunggu',
-          '-',
-        ]],
+        values: [[waktu, `'${nis}`, nama, kelas, statusIzin, keterangan || '-', tanggalMulai, fileLink, 'Menunggu', '-']],
       },
     });
 
@@ -920,16 +733,12 @@ app.post('/api/izin', upload.single('fileBukti'), async (req: Request, res: Resp
       fileLink,
     });
   } catch (error: any) {
-    console.error('Error Izin Detail:', error.response?.data || error.message);
-    const detailError = error.response?.data?.error?.message || error.message;
-    return res.status(500).json({
-      success: false,
-      message: `Gagal mengirim pengajuan izin: ${detailError}`,
-    });
+    console.error('Error Izin Detail:', error.message);
+    return res.status(500).json({ success: false, message: `Gagal mengirim pengajuan izin: ${error.message}` });
   }
 });
 
-// 10a. ENDPOINT AMBIL RIWAYAT IZIN SISWA (Berdasarkan NIS)
+// 10a. ENDPOINT AMBIL RIWAYAT IZIN SISWA
 app.get('/api/izin/:nis', async (req: Request, res: Response) => {
   try {
     const { nis } = req.params;
@@ -956,12 +765,12 @@ app.get('/api/izin/:nis', async (req: Request, res: Response) => {
 
     return res.json({ success: true, izin: rows });
   } catch (error: any) {
-    console.error('Error Get Riwayat Izin:', error.response?.data || error.message);
+    console.error('Error Get Riwayat Izin:', error.message);
     return res.status(500).json({ success: false, message: 'Gagal memuat riwayat izin.' });
   }
 });
 
-// 10b. ENDPOINT AMBIL DAFTAR PENGAJUAN IZIN UNTUK GURU (Berdasarkan Kelas)
+// 10b. ENDPOINT AMBIL DAFTAR PENGAJUAN IZIN UNTUK GURU
 app.get('/api/guru/verifikasi-izin', async (req: Request, res: Response) => {
   try {
     const kelas = req.query.kelas as string;
@@ -981,7 +790,7 @@ app.get('/api/guru/verifikasi-izin', async (req: Request, res: Response) => {
       const rowKelas = String(row[3] || '').trim().toUpperCase();
       if (rowKelas === kelas.trim().toUpperCase()) {
         daftarIzin.push({
-          rowIndex: index + 2, // Baris asli di Google Sheets (1-based index)
+          rowIndex: index + 2,
           waktuPengajuan: row[0] || '-',
           nis: row[1] || '-',
           nama: row[2] || '-',
@@ -997,15 +806,14 @@ app.get('/api/guru/verifikasi-izin', async (req: Request, res: Response) => {
     });
 
     daftarIzin.reverse();
-
     return res.json({ success: true, daftarIzin });
   } catch (error: any) {
-    console.error('Error Get Izin Guru Detail:', error.response?.data || error.message);
+    console.error('Error Get Izin Guru Detail:', error.message);
     return res.status(500).json({ success: false, message: 'Gagal memuat daftar izin siswa.' });
   }
 });
 
-// 10c. ENDPOINT AKSI VERIFIKASI IZIN / SAKIT OLEH GURU (ACC / Tolak)
+// 10c. ENDPOINT AKSI VERIFIKASI IZIN / SAKIT OLEH GURU
 app.post('/api/guru/verifikasi-izin', async (req: Request, res: Response) => {
   try {
     const { rowIndex, tindakan, verifikator } = req.body;
@@ -1015,7 +823,6 @@ app.post('/api/guru/verifikasi-izin', async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'Data verifikasi atau nomor baris tidak valid!' });
     }
 
-    // 1. Ambil data baris tersebut untuk dibaca nilainya
     const rowRes = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
       range: `Izin!A${targetRow}:J${targetRow}`,
@@ -1029,11 +836,10 @@ app.post('/api/guru/verifikasi-izin', async (req: Request, res: Response) => {
     const nis = rowData[1];
     const nama = rowData[2];
     const kelas = rowData[3];
-    const statusIzin = rowData[4]; // 'Sakit' atau 'Izin'
+    const statusIzin = rowData[4];
     const keterangan = rowData[5];
     const tanggalMulai = rowData[6];
 
-    // 2. Perbarui kolom status verifikasi (Kolom I) dan nama guru pemeriksa (Kolom J)
     await sheets.spreadsheets.values.update({
       spreadsheetId: SPREADSHEET_ID,
       range: `Izin!I${targetRow}:J${targetRow}`,
@@ -1043,7 +849,6 @@ app.post('/api/guru/verifikasi-izin', async (req: Request, res: Response) => {
       },
     });
 
-    // 3. JIKA DISETUJUI (ACC): Otomatis catat ke sheet Absensi agar statusnya resmi tercatat Sakit/Izin
     if (tindakan === 'Disetujui') {
       const waktuSekarang = getWaktuWIB();
       const jamOnly = waktuSekarang.includes(' ') ? waktuSekarang.split(' ')[1] : waktuSekarang;
@@ -1074,9 +879,8 @@ app.post('/api/guru/verifikasi-izin', async (req: Request, res: Response) => {
       message: `Pengajuan ${nama} berhasil ditandai sebagai: ${tindakan}`,
     });
   } catch (error: any) {
-    console.error('Error Aksi Verifikasi Izin Detail:', error.response?.data || error.message);
-    const detailError = error.response?.data?.error?.message || error.message;
-    return res.status(500).json({ success: false, message: `Gagal memproses verifikasi izin: ${detailError}` });
+    console.error('Error Aksi Verifikasi Izin Detail:', error.message);
+    return res.status(500).json({ success: false, message: `Gagal memproses verifikasi izin: ${error.message}` });
   }
 });
 
@@ -1105,7 +909,7 @@ app.post('/api/guru/pengumuman', async (req: Request, res: Response) => {
   }
 });
 
-// 12. ENDPOINT AMBIL PENGUMUMAN (DIFILTER BERDASARKAN KELAS SISWA & TANGGAL AKTIF)
+// 12. ENDPOINT AMBIL PENGUMUMAN
 app.get('/api/pengumuman', async (req: Request, res: Response) => {
   try {
     const { kelas } = req.query;
@@ -1117,7 +921,6 @@ app.get('/api/pengumuman', async (req: Request, res: Response) => {
     });
 
     const rows = response.data.values || [];
-
     const validRows = rows
       .filter((row) => {
         const tglExpired = row[3] || '9999-12-31';
@@ -1149,7 +952,7 @@ app.get('/api/pengumuman', async (req: Request, res: Response) => {
   }
 });
 
-// 13. ENDPOINT ADMIN: GENERATE TOKEN BARU (Simpan ke Tab Sheet "Tokens")
+// 13. ENDPOINT ADMIN: GENERATE TOKEN BARU
 app.post('/api/admin/generate-token', async (req: Request, res: Response) => {
   try {
     const { kategori, customToken, pembuat } = req.body;
