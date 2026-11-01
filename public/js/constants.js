@@ -54,7 +54,7 @@ const DAFTAR_MAPEL = [
   'Pendidikan Jasmani, Olahraga & Kesehatan (PJOK)',
   'Seni Budaya & Prakarya (SBdP)',
   'Bahasa Inggris',
-  'Muatan Lokal / Bahasa Daerah'
+  'Muatan Lokal / Informatika'
 ];
 
 // ============================================================================
