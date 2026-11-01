@@ -5,7 +5,8 @@
  * ============================================================================
  * Mengelola interaksi dashboard guru dan pengelola sekolah: pembuatan QR
  * absensi harian, rekapitulasi presensi & ekspor CSV, verifikasi surat izin/sakit,
- * publikasi & penilaian tugas murid, generator token, dan penerbitan pengumuman.
+ * publikasi & penilaian tugas murid, generator token, penerbitan pengumuman,
+ * dan pusat notifikasi terpadu (tugas belum dinilai & edaran resmi).
  */
 
 let currentGuru = null;
@@ -69,31 +70,41 @@ function initEventListeners() {
 
   btnToggle?.addEventListener('click', (e) => {
     e.stopPropagation();
-    const isTutup = dropdownMenu?.classList.contains('hidden');
-    if (isTutup) {
-      dropdownMenu?.classList.remove('hidden');
-      chevron?.classList.add('rotate-180');
-    } else {
+    dropdownMenu?.classList.toggle('hidden');
+    chevron?.classList.toggle('rotate-180');
+    document.getElementById('popoverNotifGuruDesktop')?.classList.add('hidden');
+  });
+
+  // Toggle Lonceng Notifikasi Guru (Desktop Popover vs Mobile Bottom Sheet)
+  const btnNotif = document.getElementById('btnToggleNotifGuru');
+  btnNotif?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    tandaiNotifikasiGuruDibaca();
+
+    if (window.innerWidth >= 768) {
+      document.getElementById('popoverNotifGuruDesktop')?.classList.toggle('hidden');
       dropdownMenu?.classList.add('hidden');
-      chevron?.classList.remove('rotate-180');
+    } else {
+      bukaBottomSheetNotifGuru();
     }
   });
 
-  // Tutup menu popover jika klik di luar box
+  // Tutup menu popover jika klik di luar area
   document.addEventListener('click', (e) => {
     if (dropdownMenu && !dropdownMenu.contains(e.target) && !btnToggle?.contains(e.target)) {
       dropdownMenu.classList.add('hidden');
       chevron?.classList.remove('rotate-180');
     }
+    const popoverNotif = document.getElementById('popoverNotifGuruDesktop');
+    if (popoverNotif && !popoverNotif.contains(e.target) && !btnNotif?.contains(e.target)) {
+      popoverNotif.classList.add('hidden');
+    }
   });
 
   // Tab Navigasi Menu Header (Desktop & Mobile)
   ['absen', 'tugas', 'pengumuman'].forEach((tabKey) => {
-    const btnDesk = document.getElementById(`tabGuruBtn-${tabKey}`);
-    const btnMob = document.getElementById(`tabGuruBtn-${tabKey}-mob`);
-
-    btnDesk?.addEventListener('click', () => switchGuruTab(tabKey));
-    btnMob?.addEventListener('click', () => switchGuruTab(tabKey));
+    document.getElementById(`tabGuruBtn-${tabKey}`)?.addEventListener('click', () => switchGuruTab(tabKey));
+    document.getElementById(`tabGuruBtn-${tabKey}-mob`)?.addEventListener('click', () => switchGuruTab(tabKey));
   });
 
   // Tab 1: Absensi & QR
@@ -123,7 +134,183 @@ function initEventListeners() {
 }
 
 // ============================================================================
-// 3. AUTENTIKASI PENGELOLA & SINKRONISASI TAMPILAN
+// 3. PUSAT NOTIFIKASI GURU (TUGAS MASUK & PENGUMUMAN)
+// ============================================================================
+
+function bukaBottomSheetNotifGuru() {
+  document.getElementById('bottomSheetNotifGuru')?.classList.remove('hidden');
+}
+window.bukaBottomSheetNotifGuru = bukaBottomSheetNotifGuru;
+
+function tutupBottomSheetNotifGuru() {
+  document.getElementById('bottomSheetNotifGuru')?.classList.add('hidden');
+}
+window.tutupBottomSheetNotifGuru = tutupBottomSheetNotifGuru;
+
+function switchTabNotifGuru(tab) {
+  const deskTugas = document.getElementById('notifDaftarTugasDesktop');
+  const deskPeng = document.getElementById('notifDaftarPengumumanDesktop');
+  const mobTugas = document.getElementById('notifDaftarTugasMobile');
+  const mobPeng = document.getElementById('notifDaftarPengumumanMobile');
+
+  const btnDeskTugas = document.getElementById('tabNotifBtn-tugas');
+  const btnDeskPeng = document.getElementById('tabNotifBtn-pengumuman');
+  const btnMobTugas = document.getElementById('tabNotifMobBtn-tugas');
+  const btnMobPeng = document.getElementById('tabNotifMobBtn-pengumuman');
+
+  if (tab === 'tugas') {
+    deskTugas?.classList.remove('hidden');
+    deskPeng?.classList.add('hidden');
+    mobTugas?.classList.remove('hidden');
+    mobPeng?.classList.add('hidden');
+
+    btnDeskTugas?.classList.add('bg-white', 'text-indigo-900', 'shadow-sm');
+    btnDeskTugas?.classList.remove('text-slate-500');
+    btnDeskPeng?.classList.remove('bg-white', 'text-indigo-900', 'shadow-sm');
+    btnDeskPeng?.classList.add('text-slate-500');
+
+    btnMobTugas?.classList.add('bg-white', 'text-indigo-900', 'shadow-sm');
+    btnMobTugas?.classList.remove('text-slate-500');
+    btnMobPeng?.classList.remove('bg-white', 'text-indigo-900', 'shadow-sm');
+    btnMobPeng?.classList.add('text-slate-500');
+  } else {
+    deskTugas?.classList.add('hidden');
+    deskPeng?.classList.remove('hidden');
+    mobTugas?.classList.add('hidden');
+    mobPeng?.classList.remove('hidden');
+
+    btnDeskPeng?.classList.add('bg-white', 'text-indigo-900', 'shadow-sm');
+    btnDeskPeng?.classList.remove('text-slate-500');
+    btnDeskTugas?.classList.remove('bg-white', 'text-indigo-900', 'shadow-sm');
+    btnDeskTugas?.classList.add('text-slate-500');
+
+    btnMobPeng?.classList.add('bg-white', 'text-indigo-900', 'shadow-sm');
+    btnMobPeng?.classList.remove('text-slate-500');
+    btnMobTugas?.classList.remove('bg-white', 'text-indigo-900', 'shadow-sm');
+    btnMobTugas?.classList.add('text-slate-500');
+  }
+}
+window.switchTabNotifGuru = switchTabNotifGuru;
+
+function tandaiNotifikasiGuruDibaca() {
+  const badge = document.getElementById('badgeNotifLiveGuru');
+  if (badge) {
+    badge.classList.add('hidden');
+  }
+  localStorage.setItem('sibintang_notif_guru_read', Date.now().toString());
+}
+
+async function muatUlangNotifikasiGuru() {
+  if (!currentGuru) return;
+
+  const kelasTarget = currentGuru.kelasBinaan !== '-' ? currentGuru.kelasBinaan : '1A';
+  const mapelTarget = currentGuru.mapelAjar !== '-' ? currentGuru.mapelAjar : 'SEMUA';
+
+  let jumlahItemBaru = 0;
+
+  // 1. Ambil Notifikasi Tugas Masuk
+  try {
+    const resTugas = await fetch(`/api/guru/tugas?kelas=${encodeURIComponent(kelasTarget)}&mapel=${encodeURIComponent(mapelTarget)}`);
+    const dataTugas = await resTugas.json();
+    const daftar = dataTugas.daftarTugas || [];
+
+    // Filter presisi: hanya yang benar-benar belum dinilai (bukan nilai 0)
+    const belumDinilai = daftar.filter(t => t.nilai === '' || t.nilai === null || t.nilai === undefined);
+    jumlahItemBaru += belumDinilai.length;
+
+    const htmlTugas = belumDinilai.length === 0
+      ? `<p class="text-xs text-slate-400 text-center py-4">Semua tugas siswa sudah dinilai.</p>`
+      : belumDinilai.map(t => {
+          const safeKelas = (t.kelas || '').replace(/'/g, "\\'");
+          const safeMapel = (t.mapel || '').replace(/'/g, "\\'");
+          return `
+            <div class="p-3 bg-indigo-50/70 hover:bg-indigo-100/70 rounded-2xl border border-indigo-100 transition space-y-1">
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] font-bold bg-indigo-200 text-indigo-900 px-2 py-0.5 rounded-md">${t.kelas} • ${t.mapel}</span>
+                <span class="text-[10px] text-slate-400 font-mono">${t.waktu}</span>
+              </div>
+              <h5 class="text-xs font-black text-slate-800">${t.nama} <span class="text-[10px] text-slate-500 font-normal">(NIS: ${t.nis})</span></h5>
+              <p class="text-[11px] text-slate-600 truncate">${t.judul}</p>
+              <div class="pt-1.5 flex items-center justify-between border-t border-indigo-200/50 mt-1">
+                <span class="text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded">Belum Dinilai</span>
+                <button type="button" onclick="arahkanKePenilaian('${safeKelas}', '${safeMapel}')" class="cursor-pointer text-[11px] font-bold text-indigo-700 hover:underline">Buka & Beri Nilai →</button>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+    const deskTugas = document.getElementById('notifDaftarTugasDesktop');
+    const mobTugas = document.getElementById('notifDaftarTugasMobile');
+    if (deskTugas) deskTugas.innerHTML = htmlTugas;
+    if (mobTugas) mobTugas.innerHTML = htmlTugas;
+  } catch {
+    const errorHtml = `<p class="text-xs text-rose-500 text-center py-2">Gagal memuat notifikasi tugas.</p>`;
+    const deskTugas = document.getElementById('notifDaftarTugasDesktop');
+    if (deskTugas) deskTugas.innerHTML = errorHtml;
+  }
+
+  // 2. Ambil Notifikasi Pengumuman Resmi Sekolah
+  try {
+    const resPeng = await fetch(`/api/pengumuman?kelas=SEMUA`);
+    const dataPeng = await resPeng.json();
+    const daftarPeng = dataPeng.pengumuman || [];
+
+    const htmlPeng = daftarPeng.length === 0
+      ? `<p class="text-xs text-slate-400 text-center py-4">Tidak ada pengumuman aktif saat ini.</p>`
+      : daftarPeng.map(p => `
+          <div class="p-3 bg-slate-50 hover:bg-slate-100 rounded-2xl border border-slate-200/80 transition space-y-1">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-100 text-amber-800">${p.kategori}</span>
+              <span class="text-[10px] text-slate-400 font-mono">${p.waktu}</span>
+            </div>
+            <h5 class="text-xs font-black text-slate-800 leading-snug">${p.judul}</h5>
+            <p class="text-[11px] text-slate-600 line-clamp-2 leading-relaxed">${p.isi}</p>
+            <div class="pt-1 text-[10px] text-slate-400 font-medium border-t border-slate-100 mt-1">
+              Oleh: <b>${p.pembuat}</b>
+            </div>
+          </div>
+        `).join('');
+
+    const deskPeng = document.getElementById('notifDaftarPengumumanDesktop');
+    const mobPeng = document.getElementById('notifDaftarPengumumanMobile');
+    if (deskPeng) deskPeng.innerHTML = htmlPeng;
+    if (mobPeng) mobPeng.innerHTML = htmlPeng;
+  } catch {
+    const errorHtml = `<p class="text-xs text-rose-500 text-center py-2">Gagal memuat pengumuman.</p>`;
+    const deskPeng = document.getElementById('notifDaftarPengumumanDesktop');
+    if (deskPeng) deskPeng.innerHTML = errorHtml;
+  }
+
+  // 3. Atur Pill Counter dan Live Ping Badge
+  const counterPill = document.getElementById('notifCounterPill');
+  if (counterPill) counterPill.textContent = `${jumlahItemBaru} Tugas Baru`;
+
+  const badge = document.getElementById('badgeNotifLiveGuru');
+  if (jumlahItemBaru > 0) {
+    badge?.classList.remove('hidden');
+  } else {
+    badge?.classList.add('hidden');
+  }
+}
+window.muatUlangNotifikasiGuru = muatUlangNotifikasiGuru;
+
+function arahkanKePenilaian(kelas, mapel) {
+  tutupBottomSheetNotifGuru();
+  document.getElementById('popoverNotifGuruDesktop')?.classList.add('hidden');
+
+  switchGuruTab('tugas');
+
+  const filterK = document.getElementById('filterKelasTugas');
+  const filterM = document.getElementById('filterMapelTugas');
+  if (filterK && kelas) filterK.value = kelas;
+  if (filterM && mapel) filterM.value = mapel;
+
+  loadRekapTugas();
+}
+window.arahkanKePenilaian = arahkanKePenilaian;
+
+// ============================================================================
+// 4. AUTENTIKASI PENGELOLA & SINKRONISASI TAMPILAN
 // ============================================================================
 
 function switchAuthTab(type) {
@@ -136,13 +323,13 @@ function switchAuthTab(type) {
   if (type === 'masuk') {
     formMasuk.classList.remove('hidden');
     formDaftar.classList.add('hidden');
-    if (btnMasuk) btnMasuk.className = 'py-2.5 text-xs font-bold rounded-xl bg-indigo-800 text-white shadow-sm transition flex items-center justify-center gap-1.5';
-    if (btnDaftar) btnDaftar.className = 'py-2.5 text-xs font-bold rounded-xl text-slate-600 hover:text-slate-800 transition flex items-center justify-center gap-1.5';
+    if (btnMasuk) btnMasuk.className = 'py-2.5 text-xs font-bold rounded-xl bg-indigo-800 text-white shadow-sm transition flex items-center justify-center gap-1.5 cursor-pointer';
+    if (btnDaftar) btnDaftar.className = 'py-2.5 text-xs font-bold rounded-xl text-slate-600 hover:text-slate-800 transition flex items-center justify-center gap-1.5 cursor-pointer';
   } else {
     formMasuk.classList.add('hidden');
     formDaftar.classList.remove('hidden');
-    if (btnDaftar) btnDaftar.className = 'py-2.5 text-xs font-bold rounded-xl bg-emerald-600 text-white shadow-sm transition flex items-center justify-center gap-1.5';
-    if (btnMasuk) btnMasuk.className = 'py-2.5 text-xs font-bold rounded-xl text-slate-600 hover:text-slate-800 transition flex items-center justify-center gap-1.5';
+    if (btnDaftar) btnDaftar.className = 'py-2.5 text-xs font-bold rounded-xl bg-emerald-600 text-white shadow-sm transition flex items-center justify-center gap-1.5 cursor-pointer';
+    if (btnMasuk) btnMasuk.className = 'py-2.5 text-xs font-bold rounded-xl text-slate-600 hover:text-slate-800 transition flex items-center justify-center gap-1.5 cursor-pointer';
   }
 }
 
@@ -245,31 +432,22 @@ function updateGuruHeaderUI(isLoggedIn) {
   const container = document.getElementById('headerGuruContainer');
   const linkSiswa = document.getElementById('linkPortalSiswa');
   const userDropdown = document.getElementById('userProfileDropdownWrap');
+  const notifWrap = document.getElementById('notifWrapGuru');
   const navDesk = document.getElementById('navGuruDesktop');
   const navMob = document.getElementById('navGuruMobile');
 
   if (isLoggedIn) {
-    if (container) {
-      container.className = "w-full max-w-6xl mx-auto px-4 md:px-6 transition-all duration-300";
-    }
+    if (container) container.className = "w-full max-w-6xl mx-auto px-4 md:px-6 transition-all duration-300";
     if (linkSiswa) linkSiswa.classList.add('hidden');
     if (userDropdown) userDropdown.classList.remove('hidden');
-
-    if (navDesk) {
-      navDesk.className = "hidden md:flex items-center gap-1 bg-indigo-900/60 p-1 rounded-2xl border border-indigo-800/60 transition-all";
-    }
-    if (navMob) {
-      navMob.className = "flex md:hidden pb-2.5 pt-0.5 overflow-x-auto no-scrollbar items-center gap-1.5 border-t border-indigo-900/50";
-    }
+    if (notifWrap) notifWrap.classList.remove('hidden');
+    if (navDesk) navDesk.className = "hidden md:flex items-center gap-1 bg-indigo-900/60 p-1 rounded-2xl border border-indigo-800/60 transition-all";
+    if (navMob) navMob.className = "grid md:hidden pb-2.5 pt-0.5 grid-cols-3 gap-1.5 border-t border-indigo-900/50";
   } else {
-    if (container) {
-      container.className = "w-full max-w-md mx-auto px-4 sm:px-0 transition-all duration-300";
-    }
+    if (container) container.className = "w-full max-w-md mx-auto px-4 sm:px-0 transition-all duration-300";
     if (linkSiswa) linkSiswa.classList.remove('hidden');
-    if (userDropdown) {
-      userDropdown.classList.add('hidden');
-      document.getElementById('userDropdownMenu')?.classList.add('hidden');
-    }
+    if (userDropdown) userDropdown.classList.add('hidden');
+    if (notifWrap) notifWrap.classList.add('hidden');
     if (navDesk) navDesk.className = "hidden";
     if (navMob) navMob.className = "hidden";
   }
@@ -280,7 +458,6 @@ function updateGuruHeaderUI(isLoggedIn) {
 function bukaDashboardGuru() {
   document.getElementById('loginGuruSection')?.classList.add('hidden');
   document.getElementById('dashboardGuruSection')?.classList.remove('hidden');
-
   updateGuruHeaderUI(true);
 
   // Penataan Data Profil Pengelola
@@ -290,31 +467,23 @@ function bukaDashboardGuru() {
   if (currentGuru?.role === 'Wali Kelas') detailRole += ` | Kelas Binaan: ${currentGuru.kelasBinaan}`;
   if (currentGuru?.role === 'Guru Mapel' || currentGuru?.role === 'Guru Mata Pelajaran') detailRole += ` | Mapel: ${currentGuru.mapelAjar}`;
 
-  // 1. Tampilkan di Header Pill Pengelola
   const pillName = document.getElementById('headerUserPillName');
   const pillRole = document.getElementById('headerUserPillRole');
   const initial = document.getElementById('headerAvatarInitial');
-  
-  if (pillName) {
-    const parts = namaGuru.split(' ');
-    pillName.textContent = parts.slice(0, 2).join(' ');
-  }
+  if (pillName) pillName.textContent = namaGuru.split(' ').slice(0, 2).join(' ');
   if (pillRole) pillRole.textContent = roleGuru;
   if (initial) initial.textContent = (namaGuru.trim()[0] || 'G').toUpperCase();
 
-  // 2. Tampilkan di Dropdown Menu Card
   const ddNama = document.getElementById('dropdownNamaLengkap');
   const ddRole = document.getElementById('dropdownPeranDetail');
   if (ddNama) ddNama.textContent = namaGuru;
   if (ddRole) ddRole.textContent = detailRole;
 
-  // Terapkan Pembatasan Akses Role via Auth.js
   Auth.terapkanAksesRoleGuru(currentGuru);
-
-  // Inisialisasi tampilan awal tab absen
   switchGuruTab('absen');
   updateDashboardAbsen();
   loadRekapTugas();
+  muatUlangNotifikasiGuru();
 }
 
 async function logoutGuru() {
@@ -331,7 +500,7 @@ async function logoutGuru() {
 }
 
 // ============================================================================
-// 4. MANAJEMEN TAB NAVIGASI GURU
+// 5. MANAJEMEN TAB NAVIGASI GURU (3 MENU)
 // ============================================================================
 
 function switchGuruTab(tab) {
@@ -351,26 +520,21 @@ function switchGuruTab(tab) {
 
 function sinkronkanStyleTabGuru(activeTabKey) {
   const tabs = ['absen', 'tugas', 'pengumuman'];
-
   tabs.forEach((key) => {
     const btnDesk = document.getElementById(`tabGuruBtn-${key}`);
     const btnMob = document.getElementById(`tabGuruBtn-${key}-mob`);
     const isActive = key === activeTabKey;
 
     if (btnDesk) {
-      if (isActive) {
-        btnDesk.className = 'py-1.5 px-3.5 text-xs font-bold rounded-xl bg-indigo-600 text-white shadow-sm transition flex items-center gap-1.5';
-      } else {
-        btnDesk.className = 'py-1.5 px-3.5 text-xs font-bold rounded-xl text-indigo-200 hover:text-white hover:bg-indigo-800/50 transition flex items-center gap-1.5';
-      }
+      btnDesk.className = isActive
+        ? 'py-1.5 px-3.5 text-xs font-bold rounded-xl bg-indigo-600 text-white shadow-sm transition flex items-center gap-1.5 cursor-pointer'
+        : 'py-1.5 px-3.5 text-xs font-bold rounded-xl text-indigo-200 hover:text-white hover:bg-indigo-800/50 transition flex items-center gap-1.5 cursor-pointer';
     }
 
     if (btnMob) {
-      if (isActive) {
-        btnMob.className = 'py-1.5 px-3 text-xs font-bold rounded-xl bg-indigo-600 text-white shrink-0 shadow-sm transition flex items-center gap-1.5';
-      } else {
-        btnMob.className = 'py-1.5 px-3 text-xs font-bold rounded-xl text-indigo-200 bg-indigo-900/60 shrink-0 transition flex items-center gap-1.5';
-      }
+      btnMob.className = isActive
+        ? 'py-2 text-xs font-bold rounded-xl bg-indigo-600 text-white shadow-sm transition flex items-center justify-center gap-1 cursor-pointer'
+        : 'py-2 text-xs font-bold rounded-xl text-indigo-200 bg-indigo-900/60 transition flex items-center justify-center gap-1 cursor-pointer';
     }
   });
 }
@@ -398,14 +562,13 @@ function updateDashboardAbsen() {
 }
 
 // ============================================================================
-// 5. GENERATOR QR CODE ABSENSI KELAS
+// 6. GENERATOR QR CODE ABSENSI KELAS
 // ============================================================================
 
 function generateQR() {
   const kelas = document.getElementById('filterKelas')?.value || currentGuru?.kelasBinaan || '1A';
   const tanggal = document.getElementById('filterTanggal')?.value || new Date().toISOString().split('T')[0];
   const sesi = document.getElementById('ketSesi')?.value.trim() || 'Harian';
-
   const qrDataString = `ABSEN-SIBINTANG|${kelas}|${tanggal}|${sesi}`;
 
   const titleEl = document.getElementById('qrTitleKelas');
@@ -472,7 +635,7 @@ function generateQR() {
 }
 
 // ============================================================================
-// 6. REKAPITULASI PRESENSI & VERIFIKASI PERMOHONAN IZIN
+// 7. REKAPITULASI PRESENSI & VERIFIKASI PERMOHONAN IZIN
 // ============================================================================
 
 async function loadRekapKelas() {
@@ -486,7 +649,6 @@ async function loadRekapKelas() {
     if (!data.success) return;
 
     cacheRekapAbsen = data;
-
     document.getElementById('statTotal').textContent = data.totalSiswa || 0;
     document.getElementById('statHadir').textContent = data.jumlahHadir || 0;
     document.getElementById('statBelum').textContent = data.jumlahBelum || 0;
@@ -560,10 +722,9 @@ async function loadVerifikasiIzinGuru() {
 
     tbody.innerHTML = data.daftarIzin
       .map((item) => {
-        const linkSurat =
-          item.link && item.link !== '-' && item.link !== '#'
-            ? `<a href="${item.link}" target="_blank" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded-lg font-bold inline-flex items-center text-[11px] gap-1 transition">Berkas ${ICONS.external}</a>`
-            : `<span class="text-slate-400 italic">Tanpa Berkas</span>`;
+        const linkSurat = item.link && item.link !== '-' && item.link !== '#'
+          ? `<a href="${item.link}" target="_blank" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded-lg font-bold inline-flex items-center text-[11px] gap-1 transition">Berkas ${ICONS.external}</a>`
+          : `<span class="text-slate-400 italic">Tanpa Berkas</span>`;
 
         let badgeStatus = `<span class="bg-amber-100 text-amber-800 px-2.5 py-0.5 rounded-full font-bold text-[10px]">Menunggu</span>`;
         if (item.statusVerifikasi === 'Disetujui') {
@@ -572,10 +733,9 @@ async function loadVerifikasiIzinGuru() {
           badgeStatus = `<span class="bg-rose-100 text-rose-800 px-2.5 py-0.5 rounded-full font-bold text-[10px]">✕ Ditolak</span>`;
         }
 
-        const aksiBtn =
-          item.statusVerifikasi === 'Disetujui' || item.statusVerifikasi === 'Ditolak'
-            ? `<span class="text-[11px] text-slate-400 font-medium">Oleh: ${item.verifikator || '-'}</span>`
-            : `
+        const aksiBtn = item.statusVerifikasi === 'Disetujui' || item.statusVerifikasi === 'Ditolak'
+          ? `<span class="text-[11px] text-slate-400 font-medium">Oleh: ${item.verifikator || '-'}</span>`
+          : `
             <div class="inline-flex items-center gap-1.5">
               <button type="button" onclick="responIzinSiswa(${item.rowIndex}, 'Disetujui')" class="cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded-lg font-bold text-xs inline-flex items-center gap-1 shadow-sm transition">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
@@ -609,6 +769,7 @@ async function loadVerifikasiIzinGuru() {
     console.error('Gagal mengambil daftar izin siswa:', err);
   }
 }
+window.loadVerifikasiIzinGuru = loadVerifikasiIzinGuru;
 
 async function responIzinSiswa(rowIndex, tindakan) {
   const yakin = await konfirmasiModal({
@@ -621,7 +782,6 @@ async function responIzinSiswa(rowIndex, tindakan) {
   if (!yakin) return;
 
   const verifikator = currentGuru ? `${currentGuru.nama} (${currentGuru.role})` : 'Wali Kelas';
-
   try {
     const res = await fetch('/api/guru/verifikasi-izin', {
       method: 'POST',
@@ -641,9 +801,10 @@ async function responIzinSiswa(rowIndex, tindakan) {
     showToast('Gagal terhubung ke server.', 'error');
   }
 }
+window.responIzinSiswa = responIzinSiswa;
 
 // ============================================================================
-// 7. KELOLA TUGAS, DAFTAR PENGUMPULAN & PENILAIAN
+// 8. KELOLA TUGAS, DAFTAR PENGUMPULAN & PENILAIAN
 // ============================================================================
 
 async function submitBuatTugasGuru(e) {
@@ -655,7 +816,6 @@ async function submitBuatTugasGuru(e) {
   const deskripsi = document.getElementById('buatTugasDeskripsi').value.trim();
   const fileInput = document.getElementById('buatTugasFile')?.files?.[0];
   const activeUser = currentGuru || Auth.getGuru() || {};
-
   const btn = document.getElementById('btnPublikasiTugas');
   btn.textContent = 'Memublikasikan...';
   btn.disabled = true;
@@ -696,6 +856,7 @@ async function submitBuatTugasGuru(e) {
       showToast('Tugas baru berhasil dipublikasikan ke siswa!', 'success');
       document.getElementById('formBuatTugasGuru').reset();
       Auth.terapkanAksesRoleGuru(currentGuru);
+      muatUlangNotifikasiGuru();
     } else {
       showToast(data.message || data.error || 'Gagal memublikasikan tugas.', 'error');
     }
@@ -719,7 +880,6 @@ async function loadRekapTugas() {
 
     cacheRekapTugasFull = data;
     cacheDaftarTugas = data.daftarTugas || [];
-
     document.getElementById('statTotalFileTugas').textContent = `${data.totalTerkumpul || 0} File`;
     document.getElementById('statSiswaSudahTugas').textContent = `${data.jumlahSiswaSudah || 0} Siswa`;
     document.getElementById('statSiswaBelumTugas').textContent = `${data.jumlahSiswaBelum || 0} Siswa`;
@@ -792,7 +952,7 @@ function renderTabelTugas(list) {
           </td>
           <td class="p-3 text-right whitespace-nowrap space-x-1">
             <a href="${item.link}" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1.5 rounded-xl font-bold inline-flex items-center text-xs gap-1 transition shadow-sm">Buka File ${ICONS.external}</a>
-            <button type="button" onclick="openModalNilai(${item.rowIndex}, '${safeNama}', '${safeJudul}', '${item.nilai || ''}', '${safeCatatan}')" class="cursor-pointer bg-indigo-50 hover:bg-indigo-100 text-indigo-800 px-2.5 py-1.5 rounded-xl font-bold inline-flex items-center text-xs gap-1 transition border border-indigo-200">
+            <button type="button" onclick="openModalNilai(${item.rowIndex}, '${safeNama}', '${safeJudul}', '${item.nilai !== undefined && item.nilai !== null ? item.nilai : ''}', '${safeCatatan}')" class="cursor-pointer bg-indigo-50 hover:bg-indigo-100 text-indigo-800 px-2.5 py-1.5 rounded-xl font-bold inline-flex items-center text-xs gap-1 transition border border-indigo-200">
               ${ICONS.edit}<span>Beri Nilai</span>
             </button>
           </td>
@@ -826,10 +986,12 @@ function openModalNilai(rowIndex, nama, judul, nilai, catatan) {
   document.getElementById('inputCatatanGuru').value = catatan;
   document.getElementById('modalNilai').classList.remove('hidden');
 }
+window.openModalNilai = openModalNilai;
 
 function closeModalNilai() {
   document.getElementById('modalNilai').classList.add('hidden');
 }
+window.closeModalNilai = closeModalNilai;
 
 async function simpanNilaiTugas(e) {
   e.preventDefault();
@@ -852,6 +1014,7 @@ async function simpanNilaiTugas(e) {
       showToast('Nilai dan catatan berhasil disimpan!', 'success');
       closeModalNilai();
       loadRekapTugas();
+      muatUlangNotifikasiGuru(); // Otomatis perbarui jumlah tugas yang belum dinilai
     } else {
       showToast(result.message || result.error || 'Gagal menyimpan nilai.', 'error');
     }
@@ -864,7 +1027,7 @@ async function simpanNilaiTugas(e) {
 }
 
 // ============================================================================
-// 8. GENERATOR TOKEN REGISTRASI RESMI (ADMIN / KEPALA SEKOLAH)
+// 9. GENERATOR TOKEN REGISTRASI RESMI (ADMIN / KEPALA SEKOLAH)
 // ============================================================================
 
 async function submitGenerateToken(e) {
@@ -920,7 +1083,7 @@ function salinToken() {
 }
 
 // ============================================================================
-// 9. EKSPOR DATA KE FORMAT CSV (EXCEL COMPATIBLE)
+// 10. EKSPOR DATA KE FORMAT CSV (EXCEL COMPATIBLE)
 // ============================================================================
 
 function escapeCSV(val) {
@@ -997,7 +1160,7 @@ function exportTugasCSV() {
       t.kelas,
       t.mapel,
       t.judul,
-      t.nilai !== '' && t.nilai !== undefined ? t.nilai : 'Belum Dinilai',
+      t.nilai !== '' && t.nilai !== undefined && t.nilai !== null ? t.nilai : 'Belum Dinilai',
       t.catatan || '-',
       t.link,
     ]);
@@ -1018,7 +1181,7 @@ function exportTugasCSV() {
 }
 
 // ============================================================================
-// 10. TEMPLATE PENGUMUMAN & PENERBITAN PENGUMUMAN SEKOLAH
+// 11. TEMPLATE PENGUMUMAN & PENERBITAN PENGUMUMAN SEKOLAH
 // ============================================================================
 
 function pilihTemplatePengumuman() {
@@ -1069,6 +1232,7 @@ async function submitPengumumanGuru(e) {
     if (result.success) {
       showToast('Pengumuman berhasil diterbitkan!', 'success');
       document.getElementById('formPengumuman').reset();
+      muatUlangNotifikasiGuru(); // Otomatis refresh daftar notifikasi pengumuman
     } else {
       showToast(result.message || result.error || 'Gagal menerbitkan pengumuman.', 'error');
     }
