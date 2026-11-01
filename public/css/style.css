@@ -75,11 +75,12 @@ select {
 }
 
 /* ==========================================================================
-   4. PENYESUAIAN KAMERA SCANNER QR (HTML5-QRCode)
+   4. PENYESUAIAN KAMERA SCANNER QR (HTML5-QRCode) & ANIMASI LASER
    ========================================================================== */
 #reader {
   position: relative;
   overflow: hidden;
+  border: none !important;
 }
 
 #reader video {
@@ -89,14 +90,57 @@ select {
   border-radius: 1.25rem !important;
 }
 
-/* Sembunyikan elemen teks bawaan yang tidak diperlukan dari library scanner */
+/* Sembunyikan elemen UI teks & kontrol default yang tidak diperlukan dari library */
 #reader__dashboard_section_csr,
-#reader__status_span {
+#reader__status_span,
+#reader__dashboard_section_swaplink,
+#reader__camera_selection {
   display: none !important;
 }
 
+/* Animasi Garis Laser Pemindai QR */
+@keyframes scanLaser {
+  0% {
+    top: 6%;
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    top: 90%;
+    opacity: 0.2;
+  }
+}
+
+.animate-scan-laser {
+  animation: scanLaser 2.2s ease-in-out infinite alternate;
+}
+
 /* ==========================================================================
-   5. TOMBOL & KOMPONEN KUSTOM
+   5. ANIMASI AMBIENT GELOMBANG CAHAYA FOOTER
+   ========================================================================== */
+@keyframes ambientWave {
+  0% {
+    transform: translateX(-20%) scaleY(1);
+    opacity: 0.25;
+  }
+  50% {
+    transform: translateX(20%) scaleY(1.3);
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateX(-20%) scaleY(1);
+    opacity: 0.25;
+  }
+}
+
+.animate-ambient-flow {
+  animation: ambientWave 10s ease-in-out infinite alternate;
+}
+
+/* ==========================================================================
+   6. TOMBOL & KOMPONEN KUSTOM
    ========================================================================== */
 .btn-primary-custom {
   background-color: var(--logo-blue);
@@ -117,7 +161,7 @@ select {
 }
 
 /* ==========================================================================
-   6. ATURAN CETAK (PRINT-SAFE POSTER QR CODE & LAPORAN)
+   7. ATURAN CETAK (PRINT-SAFE POSTER QR CODE & LAPORAN)
    ========================================================================== */
 @media print {
   /* Kunci ukuran kertas A4 Portrait dengan margin 1 cm */
