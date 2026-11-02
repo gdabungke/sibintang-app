@@ -5,7 +5,7 @@
  * ============================================================================
  * Mengelola interaksi portal siswa: autentikasi, pemindai kamera QR dengan
  * panduan visual interaktif, toggle izin/sakit, pengunggahan tugas Google Drive,
- * pusat notifikasi terpadu (tugas belum dikumpul & pengumuman), serta log riwayat.
+ * pemutar materi YouTube interaktif, pusat notifikasi, serta log riwayat.
  */
 
 let currentStudent = null;
@@ -52,7 +52,6 @@ function initEventListeners() {
     e.stopPropagation();
     dropdownMenu?.classList.toggle('hidden');
     chevron?.classList.toggle('rotate-180');
-    // Tutup popover pengumuman/notifikasi jika profil dibuka
     document.getElementById('popoverNotifDesktop')?.classList.add('hidden');
   });
 
@@ -61,7 +60,6 @@ function initEventListeners() {
   btnNotif?.addEventListener('click', (e) => {
     e.stopPropagation();
     tandaiNotifikasiSiswaDibaca();
-
     if (window.innerWidth >= 768) {
       document.getElementById('popoverNotifDesktop')?.classList.toggle('hidden');
       dropdownMenu?.classList.add('hidden');
@@ -102,24 +100,24 @@ function initEventListeners() {
 // ============================================================================
 // 3. AUTENTIKASI SISWA & SINKRONISASI TAMPILAN
 // ============================================================================
-
 function switchAuthTab(type) {
   const formMasuk = document.getElementById('formMasuk');
   const formDaftar = document.getElementById('formDaftar');
   const btnMasuk = document.getElementById('authTabBtn-masuk');
   const btnDaftar = document.getElementById('authTabBtn-daftar');
+
   if (!formMasuk || !formDaftar) return;
 
   if (type === 'masuk') {
     formMasuk.classList.remove('hidden');
     formDaftar.classList.add('hidden');
-    if (btnMasuk) btnMasuk.className = 'py-2.5 text-xs font-bold rounded-xl bg-blue-700 text-white shadow-sm transition flex items-center justify-center gap-1.5';
-    if (btnDaftar) btnDaftar.className = 'py-2.5 text-xs font-bold rounded-xl text-slate-600 hover:text-slate-800 transition flex items-center justify-center gap-1.5';
+    if (btnMasuk) btnMasuk.className = 'py-2.5 text-xs font-bold rounded-xl bg-blue-700 text-white shadow-sm transition flex items-center justify-center gap-1.5 cursor-pointer';
+    if (btnDaftar) btnDaftar.className = 'py-2.5 text-xs font-bold rounded-xl text-slate-600 hover:text-slate-800 transition flex items-center justify-center gap-1.5 cursor-pointer';
   } else {
     formMasuk.classList.add('hidden');
     formDaftar.classList.remove('hidden');
-    if (btnDaftar) btnDaftar.className = 'py-2.5 text-xs font-bold rounded-xl bg-emerald-600 text-white shadow-sm transition flex items-center justify-center gap-1.5';
-    if (btnMasuk) btnMasuk.className = 'py-2.5 text-xs font-bold rounded-xl text-slate-600 hover:text-slate-800 transition flex items-center justify-center gap-1.5';
+    if (btnDaftar) btnDaftar.className = 'py-2.5 text-xs font-bold rounded-xl bg-emerald-600 text-white shadow-sm transition flex items-center justify-center gap-1.5 cursor-pointer';
+    if (btnMasuk) btnMasuk.className = 'py-2.5 text-xs font-bold rounded-xl text-slate-600 hover:text-slate-800 transition flex items-center justify-center gap-1.5 cursor-pointer';
   }
 }
 
@@ -136,8 +134,8 @@ async function prosesMasukSiswa(e) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ nis, aksi: 'login' }),
     });
-    const result = await res.json();
 
+    const result = await res.json();
     if (result.success) {
       currentStudent = result.data;
       Auth.setSiswa(currentStudent);
@@ -177,8 +175,8 @@ async function prosesDaftarSiswa(e) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
-    const result = await res.json();
 
+    const result = await res.json();
     if (result.success) {
       currentStudent = result.data;
       Auth.setSiswa(currentStudent);
@@ -208,9 +206,8 @@ function updateHeaderUI(isLoggedIn) {
     if (guestBadge) guestBadge.classList.add('hidden');
     if (userDropdown) userDropdown.classList.remove('hidden');
     if (notifWrap) notifWrap.classList.remove('hidden');
-
     if (navDesk) navDesk.className = "hidden md:flex items-center gap-1.5 bg-indigo-900/60 p-1 rounded-2xl border border-indigo-800/60 transition-all";
-    if (navMob) navMob.className = "grid md:hidden pb-2.5 pt-0.5 grid-cols-2 gap-2 border-t border-indigo-900/50";
+    if (navMob) navMob.className = "grid md:hidden pb-2 pt-1 grid-cols-2 gap-2 border-t border-indigo-900/50";
   } else {
     if (container) container.className = "w-full max-w-md mx-auto px-4 sm:px-0 transition-all duration-300";
     if (guestBadge) guestBadge.classList.remove('hidden');
@@ -228,21 +225,17 @@ function showDashboard() {
   document.getElementById('appSection')?.classList.remove('hidden');
   updateHeaderUI(true);
 
-  // Penataan Data Profil Siswa
   const namaSiswa = currentStudent?.nama || 'Siswa';
   const kelasSiswa = currentStudent?.kelas || '-';
   const nisSiswa = currentStudent?.nis || '-';
 
-  // 1. Tampilkan di Header Pill Siswa
   const pillName = document.getElementById('headerUserPillNameSiswa');
   const pillRole = document.getElementById('headerUserPillRoleSiswa');
   const initial = document.getElementById('headerAvatarInitialSiswa');
-
   if (pillName) pillName.textContent = namaSiswa.split(' ').slice(0, 2).join(' ');
   if (pillRole) pillRole.textContent = `Kelas ${kelasSiswa}`;
   if (initial) initial.textContent = (namaSiswa.trim()[0] || 'S').toUpperCase();
 
-  // 2. Tampilkan di Dropdown Card Popover
   const ddNama = document.getElementById('dropdownNamaLengkapSiswa');
   const ddDetail = document.getElementById('dropdownPeranDetailSiswa');
   if (ddNama) ddNama.textContent = namaSiswa;
@@ -266,13 +259,11 @@ async function logout() {
     teksKonfirmasi: 'Ya, Keluar',
     tipe: 'warning'
   });
-
   if (!yakin) return;
 
   stopScanner();
   Auth.logoutSiswa();
   currentStudent = null;
-
   document.getElementById('appSection')?.classList.add('hidden');
   document.getElementById('loginSection')?.classList.remove('hidden');
   updateHeaderUI(false);
@@ -281,7 +272,6 @@ async function logout() {
 // ============================================================================
 // 4. NAVIGASI 2 MENU UTAMA & MODE PRESENSI
 // ============================================================================
-
 function switchTab(tab) {
   const tabPresensi = document.getElementById('tabContent-presensi');
   const tabTugas = document.getElementById('tabContent-tugas');
@@ -295,7 +285,6 @@ function switchTab(tab) {
     stopScanner();
     loadDaftarTugasGuru();
   }
-
   sinkronkanStyle2Tab(tab);
 }
 
@@ -307,13 +296,13 @@ function sinkronkanStyle2Tab(activeTabKey) {
 
     if (btnDesk) {
       btnDesk.className = isActive
-        ? 'py-1.5 px-4 text-xs font-bold rounded-xl bg-blue-600 text-white shadow-sm transition flex items-center gap-1.5'
-        : 'py-1.5 px-4 text-xs font-bold rounded-xl text-indigo-200 hover:text-white hover:bg-indigo-800/50 transition flex items-center gap-1.5';
+        ? 'py-1.5 px-4 text-xs font-bold rounded-xl bg-blue-600 text-white shadow-sm transition flex items-center gap-1.5 cursor-pointer'
+        : 'py-1.5 px-4 text-xs font-bold rounded-xl text-indigo-200 hover:text-white hover:bg-indigo-800/50 transition flex items-center gap-1.5 cursor-pointer';
     }
     if (btnMob) {
       btnMob.className = isActive
-        ? 'py-2 text-xs font-bold rounded-xl bg-blue-600 text-white shadow-sm transition flex items-center justify-center gap-1.5'
-        : 'py-2 text-xs font-bold rounded-xl text-indigo-200 bg-indigo-900/60 transition flex items-center justify-center gap-1.5';
+        ? 'py-1.5 text-xs font-bold rounded-xl bg-blue-600 text-white shadow-sm transition flex items-center justify-center gap-1.5 cursor-pointer'
+        : 'py-1.5 text-xs font-bold rounded-xl text-indigo-200 bg-indigo-900/60 transition flex items-center justify-center gap-1.5 cursor-pointer';
     }
   });
 }
@@ -342,7 +331,6 @@ window.switchPresensiMode = switchPresensiMode;
 // ============================================================================
 // 5. KAMERA QR CODE SCANNER DENGAN PANDUAN VISUAL DINAMIS
 // ============================================================================
-
 function startScanner() {
   const alertBox = document.getElementById('absenAlert');
   if (alertBox) alertBox.classList.add('hidden');
@@ -366,15 +354,12 @@ function startScanner() {
       () => {}
     )
     .then(() => {
-      // Sembunyikan placeholder panduan, nyalakan bingkai laser aktif
       if (guidePlaceholder) guidePlaceholder.classList.add('hidden');
       if (activeOverlay) activeOverlay.classList.remove('hidden');
-
       if (badgeStatus) {
         badgeStatus.className = 'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200';
         badgeStatus.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Memindai QR...';
       }
-
       document.getElementById('btnStartScan')?.classList.add('hidden');
       document.getElementById('btnStopScan')?.classList.remove('hidden');
     })
@@ -394,10 +379,8 @@ async function stopScanner() {
   const activeOverlay = document.getElementById('scannerActiveOverlay');
   const badgeStatus = document.getElementById('badgeStatusKamera');
 
-  // Kembalikan ke tampilan ilustrasi panduan visual
   if (guidePlaceholder) guidePlaceholder.classList.remove('hidden');
   if (activeOverlay) activeOverlay.classList.add('hidden');
-
   if (badgeStatus) {
     badgeStatus.className = 'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200';
     badgeStatus.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> Kamera Standby';
@@ -429,13 +412,11 @@ async function kirimAbsensi(qrCodeData) {
       const qrParts = qrCodeData.split('|').map((p) => p.trim());
       const kelasQR = (qrParts[1] || '').toUpperCase();
       const kelasSiswa = (currentStudent?.kelas || '').trim().toUpperCase();
-
       if (kelasQR && kelasSiswa && kelasQR !== kelasSiswa) {
         throw new Error(`QR ini khusus Kelas ${kelasQR}. Anda terdaftar di Kelas ${kelasSiswa}.`);
       }
     }
 
-    // Jalur Mode Offline
     if (!navigator.onLine) {
       if (typeof simpanKeAntreanOffline === 'function') {
         simpanKeAntreanOffline(payload);
@@ -454,8 +435,8 @@ async function kirimAbsensi(qrCodeData) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
-    const result = await res.json();
 
+    const result = await res.json();
     if (result.success) {
       bunyikanBeep('success');
       if (alertBox) {
@@ -494,40 +475,116 @@ async function kirimAbsensi(qrCodeData) {
 // ============================================================================
 // 6. DAFTAR TUGAS DARI GURU & PENGUMPULAN FILE TUGAS
 // ============================================================================
-
 async function loadDaftarTugasGuru() {
   if (!currentStudent) return;
   const container = document.getElementById('containerDaftarTugasGuru');
   if (!container) return;
 
   try {
-    const res = await fetch(`/api/guru/tugas?kelas=${encodeURIComponent(currentStudent.kelas)}`);
-    const result = await res.json();
+    const [resSoal, resRiwayat] = await Promise.all([
+      fetch(`/api/guru/tugas?kelas=${encodeURIComponent(currentStudent.kelas)}`),
+      fetch(`/api/riwayat/${currentStudent.nis}`).catch(() => null)
+    ]);
+
+    const result = await resSoal.json();
     const tugasList = result.daftarSoal || result.data || result.daftarTugas || [];
+
+    let judulSudahKumpul = [];
+    if (resRiwayat && resRiwayat.ok) {
+      const dataRiwayat = await resRiwayat.json();
+      judulSudahKumpul = (dataRiwayat.tugas || []).map(t => (t.judul || '').trim().toLowerCase());
+    }
 
     if (!result.success || tugasList.length === 0) {
       container.innerHTML = `<p class="text-xs text-slate-400 text-center py-3">Belum ada tugas atau PR untuk kelas Anda.</p>`;
       return;
     }
 
+    const iconExt = typeof ICONS !== 'undefined' && ICONS.external ? ICONS.external : '';
+
     container.innerHTML = tugasList.map((t) => {
-      const fileLinkBtn = (t.link && t.link !== '-' && t.link !== '#')
-        ? `<a href="${t.link}" target="_blank" class="bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1.5 rounded-xl font-bold text-xs inline-flex items-center gap-1 transition">Buka File Soal ${ICONS.external}</a>`
-        : '';
       const safeJudul = (t.judul || '').replace(/'/g, "\\'");
       const safeMapel = (t.mapel || '').replace(/'/g, "\\'");
+      const safeMateri = (t.materi || '').replace(/'/g, "\\'");
+
+      const cleanJudul = (t.judul || '').trim().toLowerCase();
+      const sudahKumpul = judulSudahKumpul.includes(cleanJudul);
+
+      // 1. Tautan File Fisik Guru (Google Drive)
+      const fileLinkBtn = (t.link && t.link !== '-' && t.link !== '#')
+        ? `<a href="${t.link}" target="_blank" class="bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1.5 rounded-xl font-bold text-xs inline-flex items-center gap-1 transition">Buka File Soal ${iconExt}</a>`
+        : '';
+
+      // 2. Deteksi Video YouTube atau Tautan Modul Web
+      const urlMateri = t.linkMateri || t.linkExternal || '';
+      const isYt = typeof getYouTubeId === 'function' && getYouTubeId(urlMateri);
+      const ytEmbed = isYt && typeof renderYouTubeEmbed === 'function' ? renderYouTubeEmbed(urlMateri) : '';
+
+      const webMateriBtn = (!isYt && urlMateri && urlMateri !== '-' && urlMateri !== '#')
+        ? `<a href="${urlMateri}" target="_blank" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-xl font-bold text-xs inline-flex items-center gap-1 transition">
+             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+             <span>Buka Tautan Materi</span>
+           </a>`
+        : '';
+
+      // Tampilan Materi / Pokok Bahasan
+      const materiBadge = t.materi
+        ? `<span class="text-[11px] font-semibold text-slate-500 bg-slate-200/60 px-2 py-0.5 rounded-md">${t.materi}</span>`
+        : '';
+
+      if (sudahKumpul) {
+        return `
+          <div class="p-4 rounded-2xl border border-emerald-200 bg-emerald-50/70 space-y-2.5 transition-all">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="text-xs font-bold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-md">${t.mapel}</span>
+                ${materiBadge}
+              </div>
+              <span class="text-[11px] text-slate-400 font-medium">Batas Waktu: ${t.deadline || '-'}</span>
+            </div>
+
+            <h4 class="text-sm font-black text-slate-800">${t.judul}</h4>
+            <p class="text-xs text-slate-600 leading-relaxed">${t.deskripsi || '-'}</p>
+
+            ${ytEmbed}
+
+            <div class="pt-2 flex items-center justify-between gap-2 flex-wrap border-t border-emerald-200/60">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                ${fileLinkBtn}
+                ${webMateriBtn}
+              </div>
+              <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-200/80 text-emerald-800 text-xs font-bold ml-auto">
+                <svg class="w-4 h-4 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                <span>Sudah Dikerjakan</span>
+              </span>
+            </div>
+          </div>
+        `;
+      }
 
       return `
-        <div class="p-4 rounded-2xl border border-slate-200 bg-slate-50 space-y-2">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-            <span class="text-xs font-bold text-blue-700 bg-blue-100/70 px-2.5 py-0.5 rounded-md w-fit">${t.mapel}</span>
+        <div class="p-4 rounded-2xl border border-slate-200 bg-slate-50 space-y-2.5 transition-all">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="text-xs font-bold text-blue-700 bg-blue-100/70 px-2.5 py-0.5 rounded-md">${t.mapel}</span>
+              ${materiBadge}
+            </div>
             <span class="text-[11px] text-slate-500 font-medium">Batas Waktu: ${t.deadline || '-'}</span>
           </div>
+
           <h4 class="text-sm font-black text-slate-800">${t.judul}</h4>
           <p class="text-xs text-slate-600 leading-relaxed">${t.deskripsi || '-'}</p>
+
+          ${ytEmbed}
+
           <div class="pt-2 flex items-center justify-between gap-2 flex-wrap border-t border-slate-200/60">
-            ${fileLinkBtn}
-            <button type="button" onclick="pilihTugas('${safeJudul}', '${safeMapel}')" class="cursor-pointer text-xs bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold px-3.5 py-1.5 rounded-xl transition shadow-sm ml-auto">Kumpul Tugas Ini</button>
+            <div class="flex items-center gap-1.5 flex-wrap">
+              ${fileLinkBtn}
+              ${webMateriBtn}
+            </div>
+            <button type="button" onclick="pilihTugas('${safeJudul}', '${safeMapel}', '${safeMateri}')" class="cursor-pointer text-xs bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-bold px-3.5 py-1.5 rounded-xl transition shadow-sm ml-auto">
+              Kumpul Tugas Ini
+            </button>
           </div>
         </div>
       `;
@@ -537,11 +594,17 @@ async function loadDaftarTugasGuru() {
   }
 }
 
-function pilihTugas(judul, mapel) {
+function pilihTugas(judul, mapel, materi = '') {
   const inputJudul = document.getElementById('judulTugas');
   const selectMapel = document.getElementById('mapel');
-  if (inputJudul) inputJudul.value = judul;
-  if (selectMapel && mapel) selectMapel.value = mapel;
+
+  if (inputJudul) {
+    inputJudul.value = materi ? `[${materi}] ${judul}` : judul;
+  }
+  if (selectMapel && mapel) {
+    selectMapel.value = mapel;
+  }
+
   switchTab('tugas');
   inputJudul?.scrollIntoView({ behavior: 'smooth' });
 }
@@ -565,24 +628,19 @@ async function submitTugasSiswa(e) {
   alertBox.classList.add('hidden');
 
   try {
-    // 1. Format nama berkas: nama_kelas_matapelajaran_timestamp
     const cleanNama = (currentStudent?.nama || 'Siswa').replace(/\s+/g, '_');
     const cleanKelas = (currentStudent?.kelas || 'Kelas').replace(/\s+/g, '_');
     const cleanMapel = mapelVal.replace(/\s+/g, '_');
     const timestamp = Math.floor(Date.now() / 1000);
-
     const namaFileKustom = `${cleanNama}_${cleanKelas}_${cleanMapel}_${timestamp}`;
     const namaSubFolder = `Tugas_${cleanKelas}_${cleanMapel}`;
 
-    // Unggah berkas langsung ke Google Drive via Apps Script
     showToast('Mengunggah file ke Google Drive...', 'info');
     const linkDrive = await uploadFileKeDrivePribadi(fileInput, namaFileKustom, namaSubFolder);
-
     if (!linkDrive) {
       throw new Error('Gagal mendapatkan tautan file dari Google Drive.');
     }
 
-    // 2. Kirim metadata tugas beserta link Google Drive ke backend Vercel
     btn.textContent = 'Menyimpan data tugas...';
     const res = await fetch('/api/tugas', {
       method: 'POST',
@@ -600,17 +658,22 @@ async function submitTugasSiswa(e) {
     });
 
     const result = await res.json();
-
     if (result.success) {
+      const iconCheck = typeof ICONS !== 'undefined' && ICONS.check ? ICONS.check : '✓';
+      const iconExt = typeof ICONS !== 'undefined' && ICONS.external ? ICONS.external : '';
+
       alertBox.className = 'mt-3 p-2.5 rounded-xl text-xs font-bold text-center bg-emerald-100 text-emerald-800';
       alertBox.innerHTML = `
-        <div class="flex items-center justify-center gap-1.5 font-bold mb-1">${ICONS.check}<span>${result.message || 'Tugas berhasil disimpan!'}</span></div>
-        <a href="${linkDrive}" target="_blank" class="underline font-bold inline-flex items-center text-blue-700">Lihat File di Google Drive ${ICONS.external}</a>
+        <div class="flex items-center justify-center gap-1.5 font-bold mb-1">${iconCheck}<span>${result.message || 'Tugas berhasil disimpan!'}</span></div>
+        <a href="${linkDrive}" target="_blank" class="underline font-bold inline-flex items-center text-blue-700">Lihat File di Google Drive ${iconExt}</a>
       `;
       alertBox.classList.remove('hidden');
+
       showToast('Tugas berhasil diupload!', 'success');
       document.getElementById('tugasForm').reset();
+
       loadRiwayat();
+      loadDaftarTugasGuru();
       if (typeof muatUlangNotifikasiSiswa === 'function') {
         muatUlangNotifikasiSiswa();
       }
@@ -618,8 +681,9 @@ async function submitTugasSiswa(e) {
       throw new Error(result.message || result.error);
     }
   } catch (err) {
+    const iconErr = typeof ICONS !== 'undefined' && ICONS.error ? ICONS.error : '✕';
     alertBox.className = 'mt-3 p-2.5 rounded-xl text-xs font-bold text-center bg-rose-100 text-rose-700 flex items-center justify-center gap-1.5';
-    alertBox.innerHTML = `${ICONS.error}<span>Gagal mengupload tugas: ${err.message || 'Kesalahan jaringan'}</span>`;
+    alertBox.innerHTML = `${iconErr}<span>Gagal mengupload tugas: ${err.message || 'Kesalahan jaringan'}</span>`;
     alertBox.classList.remove('hidden');
     showToast('Gagal mengupload tugas: ' + (err.message || ''), 'error');
   } finally {
@@ -631,7 +695,6 @@ async function submitTugasSiswa(e) {
 // ============================================================================
 // 7. PERMOHONAN IZIN & SAKIT SISWA
 // ============================================================================
-
 async function submitIzinSiswa(e) {
   e.preventDefault();
   const btn = document.getElementById('btnSubmitIzin');
@@ -645,27 +708,22 @@ async function submitIzinSiswa(e) {
 
   try {
     let linkBukti = '-';
-
-    // 1. Jika ada lampiran surat dokter/bukti izin, upload langsung ke Google Drive via Apps Script
     if (fileInput) {
       if (typeof showToast === 'function') {
         showToast('Mengunggah bukti surat izin ke Google Drive...', 'info');
       }
       btn.textContent = 'Mengunggah ke Drive...';
 
-      // Format nama berkas: SuratIzin_nama_kelas_timestamp
       const cleanNama = (currentStudent?.nama || 'Siswa').replace(/\s+/g, '_');
       const cleanKelas = (currentStudent?.kelas || 'Kelas').replace(/\s+/g, '_');
       const cleanStatus = statusIzinVal.replace(/\s+/g, '_');
       const timestamp = Math.floor(Date.now() / 1000);
-
       const namaFileKustom = `Surat${cleanStatus}_${cleanNama}_${cleanKelas}_${timestamp}`;
       const namaSubFolder = `Surat_Izin_${cleanKelas}`;
 
       linkBukti = await uploadFileKeDrivePribadi(fileInput, namaFileKustom, namaSubFolder);
     }
 
-    // 2. Kirim data izin beserta tautan Google Drive ke backend Vercel
     btn.textContent = 'Mengirim permohonan...';
     const res = await fetch('/api/izin', {
       method: 'POST',
@@ -683,11 +741,12 @@ async function submitIzinSiswa(e) {
     });
 
     const result = await res.json();
-
     if (result.success) {
+      const iconCheck = typeof ICONS !== 'undefined' && ICONS.check ? ICONS.check : '✓';
       alertBox.className = 'mt-3 p-2.5 rounded-xl text-xs font-bold text-center bg-emerald-100 text-emerald-800 flex items-center justify-center gap-1.5';
-      alertBox.innerHTML = `${ICONS.check}<span>${result.message || 'Pengajuan izin berhasil terkirim!'}</span>`;
+      alertBox.innerHTML = `${iconCheck}<span>${result.message || 'Pengajuan izin berhasil terkirim!'}</span>`;
       alertBox.classList.remove('hidden');
+
       if (typeof showToast === 'function') {
         showToast('Pengajuan izin terkirim!', 'success');
       }
@@ -699,8 +758,9 @@ async function submitIzinSiswa(e) {
       throw new Error(result.message || result.error);
     }
   } catch (err) {
+    const iconErr = typeof ICONS !== 'undefined' && ICONS.error ? ICONS.error : '✕';
     alertBox.className = 'mt-3 p-2.5 rounded-xl text-xs font-bold text-center bg-rose-100 text-rose-700 flex items-center justify-center gap-1.5';
-    alertBox.innerHTML = `${ICONS.error}<span>Gagal mengirim izin: ${err.message || 'Kesalahan jaringan'}</span>`;
+    alertBox.innerHTML = `${iconErr}<span>Gagal mengirim izin: ${err.message || 'Kesalahan jaringan'}</span>`;
     alertBox.classList.remove('hidden');
     if (typeof showToast === 'function') {
       showToast('Gagal mengirim izin.', 'error');
@@ -713,7 +773,6 @@ async function submitIzinSiswa(e) {
 
 async function loadRiwayatIzin() {
   if (!currentStudent) return;
-
   try {
     const res = await fetch(`/api/izin/${currentStudent.nis}`);
     const result = await res.json();
@@ -725,6 +784,8 @@ async function loadRiwayatIzin() {
       return;
     }
 
+    const iconExt = typeof ICONS !== 'undefined' && ICONS.external ? ICONS.external : '';
+
     tbody.innerHTML = result.izin.map((item) => {
       let badgeVerifikasi = `<span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-bold text-[10px] inline-flex items-center gap-1">Menunggu</span>`;
       if (item.verifikasi === 'Disetujui') {
@@ -734,16 +795,16 @@ async function loadRiwayatIzin() {
       }
 
       const lampiranLink = (item.link && item.link !== '-' && item.link !== '#')
-        ? `<a href="${item.link}" target="_blank" class="bg-blue-50 hover:bg-blue-100 text-blue-700 px-2 py-0.5 rounded-lg font-bold text-[10px] inline-flex items-center gap-1 transition">Lihat ${ICONS.external}</a>`
+        ? `<a href="${item.link}" target="_blank" class="bg-blue-50 hover:bg-blue-100 text-blue-700 px-2 py-0.5 rounded-lg font-bold text-[10px] inline-flex items-center gap-1 transition">Lihat ${iconExt}</a>`
         : '<span class="text-slate-400 italic">Tanpa Berkas</span>';
 
       return `
-        <tr class="hover:bg-slate-50 transition">
-          <td class="p-2.5 font-medium text-slate-800 whitespace-nowrap">${item.tanggal}</td>
-          <td class="p-2.5"><span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-semibold">${item.status}</span></td>
-          <td class="p-2.5 text-slate-600 max-w-xs truncate" title="${item.keterangan}">${item.keterangan}</td>
-          <td class="p-2.5 whitespace-nowrap">${lampiranLink}</td>
-          <td class="p-2.5 whitespace-nowrap">${badgeVerifikasi}</td>
+        <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+          <td class="p-2.5 font-medium text-slate-800 whitespace-nowrap text-xs">${item.tanggal}</td>
+          <td class="p-2.5 text-xs"><span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-semibold">${item.status}</span></td>
+          <td class="p-2.5 text-slate-600 text-xs max-w-xs truncate" title="${item.keterangan}">${item.keterangan}</td>
+          <td class="p-2.5 whitespace-nowrap text-xs">${lampiranLink}</td>
+          <td class="p-2.5 whitespace-nowrap text-xs">${badgeVerifikasi}</td>
         </tr>
       `;
     }).join('');
@@ -756,7 +817,6 @@ window.loadRiwayatIzin = loadRiwayatIzin;
 // ============================================================================
 // 8. LOG RIWAYAT KEHADIRAN (SCAN) & RIWAYAT TUGAS
 // ============================================================================
-
 async function loadRiwayat() {
   if (!currentStudent) return;
 
@@ -765,46 +825,78 @@ async function loadRiwayat() {
     const result = await res.json();
     if (!result.success) return;
 
-    // Tabel Riwayat Absensi Kehadiran
+    // 1. Tabel Riwayat Absensi Kehadiran
     const tbodyAbsen = document.getElementById('tableAbsensi');
     if (result.absensi.length === 0) {
       tbodyAbsen.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400">Belum ada riwayat absensi.</td></tr>`;
     } else {
-      tbodyAbsen.innerHTML = result.absensi.map((item) => `
-        <tr class="hover:bg-slate-50 transition">
-          <td class="p-2.5 font-medium">${item.waktu}</td>
-          <td class="p-2.5 font-bold">${item.kelas}</td>
-          <td class="p-2.5"><span class="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded font-bold">${item.status}</span></td>
-          <td class="p-2.5 text-slate-500">${item.keterangan}</td>
-        </tr>
-      `).join('');
+      tbodyAbsen.innerHTML = result.absensi.map((item) => {
+        let badgeStatus = `<span class="bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full font-bold text-[11px] inline-flex items-center gap-1 shadow-xs"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Hadir</span>`;
+        if (item.status === 'Izin') {
+          badgeStatus = `<span class="bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full font-bold text-[11px] inline-flex items-center gap-1 shadow-xs"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>Izin</span>`;
+        } else if (item.status === 'Sakit') {
+          badgeStatus = `<span class="bg-rose-100 text-rose-800 px-2.5 py-1 rounded-full font-bold text-[11px] inline-flex items-center gap-1 shadow-xs"><span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>Sakit</span>`;
+        }
+
+        let keteranganText = item.keterangan || '-';
+        if (typeof keteranganText === 'string' && keteranganText.startsWith('ABSEN-SIBINTANG')) {
+          const parts = keteranganText.split('|').map((p) => p.trim());
+          const kelas = parts[1] || item.kelas || '';
+          const sesi = parts[3] || 'Absen Pagi';
+          keteranganText = `
+            <div class="inline-flex items-center gap-1.5 text-xs text-slate-700 font-medium">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+              <span>Hadir di Kelas ${kelas} (${sesi})</span>
+            </div>
+          `;
+        } else {
+          keteranganText = `<span class="text-xs text-slate-600">${keteranganText}</span>`;
+        }
+
+        return `
+          <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+            <td class="p-2.5 font-medium text-slate-700 text-xs whitespace-nowrap">${item.waktu}</td>
+            <td class="p-2.5 font-bold text-slate-800 text-xs">${item.kelas}</td>
+            <td class="p-2.5 whitespace-nowrap">${badgeStatus}</td>
+            <td class="p-2.5 leading-snug">${keteranganText}</td>
+          </tr>
+        `;
+      }).join('');
     }
 
-    // Tabel Riwayat Pengumpulan Tugas & Nilai Guru
+    // 2. Tabel Riwayat Pengumpulan Tugas & Nilai Guru
     const tbodyTugas = document.getElementById('tableTugas');
     if (result.tugas.length === 0) {
       tbodyTugas.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400">Belum ada tugas yang dikumpulkan.</td></tr>`;
     } else {
       tbodyTugas.innerHTML = result.tugas.map((item) => {
+        const iconStar = typeof ICONS !== 'undefined' && ICONS.star ? ICONS.star : '★';
+        const iconExternal = typeof ICONS !== 'undefined' && ICONS.external ? ICONS.external : '';
+
         const badgeNilai = item.nilai
-          ? `<span class="bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-xl font-black text-xs inline-flex items-center gap-1 shadow-sm">${ICONS.star} Nilai: ${item.nilai}</span>`
+          ? `<span class="bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-xl font-black text-xs inline-flex items-center gap-1 shadow-xs">${iconStar} Nilai: ${item.nilai}</span>`
           : `<span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded-lg font-bold text-[11px] inline-block">Menunggu Dinilai</span>`;
 
         const catatanGuru = item.catatan
           ? `<div class="text-[11px] text-slate-600 bg-slate-50 p-2 rounded-xl mt-1 border border-slate-200"><span><b>Catatan Guru:</b> "${item.catatan}"</span></div>`
           : '';
 
+        const materiBadge = item.materi
+          ? `<span class="inline-block text-[10px] font-semibold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md mb-1">${item.materi}</span>`
+          : '';
+
         return `
-          <tr class="hover:bg-slate-50 align-top transition">
-            <td class="p-3 text-slate-500 whitespace-nowrap">${item.waktu}</td>
-            <td class="p-3 font-bold text-blue-700">${item.mapel}</td>
+          <tr class="hover:bg-slate-50 align-top transition border-b border-slate-100">
+            <td class="p-3 text-slate-500 text-xs whitespace-nowrap">${item.waktu}</td>
+            <td class="p-3 font-bold text-blue-700 text-xs">${item.mapel}</td>
             <td class="p-3">
-              <div class="font-black text-slate-800">${item.judul}</div>
+              ${materiBadge}
+              <div class="font-black text-slate-800 text-xs">${item.judul}</div>
               ${catatanGuru}
             </td>
             <td class="p-3 text-right whitespace-nowrap">
               <div class="mb-1.5">${badgeNilai}</div>
-              <a href="${item.link}" target="_blank" class="bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1.5 rounded-xl font-bold inline-flex items-center text-xs gap-1 transition">Buka File ${ICONS.external}</a>
+              <a href="${item.link}" target="_blank" class="bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1.5 rounded-xl font-bold inline-flex items-center text-xs gap-1 transition">Buka File ${iconExternal}</a>
             </td>
           </tr>
         `;
@@ -819,7 +911,6 @@ window.loadRiwayat = loadRiwayat;
 // ============================================================================
 // 9. PUSAT NOTIFIKASI TERPADU SISWA (TUGAS MASUK & PENGUMUMAN SEKOLAH)
 // ============================================================================
-
 function switchTabNotifSiswa(tab) {
   const deskTugas = document.getElementById('listNotifTugasDesktop');
   const deskPeng = document.getElementById('listPengumumanDesktop');
@@ -867,16 +958,13 @@ window.switchTabNotifSiswa = switchTabNotifSiswa;
 
 async function muatUlangNotifikasiSiswa() {
   if (!currentStudent) return;
-
   let totalTugasBelumKumpul = 0;
 
-  // 1. Ambil Notifikasi Tugas dari Guru
   try {
     const resTugas = await fetch(`/api/guru/tugas?kelas=${encodeURIComponent(currentStudent.kelas)}`);
     const dataTugas = await resTugas.json();
     const daftarTugas = dataTugas.daftarSoal || dataTugas.data || dataTugas.daftarTugas || [];
 
-    // Ambil riwayat tugas yang sudah dikumpulkan siswa untuk difilter
     let tugasSudahKumpul = [];
     try {
       const resRiwayat = await fetch(`/api/riwayat/${currentStudent.nis}`);
@@ -884,7 +972,6 @@ async function muatUlangNotifikasiSiswa() {
       tugasSudahKumpul = (dataRiwayat.tugas || []).map(t => (t.judul || '').trim().toLowerCase());
     } catch (_) {}
 
-    // Saring tugas yang belum pernah diunggah oleh siswa ini
     const tugasBelumSelesai = daftarTugas.filter(t => {
       const judul = (t.judul || '').trim().toLowerCase();
       return !tugasSudahKumpul.includes(judul);
@@ -897,17 +984,20 @@ async function muatUlangNotifikasiSiswa() {
       : tugasBelumSelesai.map(t => {
           const safeJudul = (t.judul || '').replace(/'/g, "\\'");
           const safeMapel = (t.mapel || '').replace(/'/g, "\\'");
+          const safeMateri = (t.materi || '').replace(/'/g, "\\'");
+          const infoMateri = t.materi ? ` &bull; ${t.materi}` : '';
+
           return `
             <div class="p-3 bg-blue-50/70 hover:bg-blue-100/70 rounded-2xl border border-blue-100 transition space-y-1">
               <div class="flex items-center justify-between">
-                <span class="text-[10px] font-bold bg-blue-200 text-blue-900 px-2 py-0.5 rounded-md">${t.mapel}</span>
+                <span class="text-[10px] font-bold bg-blue-200 text-blue-900 px-2 py-0.5 rounded-md">${t.mapel}${infoMateri}</span>
                 <span class="text-[10px] text-slate-400 font-mono">Batas: ${t.deadline || '-'}</span>
               </div>
               <h5 class="text-xs font-black text-slate-800 leading-snug">${t.judul}</h5>
               <p class="text-[11px] text-slate-600 truncate">${t.deskripsi || '-'}</p>
               <div class="pt-1.5 flex items-center justify-between border-t border-blue-200/50 mt-1">
                 <span class="text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded">Belum Dikumpul</span>
-                <button type="button" onclick="pilihTugasDariNotif('${safeJudul}', '${safeMapel}')" class="cursor-pointer text-[11px] font-bold text-blue-700 hover:underline">Kerjakan Sekarang →</button>
+                <button type="button" onclick="pilihTugasDariNotif('${safeJudul}', '${safeMapel}', '${safeMateri}')" class="cursor-pointer text-[11px] font-bold text-blue-700 hover:underline">Kerjakan Sekarang →</button>
               </div>
             </div>
           `;
@@ -923,16 +1013,13 @@ async function muatUlangNotifikasiSiswa() {
     if (deskTugas) deskTugas.innerHTML = errHtml;
   }
 
-  // 2. Ambil Pengumuman Sekolah
   await loadPengumumanSiswa();
 
-  // 3. Update Pill Counter & Live Dot Badge
   const counterPill = document.getElementById('notifSiswaCounterPill');
   if (counterPill) counterPill.textContent = `${totalTugasBelumKumpul} Tugas Aktif`;
 
   const badgeLive = document.getElementById('badgeNotifLive');
   const sudahDibaca = localStorage.getItem('sibintang_notif_siswa_read') === 'true';
-
   if (totalTugasBelumKumpul > 0 || !sudahDibaca) {
     badgeLive?.classList.remove('hidden');
   } else {
@@ -941,11 +1028,10 @@ async function muatUlangNotifikasiSiswa() {
 }
 window.muatUlangNotifikasiSiswa = muatUlangNotifikasiSiswa;
 
-function pilihTugasDariNotif(judul, mapel) {
+function pilihTugasDariNotif(judul, mapel, materi = '') {
   tutupBottomSheetPengumuman();
   document.getElementById('popoverNotifDesktop')?.classList.add('hidden');
-
-  pilihTugas(judul, mapel);
+  pilihTugas(judul, mapel, materi);
 }
 window.pilihTugasDariNotif = pilihTugasDariNotif;
 
@@ -971,7 +1057,6 @@ async function loadPengumumanSiswa() {
   const listDesk = document.getElementById('listPengumumanDesktop');
   const listMob = document.getElementById('listPengumumanMobile');
   if (!listDesk && !listMob) return;
-
   if (!currentStudent) return;
 
   try {

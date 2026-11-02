@@ -54,7 +54,7 @@ const DAFTAR_MAPEL = [
   'Pendidikan Jasmani, Olahraga & Kesehatan (PJOK)',
   'Seni Budaya & Prakarya (SBdP)',
   'Bahasa Inggris',
-  'Muatan Lokal / Bahasa Daerah'
+  'Muatan Lokal / Informatika'
 ];
 
 // ============================================================================
@@ -637,8 +637,49 @@ async function uploadFileKeDrivePribadi(fileObj, customFileName = "", subFolder 
   }
 }
 
+// ============================================================================
+// HELPER DETEKSI & EMBED VIDEO YOUTUBE MATERI TUGAS
+// ============================================================================
+
+/**
+ * Mengekstrak ID 11 karakter video YouTube dari berbagai format tautan
+ * (dukungan: watch?v=, youtu.be, shorts, embed, mobile)
+ * @param {string} url
+ * @returns {string|null}
+ */
+function getYouTubeId(url) {
+  if (!url || typeof url !== 'string') return null;
+  const match = url.match(
+    /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/
+  );
+  return match ? match[1] : null;
+}
+
+/**
+ * Merender iframe responsif pemutar YouTube ramah perangkat seluler
+ * @param {string} url
+ * @returns {string} HTML embed player
+ */
+function renderYouTubeEmbed(url) {
+  const ytId = getYouTubeId(url);
+  if (!ytId) return '';
+  return `
+    <div class="mt-2.5 rounded-2xl overflow-hidden shadow-sm border border-slate-200 aspect-video bg-black max-w-full">
+      <iframe 
+        class="w-full h-full" 
+        src="https://www.youtube-nocookie.com/embed/${ytId}" 
+        title="Materi Pembelajaran YouTube" 
+        frameborder="0" 
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+        allowfullscreen>
+      </iframe>
+    </div>
+  `;
+}
 
 // Buka akses ke window global
+window.getYouTubeId = getYouTubeId;
+window.renderYouTubeEmbed = renderYouTubeEmbed;
 window.toBase64 = toBase64;
 window.uploadFileKeDrivePribadi = uploadFileKeDrivePribadi;
 window.konfirmasiModal = konfirmasiModal;
