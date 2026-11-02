@@ -842,7 +842,6 @@ async function submitBuatTugasGuru(e) {
       }
       btn.textContent = 'Mengunggah ke Drive...';
 
-      // Format nama berkas: Tugas_matapelajaran_timestamp
       const cleanMapel = (mapel || 'Materi').replace(/\s+/g, '_');
       const cleanKelas = (kelas || 'Umum').replace(/\s+/g, '_');
       const timestamp = Math.floor(Date.now() / 1000);
@@ -906,6 +905,10 @@ async function loadRekapTugas() {
     cacheRekapTugasFull = data;
     cacheDaftarTugas = data.daftarTugas || [];
 
+    // --- PERBAIKAN 1: Panggil render riwayat tugas yang diterbitkan guru ---
+    const daftarSoalTerbit = data.daftarSoal || data.bankSoal || data.soalTerbit || [];
+    renderRiwayatTugasGuru(daftarSoalTerbit);
+
     document.getElementById('statTotalFileTugas').textContent = `${data.totalTerkumpul || 0} File`;
     document.getElementById('statSiswaSudahTugas').textContent = `${data.jumlahSiswaSudah || 0} Siswa`;
     document.getElementById('statSiswaBelumTugas').textContent = `${data.jumlahSiswaBelum || 0} Siswa`;
@@ -967,7 +970,6 @@ function renderTabelTugas(list) {
       const safeJudul = (item.judul || '').replace(/'/g, "\\'");
       const safeCatatan = (item.catatan || '').replace(/'/g, "\\'");
 
-      // Tampilkan Badge Materi di bawah Mapel jika ada
       const materiText = item.materi
         ? `<div class="text-[11px] text-slate-500 font-medium mt-0.5 truncate max-w-[140px]" title="${item.materi}">${item.materi}</div>`
         : '';
@@ -1008,17 +1010,20 @@ function renderRiwayatTugasGuru(daftarSoal) {
   if (badge) badge.textContent = `${(daftarSoal || []).length} Tugas`;
 
   if (!daftarSoal || daftarSoal.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">Belum ada riwayat tugas yang dibuat.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">Belum ada riwayat tugas yang diterbitkan.</td></tr>`;
     return;
   }
 
   tbody.innerHTML = daftarSoal.map((t) => {
-    const linkFile = (t.link && t.link !== '-' && t.link !== '#')
-      ? `<a href="${t.link}" target="_blank" class="bg-blue-50 hover:bg-blue-100 text-blue-700 px-2 py-0.5 rounded-lg font-bold inline-flex items-center gap-1 text-[11px] transition">Berkas Soal ↗</a>`
+    // --- PERBAIKAN 2: Tangkap link soal & video YouTube dari berbagai format alias ---
+    const linkFileSoal = t.linkSoal || t.link || '';
+    const fileLinkBtn = (linkFileSoal && linkFileSoal !== '-' && linkFileSoal !== '#')
+      ? `<a href="${linkFileSoal}" target="_blank" class="bg-blue-50 hover:bg-blue-100 text-blue-700 px-2.5 py-1 rounded-lg font-bold inline-flex items-center gap-1 text-[11px] transition">Berkas Soal ↗</a>`
       : '';
 
-    const linkMateri = (t.linkMateri && t.linkMateri !== '-' && t.linkMateri !== '#')
-      ? `<a href="${t.linkMateri}" target="_blank" class="bg-rose-50 hover:bg-rose-100 text-rose-700 px-2 py-0.5 rounded-lg font-bold inline-flex items-center gap-1 text-[11px] transition">Materi/Video ↗</a>`
+    const urlVideo = t.linkMateri || t.linkExternal || t.linkYoutube || t.video || '';
+    const linkMateriBtn = (urlVideo && urlVideo !== '-' && urlVideo !== '#')
+      ? `<a href="${urlVideo}" target="_blank" class="bg-rose-50 hover:bg-rose-100 text-rose-700 px-2.5 py-1 rounded-lg font-bold inline-flex items-center gap-1 text-[11px] transition">Materi/Video ↗</a>`
       : '';
 
     return `
@@ -1032,10 +1037,10 @@ function renderRiwayatTugasGuru(daftarSoal) {
           <div class="font-bold text-slate-800 truncate">${t.judul}</div>
           <div class="text-[11px] text-slate-500 truncate">${t.deskripsi || '-'}</div>
         </td>
-        <td class="p-2.5 font-semibold text-slate-700 whitespace-nowrap">${t.deadline}</td>
+        <td class="p-2.5 font-semibold text-slate-700 whitespace-nowrap">${t.deadline || '-'}</td>
         <td class="p-2.5 text-right whitespace-nowrap space-x-1">
-          ${linkFile}
-          ${linkMateri}
+          ${fileLinkBtn}
+          ${linkMateriBtn}
         </td>
       </tr>
     `;
