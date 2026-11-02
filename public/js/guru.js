@@ -5,7 +5,7 @@
  * ============================================================================
  * Mengelola interaksi dashboard guru dan pengelola sekolah: pembuatan QR
  * absensi harian, rekapitulasi presensi & ekspor CSV, verifikasi surat izin/sakit,
- * publikasi & penilaian tugas murid, generator token (via modal profil), 
+ * publikasi & penilaian tugas murid, generator token (via modal profil),
  * penerbitan pengumuman, dan pusat notifikasi terpadu.
  */
 
@@ -24,11 +24,14 @@ function inisialisasiPortalGuru() {
   isiDropdown('regKelasBinaan', DAFTAR_KELAS, 'Pilih Kelas Binaan');
   isiDropdown('regMapelAjar', DAFTAR_MAPEL, 'Pilih Mata Pelajaran');
   isiDropdownGrup('tokenTarget', DAFTAR_TARGET_TOKEN);
+
   isiDropdown('filterKelas', DAFTAR_KELAS);
   isiDropdown('filterKelasTugas', DAFTAR_KELAS);
   isiDropdown('filterMapelTugas', DAFTAR_MAPEL, '', { val: 'SEMUA', label: 'Semua Mata Pelajaran' });
+
   isiDropdown('buatTugasKelas', DAFTAR_KELAS, 'Pilih Kelas Sasaran');
   isiDropdown('buatTugasMapel', DAFTAR_MAPEL, 'Pilih Mata Pelajaran');
+
   isiDropdown('p_target', DAFTAR_TARGET_PENGUMUMAN);
   isiDropdown('p_kategori', DAFTAR_KATEGORI_PENGUMUMAN);
   isiDropdown('p_template', DAFTAR_TEMPLATE_PENGUMUMAN);
@@ -67,6 +70,7 @@ function initEventListeners() {
   const btnToggle = document.getElementById('btnToggleUserDropdown');
   const dropdownMenu = document.getElementById('userDropdownMenu');
   const chevron = document.getElementById('chevronDropdown');
+
   btnToggle?.addEventListener('click', (e) => {
     e.stopPropagation();
     dropdownMenu?.classList.toggle('hidden');
@@ -119,6 +123,7 @@ function initEventListeners() {
   document.getElementById('cariTugasInput')?.addEventListener('input', filterTabelTugasLokal);
   document.getElementById('btnSegarkanTugas')?.addEventListener('click', loadRekapTugas);
   document.getElementById('btnExportTugasCSV')?.addEventListener('click', exportTugasCSV);
+
   document.getElementById('btnCloseModalNilai')?.addEventListener('click', closeModalNilai);
   document.getElementById('btnBatalNilai')?.addEventListener('click', closeModalNilai);
   document.getElementById('formNilai')?.addEventListener('submit', simpanNilaiTugas);
@@ -128,7 +133,7 @@ function initEventListeners() {
   document.getElementById('p_template')?.addEventListener('change', pilihTemplatePengumuman);
   document.getElementById('formPengumuman')?.addEventListener('submit', submitPengumumanGuru);
 
-  // Generator Token Modal Form (jika form di-bind manual selain via onsubmit inline)
+  // Generator Token Modal Form
   document.getElementById('formGenerateTokenModal')?.addEventListener('submit', submitGenerateToken);
   document.getElementById('btnSalinToken')?.addEventListener('click', salinTokenKeClipboard);
 }
@@ -203,6 +208,7 @@ async function muatUlangNotifikasiGuru() {
   if (!currentGuru) return;
   const kelasTarget = currentGuru.kelasBinaan !== '-' ? currentGuru.kelasBinaan : '1A';
   const mapelTarget = currentGuru.mapelAjar !== '-' ? currentGuru.mapelAjar : 'SEMUA';
+
   let jumlahItemBaru = 0;
 
   // 1. Ambil Notifikasi Tugas Masuk
@@ -210,6 +216,7 @@ async function muatUlangNotifikasiGuru() {
     const resTugas = await fetch(`/api/guru/tugas?kelas=${encodeURIComponent(kelasTarget)}&mapel=${encodeURIComponent(mapelTarget)}`);
     const dataTugas = await resTugas.json();
     const daftar = dataTugas.daftarTugas || [];
+
     const belumDinilai = daftar.filter(t => t.nilai === '' || t.nilai === null || t.nilai === undefined);
     jumlahItemBaru += belumDinilai.length;
 
@@ -253,18 +260,18 @@ async function muatUlangNotifikasiGuru() {
     const htmlPeng = daftarPeng.length === 0
       ? `<p class="text-xs text-slate-400 text-center py-4">Tidak ada pengumuman aktif saat ini.</p>`
       : daftarPeng.map(p => `
-          <div class="p-3 bg-slate-50 hover:bg-slate-100 rounded-2xl border border-slate-200/80 transition space-y-1">
-            <div class="flex items-center justify-between">
-              <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-100 text-amber-800">${p.kategori}</span>
-              <span class="text-[10px] text-slate-400 font-mono">${p.waktu}</span>
-            </div>
-            <h5 class="text-xs font-black text-slate-800 leading-snug">${p.judul}</h5>
-            <p class="text-[11px] text-slate-600 line-clamp-2 leading-relaxed">${p.isi}</p>
-            <div class="pt-1 text-[10px] text-slate-400 font-medium border-t border-slate-100 mt-1">
-              Oleh: <b>${p.pembuat}</b>
-            </div>
+        <div class="p-3 bg-slate-50 hover:bg-slate-100 rounded-2xl border border-slate-200/80 transition space-y-1">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-100 text-amber-800">${p.kategori}</span>
+            <span class="text-[10px] text-slate-400 font-mono">${p.waktu}</span>
           </div>
-        `).join('');
+          <h5 class="text-xs font-black text-slate-800 leading-snug">${p.judul}</h5>
+          <p class="text-[11px] text-slate-600 line-clamp-2 leading-relaxed">${p.isi}</p>
+          <div class="pt-1 text-[10px] text-slate-400 font-medium border-t border-slate-100 mt-1">
+            Oleh: <b>${p.pembuat}</b>
+          </div>
+        </div>
+      `).join('');
 
     const deskPeng = document.getElementById('notifDaftarPengumumanDesktop');
     const mobPeng = document.getElementById('notifDaftarPengumumanMobile');
@@ -279,6 +286,7 @@ async function muatUlangNotifikasiGuru() {
   // 3. Atur Pill Counter dan Live Ping Badge
   const counterPill = document.getElementById('notifCounterPill');
   if (counterPill) counterPill.textContent = `${jumlahItemBaru} Tugas Baru`;
+
   const badge = document.getElementById('badgeNotifLiveGuru');
   if (jumlahItemBaru > 0) {
     badge?.classList.remove('hidden');
@@ -308,6 +316,7 @@ function switchAuthTab(type) {
   const formDaftar = document.getElementById('formDaftarGuru');
   const btnMasuk = document.getElementById('authTabBtn-masuk');
   const btnDaftar = document.getElementById('authTabBtn-daftar');
+
   if (!formMasuk || !formDaftar) return;
 
   if (type === 'masuk') {
@@ -327,6 +336,7 @@ function toggleRoleOptions() {
   const role = document.getElementById('regRoleGuru')?.value || '';
   const divKelas = document.getElementById('divKelasBinaan');
   const divMapel = document.getElementById('divMapelAjar');
+
   if (divKelas) divKelas.classList.add('hidden');
   if (divMapel) divMapel.classList.add('hidden');
 
@@ -341,6 +351,7 @@ async function prosesMasukGuru(e) {
   e.preventDefault();
   const nip = document.getElementById('loginNip').value.trim();
   const btn = document.getElementById('btnSubmitMasukGuru');
+
   btn.textContent = 'Memverifikasi...';
   btn.disabled = true;
 
@@ -350,6 +361,7 @@ async function prosesMasukGuru(e) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ nip, aksi: 'login' }),
     });
+
     const result = await res.json();
     if (result.success) {
       currentGuru = result.data;
@@ -399,6 +411,7 @@ async function prosesDaftarGuru(e) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
+
     const result = await res.json();
     if (result.success) {
       currentGuru = result.data;
@@ -448,7 +461,6 @@ function bukaDashboardGuru() {
   document.getElementById('dashboardGuruSection')?.classList.remove('hidden');
   updateGuruHeaderUI(true);
 
-  // Penataan Data Profil Pengelola
   const namaGuru = currentGuru?.nama || 'Pengelola';
   const roleGuru = currentGuru?.role || 'Guru';
   let detailRole = `Peran: ${roleGuru}`;
@@ -467,7 +479,6 @@ function bukaDashboardGuru() {
   if (ddNama) ddNama.textContent = namaGuru;
   if (ddRole) ddRole.textContent = detailRole;
 
-  // Batasi tombol generate token di dropdown jika bukan Admin/Kepala Sekolah/Operator
   const wrapMenuToken = document.getElementById('wrapMenuTokenAdmin');
   if (wrapMenuToken) {
     const isAdmin = ['Kepala Sekolah', 'Operator', 'Admin', 'Admin Sistem'].includes(roleGuru);
@@ -507,6 +518,7 @@ function switchGuruTab(tab) {
   if (activeContent) activeContent.classList.remove('hidden');
 
   sinkronkanStyleTabGuru(tab);
+
   if (tab === 'absen') loadRekapKelas();
   if (tab === 'tugas') loadRekapTugas();
 }
@@ -533,6 +545,7 @@ function sinkronkanStyleTabGuru(activeTabKey) {
 
 function sinkronKelas(source) {
   if (currentGuru && (currentGuru.role === 'Wali Kelas' || currentGuru.role === 'Guru Kelas') && currentGuru.kelasBinaan !== '-') return;
+
   if (source === 'absen') {
     const val = document.getElementById('filterKelas').value;
     const target = document.getElementById('filterKelasTugas');
@@ -568,7 +581,6 @@ function generateQR() {
   if (titleEl) titleEl.textContent = `QR Absensi Kelas ${kelas}`;
   if (subEl) subEl.textContent = `Tanggal: ${tanggal} (${sesi})`;
 
-  // Tampilan status dinamis & elegan menggantikan teks mentah panjang
   if (payloadEl) {
     payloadEl.innerHTML = `
       <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 font-bold text-[11px] border border-emerald-200/80 shadow-xs">
@@ -580,8 +592,8 @@ function generateQR() {
 
   const container = document.getElementById('qrcodeContainer');
   if (!container) return;
-
   container.innerHTML = '';
+
   qrGenerator = new QRCode(container, {
     text: qrDataString,
     width: 210,
@@ -687,13 +699,13 @@ async function loadRekapKelas() {
       tbodySudah.innerHTML = data.sudahAbsen
         .map(
           (s) => `
-            <tr class="hover:bg-slate-50 transition">
-              <td class="p-2.5 font-medium text-slate-600">${s.waktuAbsen}</td>
-              <td class="p-2.5 font-mono text-slate-500">${s.nis}</td>
-              <td class="p-2.5 font-bold text-slate-800">${s.nama}</td>
-              <td class="p-2.5"><span class="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-md font-bold">${s.status}</span></td>
-            </tr>
-          `
+          <tr class="hover:bg-slate-50 transition">
+            <td class="p-2.5 font-medium text-slate-600">${s.waktuAbsen}</td>
+            <td class="p-2.5 font-mono text-slate-500">${s.nis}</td>
+            <td class="p-2.5 font-bold text-slate-800">${s.nama}</td>
+            <td class="p-2.5"><span class="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-md font-bold">${s.status}</span></td>
+          </tr>
+        `
         )
         .join('');
     }
@@ -710,12 +722,14 @@ async function loadVerifikasiIzinGuru() {
   try {
     const res = await fetch(`/api/guru/verifikasi-izin?kelas=${encodeURIComponent(kelas)}`);
     const data = await res.json();
+
     if (!data.success || !data.daftarIzin || data.daftarIzin.length === 0) {
       tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-slate-400">Tidak ada pengajuan izin/sakit untuk Kelas ${kelas}.</td></tr>`;
       return;
     }
 
     const iconExt = typeof ICONS !== 'undefined' && ICONS.external ? ICONS.external : '';
+
     tbody.innerHTML = data.daftarIzin
       .map((item) => {
         const linkSurat = item.link && item.link !== '-' && item.link !== '#'
@@ -777,12 +791,14 @@ async function responIzinSiswa(rowIndex, tindakan) {
   if (!yakin) return;
 
   const verifikator = currentGuru ? `${currentGuru.nama} (${currentGuru.role})` : 'Wali Kelas';
+
   try {
     const res = await fetch('/api/guru/verifikasi-izin', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ rowIndex, tindakan, verifikator }),
     });
+
     const result = await res.json();
     if (result.success) {
       showToast(result.message, 'success');
@@ -804,9 +820,11 @@ async function submitBuatTugasGuru(e) {
   e.preventDefault();
   const kelas = document.getElementById('buatTugasKelas').value;
   const mapel = document.getElementById('buatTugasMapel').value;
+  const materi = document.getElementById('buatTugasMateri')?.value.trim() || 'Materi Umum';
   const judul = document.getElementById('buatTugasJudul').value.trim();
   const deadline = document.getElementById('buatTugasDeadline').value;
   const deskripsi = document.getElementById('buatTugasDeskripsi').value.trim();
+  const linkExternal = document.getElementById('buatTugasLinkExternal')?.value.trim() || '';
   const fileInput = document.getElementById('buatTugasFile')?.files?.[0];
   const activeUser = currentGuru || Auth.getGuru() || {};
 
@@ -842,9 +860,12 @@ async function submitBuatTugasGuru(e) {
       body: JSON.stringify({
         kelas,
         mapel,
+        materi,
         judul,
         deadline,
         deskripsi,
+        linkMateri: linkExternal,
+        linkExternal: linkExternal,
         pembuat: activeUser.nama || 'Guru',
         linkSoal: linkSoal,
         link: linkSoal
@@ -859,6 +880,7 @@ async function submitBuatTugasGuru(e) {
       if (typeof muatUlangNotifikasiGuru === 'function') {
         muatUlangNotifikasiGuru();
       }
+      loadRekapTugas();
     } else {
       showToast(data.message || data.error || 'Gagal memublikasikan tugas.', 'error');
     }
@@ -945,16 +967,24 @@ function renderTabelTugas(list) {
       const safeJudul = (item.judul || '').replace(/'/g, "\\'");
       const safeCatatan = (item.catatan || '').replace(/'/g, "\\'");
 
+      // Tampilkan Badge Materi di bawah Mapel jika ada
+      const materiText = item.materi
+        ? `<div class="text-[11px] text-slate-500 font-medium mt-0.5 truncate max-w-[140px]" title="${item.materi}">${item.materi}</div>`
+        : '';
+
       return `
-        <tr class="hover:bg-slate-50 transition">
-          <td class="p-3 text-slate-500 whitespace-nowrap">${item.waktu}</td>
+        <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+          <td class="p-3 text-slate-500 whitespace-nowrap text-xs">${item.waktu}</td>
           <td class="p-3">
-            <div class="font-bold text-slate-800">${item.nama}</div>
+            <div class="font-bold text-slate-800 text-xs">${item.nama}</div>
             <div class="text-[11px] font-mono text-slate-400">NIS: ${item.nis}</div>
           </td>
-          <td class="p-3"><span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-semibold">${item.kelas}</span></td>
-          <td class="p-3"><span class="bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-lg font-bold">${item.mapel}</span></td>
-          <td class="p-3 font-medium text-slate-700">
+          <td class="p-3"><span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-semibold text-xs">${item.kelas}</span></td>
+          <td class="p-3">
+            <span class="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-lg font-bold text-xs inline-block">${item.mapel}</span>
+            ${materiText}
+          </td>
+          <td class="p-3 font-medium text-slate-700 text-xs">
             ${item.judul}
             ${catatanText}
           </td>
@@ -970,6 +1000,48 @@ function renderTabelTugas(list) {
     .join('');
 }
 
+function renderRiwayatTugasGuru(daftarSoal) {
+  const tbody = document.getElementById('tbodyRiwayatTugasDiterbitkan');
+  const badge = document.getElementById('badgeTotalTugasGuru');
+  if (!tbody) return;
+
+  if (badge) badge.textContent = `${(daftarSoal || []).length} Tugas`;
+
+  if (!daftarSoal || daftarSoal.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">Belum ada riwayat tugas yang dibuat.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = daftarSoal.map((t) => {
+    const linkFile = (t.link && t.link !== '-' && t.link !== '#')
+      ? `<a href="${t.link}" target="_blank" class="bg-blue-50 hover:bg-blue-100 text-blue-700 px-2 py-0.5 rounded-lg font-bold inline-flex items-center gap-1 text-[11px] transition">Berkas Soal ↗</a>`
+      : '';
+
+    const linkMateri = (t.linkMateri && t.linkMateri !== '-' && t.linkMateri !== '#')
+      ? `<a href="${t.linkMateri}" target="_blank" class="bg-rose-50 hover:bg-rose-100 text-rose-700 px-2 py-0.5 rounded-lg font-bold inline-flex items-center gap-1 text-[11px] transition">Materi/Video ↗</a>`
+      : '';
+
+    return `
+      <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+        <td class="p-2.5 font-bold text-slate-800"><span class="bg-slate-100 px-2 py-0.5 rounded">${t.kelas}</span></td>
+        <td class="p-2.5">
+          <div class="font-bold text-indigo-700">${t.mapel}</div>
+          <div class="text-[11px] text-slate-500">${t.materi || '-'}</div>
+        </td>
+        <td class="p-2.5 max-w-xs">
+          <div class="font-bold text-slate-800 truncate">${t.judul}</div>
+          <div class="text-[11px] text-slate-500 truncate">${t.deskripsi || '-'}</div>
+        </td>
+        <td class="p-2.5 font-semibold text-slate-700 whitespace-nowrap">${t.deadline}</td>
+        <td class="p-2.5 text-right whitespace-nowrap space-x-1">
+          ${linkFile}
+          ${linkMateri}
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
 function filterTabelTugasLokal() {
   const keyword = document.getElementById('cariTugasInput').value.toLowerCase().trim();
   if (!keyword) {
@@ -981,7 +1053,8 @@ function filterTabelTugasLokal() {
       item.nama.toLowerCase().includes(keyword) ||
       item.nis.toLowerCase().includes(keyword) ||
       item.judul.toLowerCase().includes(keyword) ||
-      item.mapel.toLowerCase().includes(keyword)
+      item.mapel.toLowerCase().includes(keyword) ||
+      (item.materi && item.materi.toLowerCase().includes(keyword))
   );
   renderTabelTugas(hasil);
 }
@@ -1017,6 +1090,7 @@ async function simpanNilaiTugas(e) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ rowIndex: parseInt(rowIndex), nilai, catatan }),
     });
+
     const result = await res.json();
     if (result.success) {
       showToast('Nilai dan catatan berhasil disimpan!', 'success');
@@ -1054,7 +1128,6 @@ async function submitGenerateToken(e) {
   if (e && typeof e.preventDefault === 'function') {
     e.preventDefault();
   }
-
   const kategoriEl = document.getElementById('tokenTarget') || document.getElementById('tokenKategori');
   const customTokenEl = document.getElementById('customTokenInput') || document.getElementById('customToken');
   const kategori = kategoriEl?.value || 'Guru';
@@ -1062,7 +1135,6 @@ async function submitGenerateToken(e) {
   const activeUser = currentGuru || Auth.getGuru() || {};
 
   const btn = document.getElementById('btnGenerateToken') || (e && e.target ? e.target.querySelector('button[type="submit"]') : null);
-
   if (btn) {
     btn.dataset.loading = "true";
     btn.disabled = true;
@@ -1075,8 +1147,8 @@ async function submitGenerateToken(e) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ kategori, customToken, pembuat: activeUser.nama || 'Admin' }),
     });
-    const data = await res.json();
 
+    const data = await res.json();
     if (data.success) {
       const teksToken = document.getElementById('teksTokenBaru') || document.getElementById('hasilTokenTeks');
       if (teksToken) teksToken.textContent = data.token;
@@ -1177,7 +1249,7 @@ function exportTugasCSV() {
     ['REKAP PENGUMPULAN & NILAI TUGAS - SD RK BINTANG TIMUR RANTAUPRAPAT'],
     [`Kelas: ${kelas}`, `Mata Pelajaran: ${mapel}`],
     [],
-    ['No', 'Waktu Upload', 'NIS', 'Nama Siswa', 'Kelas', 'Mata Pelajaran', 'Judul / Keterangan Tugas', 'Nilai Angka', 'Catatan Guru', 'Link File Google Drive'],
+    ['No', 'Waktu Upload', 'NIS', 'Nama Siswa', 'Kelas', 'Mata Pelajaran', 'Materi / Bab', 'Judul / Tugas', 'Nilai Angka', 'Catatan Guru', 'Link File Google Drive'],
   ];
 
   cacheDaftarTugas.forEach((t, idx) => {
@@ -1188,6 +1260,7 @@ function exportTugasCSV() {
       t.nama,
       t.kelas,
       t.mapel,
+      t.materi || '-',
       t.judul,
       t.nilai !== '' && t.nilai !== undefined && t.nilai !== null ? t.nilai : 'Belum Dinilai',
       t.catatan || '-',
@@ -1237,8 +1310,8 @@ async function submitPengumumanGuru(e) {
   const judul = document.getElementById('p_judul')?.value.trim();
   const isi = document.getElementById('p_isi')?.value.trim();
   const btn = document.getElementById('btnKirimPengumuman');
-  const userRole = currentGuru?.role || '';
 
+  const userRole = currentGuru?.role || '';
   if (target === 'SEMUA' && (userRole !== 'Admin Sistem' && userRole !== 'Admin' && userRole !== 'Kepala Sekolah')) {
     showToast('Hanya Kepala Sekolah atau Admin yang dapat menerbitkan Pengumuman Global!', 'error');
     return;
@@ -1255,6 +1328,7 @@ async function submitPengumumanGuru(e) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ target, kategori, tglBerakhir, judul, isi, pembuat: pembuatNama }),
     });
+
     const result = await res.json();
     if (result.success) {
       showToast('Pengumuman berhasil diterbitkan!', 'success');
