@@ -489,10 +489,15 @@ async function loadDaftarTugasGuru() {
     const result = await resSoal.json();
     const tugasList = result.daftarSoal || result.data || result.daftarTugas || [];
 
-    let judulSudahKumpul = [];
+    // Menggunakan key komposit Mapel + Judul agar tugas baru tidak otomatis dianggap selesai
+    let riwayatTugasKumpul = [];
     if (resRiwayat && resRiwayat.ok) {
       const dataRiwayat = await resRiwayat.json();
-      judulSudahKumpul = (dataRiwayat.tugas || []).map(t => (t.judul || '').trim().toLowerCase());
+      riwayatTugasKumpul = (dataRiwayat.tugas || []).map(t => {
+        const m = (t.mapel || '').trim().toLowerCase();
+        const j = (t.judul || '').trim().toLowerCase();
+        return `${m}:::${j}`;
+      });
     }
 
     if (!result.success || tugasList.length === 0) {
@@ -507,16 +512,23 @@ async function loadDaftarTugasGuru() {
       const safeMapel = (t.mapel || '').replace(/'/g, "\\'");
       const safeMateri = (t.materi || '').replace(/'/g, "\\'");
 
-      const cleanJudul = (t.judul || '').trim().toLowerCase();
-      const sudahKumpul = judulSudahKumpul.includes(cleanJudul);
+      // Pengecekan status kumpul yang presisi
+      const keyTugas = `${(t.mapel || '').trim().toLowerCase()}:::${(t.judul || '').trim().toLowerCase()}`;
+      const sudahKumpul = riwayatTugasKumpul.includes(keyTugas);
 
       // 1. Tautan File Fisik Guru (Google Drive)
       const fileLinkBtn = (t.link && t.link !== '-' && t.link !== '#')
         ? `<a href="${t.link}" target="_blank" class="bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1.5 rounded-xl font-bold text-xs inline-flex items-center gap-1 transition">Buka File Soal ${iconExt}</a>`
         : '';
 
-      // 2. Deteksi Video YouTube atau Tautan Modul Web
-      const urlMateri = t.linkMateri || t.linkExternal || '';
+      // 2. Deteksi Video YouTube dengan berbagai kemungkinan properti dari Backend
+      let urlMateri = t.linkMateri || t.linkExternal || t.linkYoutube || t.video || '';
+      
+      // Jika urlMateri masih kosong dan t.link berisi link youtube, gunakan t.link
+      if (!urlMateri && t.link && (t.link.includes('youtu.be') || t.link.includes('youtube.com'))) {
+        urlMateri = t.link;
+      }
+
       const isYt = typeof getYouTubeId === 'function' && getYouTubeId(urlMateri);
       const ytEmbed = isYt && typeof renderYouTubeEmbed === 'function' ? renderYouTubeEmbed(urlMateri) : '';
 
@@ -965,16 +977,20 @@ async function muatUlangNotifikasiSiswa() {
     const dataTugas = await resTugas.json();
     const daftarTugas = dataTugas.daftarSoal || dataTugas.data || dataTugas.daftarTugas || [];
 
-    let tugasSudahKumpul = [];
+    let tugasSudahKumpulMap = [];
     try {
       const resRiwayat = await fetch(`/api/riwayat/${currentStudent.nis}`);
       const dataRiwayat = await resRiwayat.json();
-      tugasSudahKumpul = (dataRiwayat.tugas || []).map(t => (t.judul || '').trim().toLowerCase());
+      tugasSudahKumpulMap = (dataRiwayat.tugas || []).map(t => {
+        const m = (t.mapel || '').trim().toLowerCase();
+        const j = (t.judul || '').trim().toLowerCase();
+        return `${m}:::${j}`;
+      });
     } catch (_) {}
 
     const tugasBelumSelesai = daftarTugas.filter(t => {
-      const judul = (t.judul || '').trim().toLowerCase();
-      return !tugasSudahKumpul.includes(judul);
+      const key = `${(t.mapel || '').trim().toLowerCase()}:::${(t.judul || '').trim().toLowerCase()}`;
+      return !tugasSudahKumpulMap.includes(key);
     });
 
     totalTugasBelumKumpul = tugasBelumSelesai.length;

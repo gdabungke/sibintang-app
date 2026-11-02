@@ -69,7 +69,6 @@ async function pastikanSheetAda(sheetTitle: string, defaultHeaders: string[] = [
     const sheetExists = (meta.data.sheets || []).some(
       (s) => s.properties?.title?.toLowerCase() === sheetTitle.toLowerCase()
     );
-
     if (!sheetExists) {
       await sheets.spreadsheets.batchUpdate({
         spreadsheetId: SPREADSHEET_ID,
@@ -83,7 +82,6 @@ async function pastikanSheetAda(sheetTitle: string, defaultHeaders: string[] = [
           ],
         },
       });
-
       if (defaultHeaders.length > 0) {
         await sheets.spreadsheets.values.append({
           spreadsheetId: SPREADSHEET_ID,
@@ -126,7 +124,6 @@ async function validasiTokenDatabase(tokenInput: string, roleOrKategori: string)
           dbKategori.includes('kelas')
         );
       }
-
       if (roleClean.includes('kelas') || roleClean.includes('siswa')) {
         const numTarget = roleClean.replace(/[^0-9]/g, '');
         const numDb = dbKategori.replace(/[^0-9]/g, '');
@@ -134,7 +131,6 @@ async function validasiTokenDatabase(tokenInput: string, roleOrKategori: string)
           return numTarget === numDb;
         }
       }
-
       return dbKategori === roleClean || dbKategori.includes(roleClean) || roleClean.includes(dbKategori);
     });
 
@@ -206,7 +202,8 @@ app.post('/api/login', async (req: Request, res: Response) => {
       }
 
       const kategoriToken = `Kelas ${kelas.replace(/[^0-9]/g, '')}`;
-      const isTokenValid = (await validasiTokenDatabase(token, kategoriToken)) || (await validasiTokenDatabase(token, kelas));
+      const isTokenValid =
+        (await validasiTokenDatabase(token, kategoriToken)) || (await validasiTokenDatabase(token, kelas));
       if (!isTokenValid) {
         return res.status(400).json({
           success: false,
@@ -372,14 +369,18 @@ app.post('/api/absen', async (req: Request, res: Response) => {
       },
     });
 
-    return res.json({ success: true, message: `Absensi ${qrParts[3]} Kelas ${kelasSiswa} berhasil dicatat!`, waktu });
+    return res.json({
+      success: true,
+      message: `Absensi ${qrParts[3]} Kelas ${kelasSiswa} berhasil dicatat!`,
+      waktu,
+    });
   } catch (error: any) {
     console.error('Error Absen:', error.message);
     return res.status(500).json({ success: false, message: 'Gagal memproses absensi.' });
   }
 });
 
-// 4. ENDPOINT PENGUMPULAN TUGAS SISWA (KINI JSON MURNI DENGAN LINK DRIVE DARI APPS SCRIPT)
+// 4. ENDPOINT PENGUMPULAN TUGAS SISWA
 app.post('/api/tugas', async (req: Request, res: Response) => {
   try {
     const { nis, nama, kelas, mapel, judulTugas, judul, link, fileLink } = req.body;
@@ -391,7 +392,6 @@ app.post('/api/tugas', async (req: Request, res: Response) => {
     }
 
     const waktu = getWaktuWIB();
-
     await pastikanSheetAda('Tugas', [
       'Waktu Upload',
       'NIS',
@@ -435,7 +435,7 @@ app.get('/api/riwayat/:nis', async (req: Request, res: Response) => {
     ]);
 
     const absenRows = (absenRes.data.values || [])
-      .filter((row) => row[1] === nis)
+      .filter((row) => String(row[1] || '').trim() === String(nis).trim())
       .map((row) => ({
         waktu: row[0],
         nis: row[1],
@@ -450,7 +450,7 @@ app.get('/api/riwayat/:nis', async (req: Request, res: Response) => {
       .map((row, index) => ({
         rowIndex: index + 2,
         waktu: row[0] || '',
-        nis: row[1] || '',
+        nis: String(row[1] || '').replace(/'/g, '').trim(),
         nama: row[2] || '',
         kelas: row[3] || '',
         mapel: row[4] || '',
@@ -459,7 +459,7 @@ app.get('/api/riwayat/:nis', async (req: Request, res: Response) => {
         nilai: row[7] || '',
         catatan: row[8] || '',
       }))
-      .filter((row) => row.nis === nis)
+      .filter((row) => row.nis === String(nis).trim())
       .reverse();
 
     return res.json({ success: true, absensi: absenRows, tugas: tugasRows });
@@ -506,7 +506,8 @@ app.get('/api/guru/rekap', async (req: Request, res: Response) => {
       const rowKelas = row[3] || '';
       const qrData = row[5] || '';
       const isMatchingQr = qrData.startsWith(targetQrPrefix);
-      const isMatchingDateAndClass = rowKelas === kelas && (waktu.includes(dateStrId1) || waktu.includes(dateStrId2));
+      const isMatchingDateAndClass =
+        rowKelas === kelas && (waktu.includes(dateStrId1) || waktu.includes(dateStrId2));
       return isMatchingQr || isMatchingDateAndClass;
     });
 
@@ -514,7 +515,7 @@ app.get('/api/guru/rekap', async (req: Request, res: Response) => {
     const belumAbsen: any[] = [];
 
     siswaKelas.forEach((siswa) => {
-      const logHadir = absenHariIni.find((row) => row[1] === siswa.nis);
+      const logHadir = absenHariIni.find((row) => String(row[1]).trim() === String(siswa.nis).trim());
       if (logHadir) {
         sudahAbsen.push({
           ...siswa,
@@ -543,7 +544,7 @@ app.get('/api/guru/rekap', async (req: Request, res: Response) => {
   }
 });
 
-// 7. ENDPOINT REKAP TUGAS PER KELAS & MAPEL (KHUSUS GURU)
+// 7. ENDPOINT REKAP TUGAS & BANK SOAL (DIPERGUNAKAN OLEH GURU & SISWA)
 app.get('/api/guru/tugas', async (req: Request, res: Response) => {
   try {
     const { kelas, mapel } = req.query;
@@ -554,7 +555,7 @@ app.get('/api/guru/tugas', async (req: Request, res: Response) => {
     const [siswaRes, tugasRes, daftarSoalRes] = await Promise.all([
       sheets.spreadsheets.values.get({ spreadsheetId: SPREADSHEET_ID, range: 'Siswa!A2:F' }),
       sheets.spreadsheets.values.get({ spreadsheetId: SPREADSHEET_ID, range: 'Tugas!A2:I' }),
-      sheets.spreadsheets.values.get({ spreadsheetId: SPREADSHEET_ID, range: 'DaftarTugas!A2:H' }).catch(() => ({ data: { values: [] } })),
+      sheets.spreadsheets.values.get({ spreadsheetId: SPREADSHEET_ID, range: 'DaftarTugas!A2:J' }).catch(() => ({ data: { values: [] } })),
     ]);
 
     const allSiswa = siswaRes.data.values || [];
@@ -571,17 +572,22 @@ app.get('/api/guru/tugas', async (req: Request, res: Response) => {
         nohp: row[5] || '-',
       }));
 
+    // Membaca tab DaftarTugas: A=Waktu, B=Kelas, C=Mapel, D=Materi, E=Judul, F=Deskripsi, G=LinkSoal, H=Deadline, I=LinkMateri, J=Pembuat
     const daftarSoalKelas = allSoal
       .filter((row) => row[1] === kelas && (!mapel || mapel === 'SEMUA' || row[2] === mapel))
       .map((row) => ({
         waktu: row[0] || '-',
         kelas: row[1] || '-',
         mapel: row[2] || '-',
-        judul: row[3] || '-',
-        deskripsi: row[4] || '-',
-        link: row[5] || '#',
-        deadline: row[6] || '-',
-        pembuat: row[7] || 'Guru',
+        materi: row[3] || 'Materi Umum',
+        judul: row[4] || '-',
+        deskripsi: row[5] || '-',
+        link: row[6] || '#',
+        linkSoal: row[6] || '#',
+        deadline: row[7] || '-',
+        linkMateri: row[8] || '',
+        linkExternal: row[8] || '',
+        pembuat: row[9] || 'Guru',
       }))
       .reverse();
 
@@ -589,7 +595,7 @@ app.get('/api/guru/tugas', async (req: Request, res: Response) => {
       .map((row, index) => ({
         rowIndex: index + 2,
         waktu: row[0] || '-',
-        nis: row[1] || '-',
+        nis: String(row[1] || '').replace(/'/g, '').trim(),
         nama: row[2] || '-',
         kelas: row[3] || '-',
         mapel: row[4] || '-',
@@ -617,6 +623,7 @@ app.get('/api/guru/tugas', async (req: Request, res: Response) => {
       daftarTugas,
       belumKumpul,
       daftarSoal: daftarSoalKelas,
+      bankSoal: daftarSoalKelas,
     });
   } catch (error: any) {
     console.error('Error Guru Tugas:', error.message);
@@ -624,35 +631,49 @@ app.get('/api/guru/tugas', async (req: Request, res: Response) => {
   }
 });
 
-// 8a. ENDPOINT GURU: BUAT TUGAS / SOAL BARU (KINI MENGGUNAKAN LINK DRIVE DARI APPS SCRIPT)
+// 8a. ENDPOINT GURU: BUAT TUGAS / SOAL BARU (DENGAN MATERI & LINK YOUTUBE/WEB)
 app.post('/api/guru/buat-tugas', async (req: Request, res: Response) => {
   try {
-    const { mapel, kelas, judul, deskripsi, deadline, pembuat, linkSoal, link } = req.body;
+    const { mapel, kelas, materi, judul, deskripsi, deadline, pembuat, linkSoal, link, linkMateri, linkExternal } = req.body;
     const fileSoalLink = linkSoal || link || '-';
+    const finalMateri = (materi || 'Materi Umum').trim();
+    const finalLinkMateri = (linkMateri || linkExternal || '-').trim();
 
     if (!mapel || !kelas || !judul || !deadline) {
       return res.status(400).json({ success: false, message: 'Mata pelajaran, kelas, judul, dan deadline wajib diisi!' });
     }
 
     const waktu = getWaktuWIB();
-
     await pastikanSheetAda('DaftarTugas', [
       'Waktu Dibuat',
       'Kelas',
       'Mata Pelajaran',
+      'Materi / Pokok Bahasan',
       'Judul Tugas',
       'Deskripsi / Instruksi',
       'Link File Soal (Drive)',
       'Deadline',
+      'Link Materi / YouTube',
       'Pembuat',
     ]);
 
     await sheets.spreadsheets.values.append({
       spreadsheetId: SPREADSHEET_ID,
-      range: 'DaftarTugas!A:H',
+      range: 'DaftarTugas!A:J',
       valueInputOption: 'USER_ENTERED',
       requestBody: {
-        values: [[waktu, kelas, mapel, judul, deskripsi || '-', fileSoalLink, deadline, pembuat || 'Guru']],
+        values: [[
+          waktu,
+          kelas,
+          mapel,
+          finalMateri,
+          judul,
+          deskripsi || '-',
+          fileSoalLink,
+          deadline,
+          finalLinkMateri,
+          pembuat || 'Guru',
+        ]],
       },
     });
 
@@ -660,6 +681,7 @@ app.post('/api/guru/buat-tugas', async (req: Request, res: Response) => {
       success: true,
       message: 'Tugas berhasil dipublikasikan ke siswa!',
       fileSoalLink,
+      linkMateri: finalLinkMateri,
     });
   } catch (error: any) {
     console.error('Error Buat Tugas Guru:', error.message);
@@ -672,7 +694,6 @@ app.post('/api/guru/nilai', async (req: Request, res: Response) => {
   try {
     const { rowIndex, nilai, catatan } = req.body;
     const targetRow = Number(rowIndex);
-
     if (!targetRow || isNaN(targetRow) || targetRow < 2) {
       return res.status(400).json({ success: false, message: 'Nomor baris data tugas tidak valid!' });
     }
@@ -693,7 +714,7 @@ app.post('/api/guru/nilai', async (req: Request, res: Response) => {
   }
 });
 
-// 9. ENDPOINT PENGAJUAN IZIN / SAKIT SISWA (KINI JSON MURNI DENGAN LINK DRIVE DARI APPS SCRIPT)
+// 9. ENDPOINT PENGAJUAN IZIN / SAKIT SISWA
 app.post('/api/izin', async (req: Request, res: Response) => {
   try {
     const { nis, nama, kelas, statusIzin, keterangan, tanggalMulai, link, linkBukti } = req.body;
@@ -704,7 +725,6 @@ app.post('/api/izin', async (req: Request, res: Response) => {
     }
 
     const waktu = getWaktuWIB();
-
     await pastikanSheetAda('Izin', [
       'Waktu Pengajuan',
       'NIS',
@@ -746,7 +766,6 @@ app.get('/api/izin/:nis', async (req: Request, res: Response) => {
       spreadsheetId: SPREADSHEET_ID,
       range: 'Izin!A2:J',
     });
-
     const rows = (izinRes.data.values || [])
       .filter((row) => String(row[1] || '').trim() === String(nis).trim())
       .map((row) => ({
@@ -782,7 +801,6 @@ app.get('/api/guru/verifikasi-izin', async (req: Request, res: Response) => {
       spreadsheetId: SPREADSHEET_ID,
       range: 'Izin!A2:J',
     });
-
     const allRows = izinRes.data.values || [];
     const daftarIzin: any[] = [];
 
@@ -818,7 +836,6 @@ app.post('/api/guru/verifikasi-izin', async (req: Request, res: Response) => {
   try {
     const { rowIndex, tindakan, verifikator } = req.body;
     const targetRow = Number(rowIndex);
-
     if (!targetRow || isNaN(targetRow) || targetRow < 2 || !tindakan) {
       return res.status(400).json({ success: false, message: 'Data verifikasi atau nomor baris tidak valid!' });
     }
@@ -985,7 +1002,7 @@ app.post('/api/admin/generate-token', async (req: Request, res: Response) => {
   }
 });
 
-// PENTUTUP PORT
+// PENUTUP PORT
 app.listen(PORT, () => {
   console.log(`Server SiBintang berjalan di http://localhost:${PORT}`);
 });
