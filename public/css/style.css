@@ -1,4 +1,19 @@
 /* ==========================================================================
+   SIBINTANG PWA v3.0.0 - CORE DESIGN SYSTEM & STYLESHEET (style.css)
+   SD Swasta RK Bintang Timur Rantauprapat
+   ==========================================================================
+   Susunan Kode:
+   1. Variabel Warna & Tema Identitas SiBintang
+   2. Anti-Flicker / Anti-FOUC Sinkronisasi Status Login & Header
+   3. Dasar Layout, Stabilitas Scrollbar & Optimasi PWA
+   4. Kustomisasi Form, Dropdown & DataTables Select (5, 10, 25)
+   5. Kamera Scanner QR (HTML5-QRCode) & Animasi Garis Laser
+   6. Animasi Latar Banner Doa (Bintang & Salib Bergerak) & Ombak Footer
+   7. Komponen Bottom Sheet Swipeable & Tombol Kustom
+   8. Aturan Cetak (Print-Safe Modal QR Code & Laporan)
+   ========================================================================== */
+
+/* ==========================================================================
    1. VARIABEL WARNA & TEMA IDENTITAS SIBINTANG
    ========================================================================== */
 :root {
@@ -6,23 +21,82 @@
   --logo-red: #e32417;
   --logo-blue: #1e3a8a;
   --logo-blue-hover: #172d6d;
+  --surface-bg: #f8fafc;
+  --text-primary: #1e293b;
 }
 
 /* ==========================================================================
-   2. DASAR LAYOUT, STABILITAS SCROLLBAR & OPTIMASI PWA
+   2. ANTI-FLICKER / ANTI-FOUC SINKRONISASI STATUS LOGIN & HEADER
+   Mencegah kedipan halaman login saat refresh maupun kedipan lebar header
+   sebelum file JavaScript selesai dimuat.
+   ========================================================================== */
+html[data-auth-state="authenticated"] #loginSection,
+html[data-auth-state="authenticated"] #loginGuruSection,
+html[data-auth-state="authenticated"] #headerGuestBadge,
+html[data-auth-state="authenticated"] #linkPortalSiswa {
+  display: none !important;
+}
+
+html[data-auth-state="authenticated"] #appSection,
+html[data-auth-state="authenticated"] #dashboardGuruSection,
+html[data-auth-state="authenticated"] #userProfileDropdownWrapSiswa,
+html[data-auth-state="authenticated"] #notifWrapSiswa,
+html[data-auth-state="authenticated"] #userProfileDropdownWrap,
+html[data-auth-state="authenticated"] #notifWrapGuru {
+  display: block !important;
+}
+
+html[data-auth-state="authenticated"] #headerSiswaContainer,
+html[data-auth-state="authenticated"] #headerGuruContainer {
+  max-width: 72rem !important;
+}
+
+@media (min-width: 768px) {
+  html[data-auth-state="authenticated"] #navSiswaDesktop,
+  html[data-auth-state="authenticated"] #navGuruDesktop {
+    display: flex !important;
+  }
+}
+
+@media (max-width: 767px) {
+  html[data-auth-state="authenticated"] #navSiswaMobile,
+  html[data-auth-state="authenticated"] #navGuruMobile {
+    display: grid !important;
+  }
+}
+
+html[data-auth-state="guest"] #appSection,
+html[data-auth-state="guest"] #dashboardGuruSection,
+html[data-auth-state="guest"] #userProfileDropdownWrapSiswa,
+html[data-auth-state="guest"] #notifWrapSiswa,
+html[data-auth-state="guest"] #userProfileDropdownWrap,
+html[data-auth-state="guest"] #notifWrapGuru,
+html[data-auth-state="guest"] #navSiswaDesktop,
+html[data-auth-state="guest"] #navSiswaMobile,
+html[data-auth-state="guest"] #navGuruDesktop,
+html[data-auth-state="guest"] #navGuruMobile {
+  display: none !important;
+}
+
+html[data-auth-state="guest"] #headerSiswaContainer,
+html[data-auth-state="guest"] #headerGuruContainer {
+  max-width: 28rem !important;
+}
+
+/* ==========================================================================
+   3. DASAR LAYOUT, STABILITAS SCROLLBAR & OPTIMASI PWA
    ========================================================================== */
 html {
-  /* Mengunci ruang scrollbar browser agar footer & layout TIDAK melompat saat switch tab */
   scrollbar-gutter: stable;
   overflow-y: scroll;
-  /* Mencegah bounce/rubber-band berlebih saat mode standalone PWA */
   overscroll-behavior-y: contain;
+  scroll-behavior: smooth;
 }
 
 body {
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  background-color: #f8fafc;
-  color: #1e293b;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--surface-bg);
+  color: var(--text-primary);
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
@@ -30,41 +104,52 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Kunci Footer selalu di bawah dan tidak pernah menciut */
-footer, #mainFooter, #guruFooter {
+footer,
+#mainFooter,
+#guruFooter {
   width: 100%;
   flex-shrink: 0;
   margin-top: auto;
 }
 
-/* Efek kontur kontras untuk logo resmi di background gelap footer */
 .logo-contour-stroke {
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
 }
 
-/* Utilitas penyembunyi scrollbar (misal tab navigasi horizontal mobile) */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
 
 /* ==========================================================================
-   3. KUSTOMISASI FORM, DROPDOWN & FOCUS
+   4. KUSTOMISASI FORM, DROPDOWN & DATATABLES SELECT (5, 10, 25)
    ========================================================================== */
-select, input, textarea {
+select,
+input,
+textarea {
   transition: all 0.2s ease-in-out;
 }
 
-select:focus, input:focus, textarea:focus {
+select:focus,
+input:focus,
+textarea:focus {
   border-color: var(--logo-blue) !important;
   box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.15) !important;
   outline: none;
 }
 
-/* Dropdown Styling yang Lebih Elegan dengan Ikon SVG */
+select:disabled,
+input:disabled,
+input[readonly] {
+  background-color: #f1f5f9;
+  color: #475569;
+  cursor: not-allowed;
+}
+
 select {
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
   background-position: right 0.75rem center;
@@ -74,8 +159,19 @@ select {
   appearance: none;
 }
 
+/* Perbaikan ukuran angka 5, 10, 25 pada dropdown DataTables agar jelas & proporsional */
+select.dt-per-page {
+  min-width: 4.4rem !important;
+  padding: 0.4rem 2.1rem 0.4rem 0.85rem !important;
+  font-size: 0.8125rem !important;
+  font-weight: 800 !important;
+  line-height: 1.25rem !important;
+  background-position: right 0.55rem center !important;
+  background-size: 1.15em 1.15em !important;
+}
+
 /* ==========================================================================
-   4. PENYESUAIAN KAMERA SCANNER QR (HTML5-QRCode) & ANIMASI LASER
+   5. KAMERA SCANNER QR (HTML5-QRCode) & ANIMASI GARIS LASER
    ========================================================================== */
 #reader {
   position: relative;
@@ -90,7 +186,6 @@ select {
   border-radius: 1.25rem !important;
 }
 
-/* Sembunyikan elemen UI teks & kontrol default yang tidak diperlukan dari library */
 #reader__dashboard_section_csr,
 #reader__status_span,
 #reader__dashboard_section_swaplink,
@@ -98,28 +193,73 @@ select {
   display: none !important;
 }
 
-/* Animasi Garis Laser Pemindai QR */
 @keyframes scanLaser {
   0% {
-    top: 6%;
-    opacity: 0.2;
+    top: 8%;
+    opacity: 0.85;
   }
   50% {
     opacity: 1;
   }
   100% {
     top: 90%;
-    opacity: 0.2;
+    opacity: 0.85;
   }
 }
 
 .animate-scan-laser {
-  animation: scanLaser 2.2s ease-in-out infinite alternate;
+  position: absolute !important;
+  left: 6% !important;
+  right: 6% !important;
+  height: 3px !important;
+  border-radius: 9999px !important;
+  background: linear-gradient(90deg, transparent 0%, #34d399 20%, #10b981 50%, #34d399 80%, transparent 100%) !important;
+  box-shadow: 0 0 12px 2px rgba(52, 211, 153, 0.85), 0 0 24px 4px rgba(16, 185, 129, 0.45) !important;
+  z-index: 30 !important;
+  pointer-events: none !important;
+  will-change: top, opacity;
+  animation: scanLaser 1.8s ease-in-out infinite alternate !important;
 }
 
 /* ==========================================================================
-   5. ANIMASI AMBIENT GELOMBANG CAHAYA FOOTER
+   6. ANIMASI LATAR BANNER DOA (BINTANG & SALIB BERGERAK) & OMBAK FOOTER
    ========================================================================== */
+@keyframes liturgyFloatSlow {
+  0% {
+    transform: translateY(0px) translateX(0px) rotate(0deg) scale(1);
+    opacity: 0.22;
+  }
+  50% {
+    transform: translateY(-8px) translateX(6px) rotate(8deg) scale(1.12);
+    opacity: 0.55;
+  }
+  100% {
+    transform: translateY(4px) translateX(-4px) rotate(-6deg) scale(0.96);
+    opacity: 0.25;
+  }
+}
+
+@keyframes liturgyTwinkle {
+  0%, 100% {
+    transform: scale(0.85);
+    opacity: 0.18;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.65;
+  }
+}
+
+.liturgy-bg-float {
+  animation: liturgyFloatSlow 6s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+
+.liturgy-bg-twinkle {
+  animation: liturgyTwinkle 3.8s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
 @keyframes ambientWave {
   0% {
     transform: translateX(-20%) scaleY(1);
@@ -140,8 +280,18 @@ select {
 }
 
 /* ==========================================================================
-   6. TOMBOL & KOMPONEN KUSTOM
+   7. KOMPONEN BOTTOM SHEET SWIPEABLE & TOMBOL KUSTOM
    ========================================================================== */
+.bottom-sheet-panel {
+  transition: height 0.28s cubic-bezier(0.16, 1, 0.3, 1), max-height 0.28s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s ease;
+  touch-action: pan-y;
+}
+
+.bottom-sheet-panel.sheet-expanded {
+  height: 92dvh !important;
+  max-height: 92dvh !important;
+}
+
 .btn-primary-custom {
   background-color: var(--logo-blue);
   color: #ffffff;
@@ -161,48 +311,58 @@ select {
 }
 
 /* ==========================================================================
-   7. ATURAN CETAK (PRINT-SAFE POSTER QR CODE & LAPORAN)
+   8. ATURAN CETAK (PRINT-SAFE MODAL QR CODE & LAPORAN)
    ========================================================================== */
 @media print {
-  /* Kunci ukuran kertas A4 Portrait dengan margin 1 cm */
   @page {
     size: A4 portrait;
     margin: 1cm;
   }
 
-  /* Hilangkan elemen navigasi & footer */
-  .no-print {
+  .no-print,
+  header,
+  footer,
+  #dashboardGuruSection > *:not(#tabGuruContent-absen),
+  #modalQR button {
     display: none !important;
   }
 
-  /* Sembunyikan semua elemen default dashboard */
   body * {
     visibility: hidden;
   }
 
-  /* Pastikan warna latar & border tercetak akurat (tidak pudar) */
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
 
-  /* Tampilkan kartu QR presisi di tengah kertas A4 */
-  #printArea, #printArea * {
+  #modalQR,
+  #modalQR * {
     visibility: visible;
   }
 
-  #printArea {
-    position: absolute;
-    left: 50% !important;
-    top: 50% !important;
-    transform: translate(-50%, -50%) !important;
+  #modalQR {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
     width: 100% !important;
-    max-width: 440px !important;
-    margin: 0 auto !important;
-    padding: 24px !important;
-    border: 3px solid var(--logo-blue) !important;
-    border-radius: 20px !important;
+    height: 100% !important;
+    background: white !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
     box-shadow: none !important;
+    border: none !important;
+  }
+
+  #modalQR > div {
+    max-width: 420px !important;
+    width: 100% !important;
+    padding: 32px !important;
+    border: 3px solid var(--logo-blue) !important;
+    border-radius: 24px !important;
+    box-shadow: none !important;
+    background: white !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
   }
