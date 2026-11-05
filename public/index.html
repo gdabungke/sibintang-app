@@ -1,16 +1,28 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-auth-state="guest">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>SiBintang - SD RK Bintang Timur Rantauprapat</title>
+  <title>Portal Siswa - SiBintang SD RK Bintang Timur Rantauprapat</title>
+
+  <!-- Sinkronisasi Instan Status Sesi Sebelum Render Body (Mencegah Kedipan Login & Header) -->
+  <script>
+    (function () {
+      try {
+        var sesiSiswa = localStorage.getItem('sibintang_siswa');
+        document.documentElement.setAttribute('data-auth-state', sesiSiswa ? 'authenticated' : 'guest');
+      } catch (e) {
+        document.documentElement.setAttribute('data-auth-state', 'guest');
+      }
+    })();
+  </script>
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- HTML5 QRCode Scanner -->
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <!-- Font Plus Jakarta Sans -->
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <!-- File CSS Eksternal & Konfigurasi PWA -->
   <link rel="stylesheet" href="/css/style.css" />
   <link rel="manifest" href="/manifest.json" />
@@ -26,33 +38,36 @@
   <!-- ======================================================================== -->
   <!-- 1. HEADER UTAMA TERPADU SISWA                                            -->
   <!-- ======================================================================== -->
-  <header class="sticky top-0 z-50 bg-indigo-950/95 backdrop-blur-md text-white border-b border-indigo-800/60 shadow-md no-print transition-all duration-300">
+  <header class="sticky top-0 z-50 bg-indigo-950/95 backdrop-blur-md text-white border-b border-indigo-800/60 shadow-md no-print">
     <div id="headerSiswaContainer" class="w-full max-w-6xl mx-auto px-3 sm:px-4 md:px-6">
-      <!-- Baris Utama Header -->
       <div class="flex items-center justify-between h-14 sm:h-16 gap-2">
-        <!-- Sisi Kiri: Brand & Logo Sekolah -->
-        <div class="flex items-center space-x-2 min-w-0 shrink">
-          <img src="/icon.png" alt="Logo SiBintang" class="w-8 h-8 sm:w-10 sm:h-10 object-contain shrink-0" />
+        <!-- Sisi Kiri: Brand & Logo Sekolah (Klik untuk Refresh ke Tampilan Awal Dashboard) -->
+        <button type="button" id="btnBrandResetSiswa" onclick="resetKeTampilanAwalSiswa()" title="Kembali ke tampilan awal dashboard" class="flex items-center space-x-2 min-w-0 shrink cursor-pointer group text-left focus:outline-none">
+          <img src="/icon.png" alt="Logo SiBintang" class="w-8 h-8 sm:w-10 sm:h-10 object-contain shrink-0 transition-transform duration-200 group-hover:scale-105 group-active:scale-95" />
           <div class="min-w-0 text-left">
             <div class="flex items-center gap-1.5 flex-wrap">
-              <h1 class="font-black text-sm sm:text-base md:text-lg leading-tight tracking-tight text-white truncate">SiBintang</h1>
+              <h1 class="font-black text-sm sm:text-base md:text-lg leading-tight tracking-tight text-white group-hover:text-amber-300 transition-colors truncate">SiBintang</h1>
               <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-indigo-800/90 text-indigo-200 border border-indigo-700/60 uppercase tracking-wider">
                 Siswa
               </span>
             </div>
             <p class="text-[10px] text-indigo-200/80 truncate font-medium hidden sm:block">SD Swasta RK Bintang Timur</p>
           </div>
-        </div>
+        </button>
 
-        <!-- Sisi Tengah: 2 Menu Utama Desktop (Presensi & Tugas/PR) -->
+        <!-- Sisi Tengah: 3 Menu Utama Desktop (1. Presensi & Kehadiran, 2. Tugas & Materi, 3. Perkembangan & Profil) -->
         <nav id="navSiswaDesktop" class="hidden md:flex items-center gap-1.5 bg-indigo-900/60 p-1 rounded-2xl border border-indigo-800/60 transition-all">
-          <button id="tabBtn-presensi" type="button" class="py-1.5 px-4 text-xs font-bold rounded-xl bg-blue-600 text-white shadow-sm transition flex items-center gap-1.5 cursor-pointer">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
-            <span>Presensi & Kehadiran</span>
+          <button id="tabBtn-presensi" type="button" class="py-1.5 px-3.5 text-xs font-bold rounded-xl bg-blue-600 text-white shadow-sm transition flex items-center gap-1.5 cursor-pointer">
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
+            <span>Presensi &amp; Kehadiran</span>
           </button>
-          <button id="tabBtn-tugas" type="button" class="py-1.5 px-4 text-xs font-bold rounded-xl text-indigo-200 hover:text-white hover:bg-indigo-800/50 transition flex items-center gap-1.5 cursor-pointer">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-            <span>Tugas & PR</span>
+          <button id="tabBtn-tugas" type="button" class="py-1.5 px-3.5 text-xs font-bold rounded-xl text-indigo-200 hover:text-white hover:bg-indigo-800/50 transition flex items-center gap-1.5 cursor-pointer">
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+            <span>Tugas &amp; Materi</span>
+          </button>
+          <button id="tabBtn-perkembangan" type="button" class="py-1.5 px-3.5 text-xs font-bold rounded-xl text-indigo-200 hover:text-white hover:bg-indigo-800/50 transition flex items-center gap-1.5 cursor-pointer">
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+            <span>Perkembangan &amp; Profil</span>
           </button>
         </nav>
 
@@ -85,23 +100,20 @@
                   </div>
                   <button type="button" onclick="muatUlangNotifikasiSiswa()" class="text-[11px] text-blue-600 font-bold hover:underline cursor-pointer">Refresh</button>
                 </div>
-                <!-- Tab Pemilih: Tugas Masuk vs Pengumuman -->
                 <div class="grid grid-cols-2 gap-1 bg-slate-100 p-1 rounded-xl my-2.5 text-xs font-bold text-center">
-                  <button type="button" id="tabNotifSiswaBtn-tugas" onclick="switchTabNotifSiswa('tugas')" class="py-1 rounded-lg bg-white text-blue-900 shadow-sm transition">Tugas Masuk</button>
-                  <button type="button" id="tabNotifSiswaBtn-pengumuman" onclick="switchTabNotifSiswa('pengumuman')" class="py-1 rounded-lg text-slate-500 hover:text-slate-800 transition">Pengumuman</button>
+                  <button type="button" id="tabNotifSiswaBtn-tugas" onclick="switchTabNotifSiswa('tugas')" class="py-1.5 rounded-lg bg-blue-600 text-white shadow-sm transition cursor-pointer">Tugas Masuk</button>
+                  <button type="button" id="tabNotifSiswaBtn-pengumuman" onclick="switchTabNotifSiswa('pengumuman')" class="py-1.5 rounded-lg text-slate-600 hover:text-slate-800 transition cursor-pointer">Pengumuman</button>
                 </div>
-                <!-- Daftar Tugas Baru -->
                 <div id="listNotifTugasDesktop" class="space-y-2 max-h-72 overflow-y-auto pr-1">
                   <p class="text-xs text-slate-400 text-center py-4">Memeriksa tugas baru...</p>
                 </div>
-                <!-- Daftar Pengumuman -->
                 <div id="listPengumumanDesktop" class="hidden space-y-2 max-h-72 overflow-y-auto pr-1">
                   <p class="text-xs text-slate-400 text-center py-4">Memuat pengumuman...</p>
                 </div>
               </div>
             </div>
 
-            <!-- DROPDOWN PROFIL SISWA (Responsif di Layar Ponsel) -->
+            <!-- DROPDOWN PROFIL SISWA -->
             <div id="userProfileDropdownWrapSiswa" class="relative hidden">
               <button type="button" id="btnToggleUserDropdownSiswa" class="flex items-center gap-1.5 bg-indigo-900/80 hover:bg-indigo-800 active:scale-95 text-white p-1 sm:pl-2.5 sm:pr-2 rounded-xl transition border border-indigo-700/60 shadow-sm cursor-pointer select-none">
                 <div id="headerAvatarInitialSiswa" class="w-6 h-6 rounded-lg bg-gradient-to-tr from-blue-500 to-indigo-400 text-white font-black text-xs flex items-center justify-center shadow-inner">
@@ -128,6 +140,21 @@
                   <p id="dropdownPeranDetailSiswa" class="text-[10px] text-blue-200 mt-0.5 leading-relaxed font-medium truncate">NIS: - | Kelas: -</p>
                 </div>
 
+                <div class="space-y-1 mb-2">
+                  <button type="button" onclick="switchTab('tugas'); switchTugasTab('materi'); document.getElementById('userDropdownMenuSiswa')?.classList.add('hidden');" class="w-full text-left px-2.5 py-2 rounded-xl hover:bg-slate-50 flex items-center gap-2 text-slate-700 font-semibold text-xs transition cursor-pointer">
+                    <svg class="w-4 h-4 text-indigo-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                    <span>Buka Materi Pelajaran Kelas</span>
+                  </button>
+                  <button type="button" onclick="switchTab('perkembangan'); document.getElementById('userDropdownMenuSiswa')?.classList.add('hidden');" class="w-full text-left px-2.5 py-2 rounded-xl hover:bg-slate-50 flex items-center gap-2 text-slate-700 font-semibold text-xs transition cursor-pointer">
+                    <svg class="w-4 h-4 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                    <span>Lihat Grafik Nilai &amp; Profil</span>
+                  </button>
+                  <a id="linkLintasPortalGuru" href="/guru.html" class="hidden w-full text-left px-2.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 flex items-center gap-2 text-amber-900 font-bold text-xs transition">
+                    <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                    <span>Buka Portal Guru &amp; Admin</span>
+                  </a>
+                </div>
+
                 <button type="button" id="btnLogout" class="w-full cursor-pointer flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 active:scale-95 transition">
                   <svg class="w-3.5 h-3.5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
                   <span>Keluar dari Akun</span>
@@ -138,26 +165,33 @@
         </div>
       </div>
 
-      <!-- Baris Navigasi Khusus Mobile (< 768px): 2 Menu Sejajar -->
-      <div id="navSiswaMobile" class="hidden pb-2 pt-1 grid grid-cols-2 gap-2 border-t border-indigo-900/50">
-        <button id="tabBtn-presensi-mob" type="button" class="py-1.5 text-xs font-bold rounded-xl bg-blue-600 text-white shadow-sm transition flex items-center justify-center gap-1.5 cursor-pointer">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
+      <!-- Baris Navigasi Khusus Mobile (< 768px): 3 Menu Sejajar (Presensi, Tugas & Materi, Perkembangan) -->
+      <div id="navSiswaMobile" class="hidden pb-2 pt-1 grid grid-cols-3 gap-1.5 border-t border-indigo-900/50">
+        <button id="tabBtn-presensi-mob" type="button" class="py-1.5 text-xs font-bold rounded-xl bg-blue-600 text-white shadow-sm transition flex items-center justify-center gap-1 cursor-pointer">
+          <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
           <span>Presensi</span>
         </button>
-        <button id="tabBtn-tugas-mob" type="button" class="py-1.5 text-xs font-bold rounded-xl text-indigo-200 bg-indigo-900/60 transition flex items-center justify-center gap-1.5 cursor-pointer">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-          <span>Tugas & PR</span>
+        <button id="tabBtn-tugas-mob" type="button" class="py-1.5 text-xs font-bold rounded-xl text-indigo-200 bg-indigo-900/60 transition flex items-center justify-center gap-1 cursor-pointer">
+          <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+          <span>Tugas &amp; Materi</span>
+        </button>
+        <button id="tabBtn-perkembangan-mob" type="button" class="py-1.5 text-xs font-bold rounded-xl text-indigo-200 bg-indigo-900/60 transition flex items-center justify-center gap-1 cursor-pointer">
+          <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+          <span>Perkembangan</span>
         </button>
       </div>
     </div>
   </header>
 
   <!-- ======================================================================== -->
-  <!-- BOTTOM SHEET NOTIFIKASI KHUSUS PONSEL (< 768px)                          -->
+  <!-- BOTTOM SHEET NOTIFIKASI KHUSUS PONSEL (BISA DI-SWIPE KE ATAS)            -->
   <!-- ======================================================================== -->
-  <div id="bottomSheetPengumuman" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-end sm:hidden transition-all duration-300">
-    <div class="bg-white rounded-t-[32px] w-full p-5 max-h-[82vh] flex flex-col shadow-2xl border-t border-slate-200">
-      <div class="w-12 h-1 bg-slate-300 rounded-full mx-auto mb-3.5 shrink-0"></div>
+  <div id="bottomSheetPengumuman" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-end md:hidden transition-all duration-300">
+    <div id="sheetPanelSiswa" class="bottom-sheet-panel bg-white rounded-t-[32px] w-full p-5 max-h-[75vh] flex flex-col shadow-2xl border-t border-slate-200">
+      <div data-sheet-handle class="w-full pt-1 pb-2.5 cursor-grab active:cursor-grabbing select-none text-center shrink-0">
+        <div class="w-12 h-1.5 bg-slate-300 hover:bg-slate-400 rounded-full mx-auto transition-colors"></div>
+        <p data-sheet-hint class="text-[10px] text-slate-400 font-semibold mt-1">Geser ke atas untuk memperluas tampilan</p>
+      </div>
       <div class="flex items-center justify-between pb-3 border-b border-slate-100 shrink-0">
         <h4 class="font-extrabold text-sm text-slate-800 flex items-center gap-2">
           <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
@@ -165,10 +199,9 @@
         </h4>
         <button type="button" onclick="tutupBottomSheetPengumuman()" class="text-slate-400 hover:text-slate-600 font-black p-1 text-base cursor-pointer">✕</button>
       </div>
-      <!-- Tab Switcher Mobile -->
       <div class="grid grid-cols-2 gap-1 bg-slate-100 p-1 rounded-xl my-2.5 text-xs font-bold text-center shrink-0">
-        <button type="button" id="tabNotifSiswaMobBtn-tugas" onclick="switchTabNotifSiswa('tugas')" class="py-1.5 rounded-lg bg-white text-blue-900 shadow-sm transition">Tugas Masuk</button>
-        <button type="button" id="tabNotifSiswaMobBtn-pengumuman" onclick="switchTabNotifSiswa('pengumuman')" class="py-1.5 rounded-lg text-slate-500 transition">Pengumuman</button>
+        <button type="button" id="tabNotifSiswaMobBtn-tugas" onclick="switchTabNotifSiswa('tugas')" class="py-1.5 rounded-lg bg-blue-600 text-white shadow-sm transition cursor-pointer">Tugas Masuk</button>
+        <button type="button" id="tabNotifSiswaMobBtn-pengumuman" onclick="switchTabNotifSiswa('pengumuman')" class="py-1.5 rounded-lg text-slate-600 transition cursor-pointer">Pengumuman</button>
       </div>
       <div id="listNotifTugasMobile" class="space-y-2 overflow-y-auto pr-1 flex-grow">
         <p class="text-xs text-slate-400 text-center py-4">Memeriksa tugas baru...</p>
@@ -195,7 +228,6 @@
           <p class="text-xs text-slate-500 mt-1 font-medium">Silakan masuk jika sudah punya akun, atau daftar akun baru</p>
         </div>
 
-        <!-- Tombol Tab Switch (Masuk vs Registrasi) -->
         <div class="grid grid-cols-2 gap-1.5 bg-slate-100 p-1.5 rounded-2xl mb-6">
           <button id="authTabBtn-masuk" type="button" class="py-2.5 text-xs font-bold rounded-xl bg-blue-700 text-white shadow-sm transition flex items-center justify-center gap-1.5 cursor-pointer">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
@@ -207,10 +239,9 @@
           </button>
         </div>
 
-        <!-- FORM 1: MASUK -->
         <form id="formMasuk" class="space-y-4">
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Nomor Induk Siswa (NIS) *</label>
+            <label for="loginNis" class="block text-xs font-semibold text-slate-600 mb-1">Nomor Induk Siswa (NIS) *</label>
             <input type="text" id="loginNis" required placeholder="Contoh: 1001" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-blue-600 focus:outline-none" />
           </div>
           <button type="submit" id="btnSubmitMasuk" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-700/20 active:scale-95 transition text-sm flex items-center justify-center gap-2 cursor-pointer">
@@ -219,23 +250,22 @@
           </button>
         </form>
 
-        <!-- FORM 2: REGISTRASI -->
         <form id="formDaftar" class="space-y-4 hidden">
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Nomor Induk Siswa (NIS) *</label>
+            <label for="regNis" class="block text-xs font-semibold text-slate-600 mb-1">Nomor Induk Siswa (NIS) *</label>
             <input type="text" id="regNis" required placeholder="Contoh: 1001" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-blue-600 focus:outline-none" />
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Nama Lengkap Siswa *</label>
+            <label for="regNama" class="block text-xs font-semibold text-slate-600 mb-1">Nama Lengkap Siswa *</label>
             <input type="text" id="regNama" required placeholder="Masukkan nama lengkap siswa" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-blue-600 focus:outline-none" />
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Kelas *</label>
+              <label for="regKelas" class="block text-xs font-semibold text-slate-600 mb-1">Kelas *</label>
               <select id="regKelas" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm bg-white focus:ring-2 focus:ring-blue-600 focus:outline-none"></select>
             </div>
             <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Jenis Kelamin</label>
+              <label for="regJk" class="block text-xs font-semibold text-slate-600 mb-1">Jenis Kelamin</label>
               <select id="regJk" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm bg-white focus:ring-2 focus:ring-blue-600 focus:outline-none">
                 <option value="L">Laki-laki</option>
                 <option value="P">Perempuan</option>
@@ -243,19 +273,20 @@
             </div>
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Nama Orang Tua / Wali</label>
+            <label for="regOrtu" class="block text-xs font-semibold text-slate-600 mb-1">Nama Orang Tua / Wali</label>
             <input type="text" id="regOrtu" placeholder="Nama Ayah / Ibu" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-blue-600 focus:outline-none" />
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">No. WhatsApp Orang Tua</label>
+            <label for="regNohp" class="block text-xs font-semibold text-slate-600 mb-1">No. WhatsApp Orang Tua</label>
             <input type="tel" id="regNohp" placeholder="0812xxxxxxxx" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-blue-600 focus:outline-none" />
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Token Pendaftaran dari Sekolah *</label>
+            <label for="regToken" class="block text-xs font-semibold text-slate-600 mb-1">Token Pendaftaran dari Sekolah *</label>
             <div class="relative">
               <input type="text" id="regToken" required placeholder="Masukkan token resmi" class="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-blue-600 focus:outline-none" />
               <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/> </div>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+              </div>
             </div>
           </div>
           <button type="submit" id="btnSubmitDaftar" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-emerald-600/20 active:scale-95 transition text-sm flex items-center justify-center gap-2 cursor-pointer">
@@ -266,17 +297,29 @@
       </div>
     </section>
 
-    <!-- 2B. DASHBOARD APLIKASI SISWA TERPADU (2 MENU UTAMA) -->
+    <!-- 2B. DASHBOARD APLIKASI SISWA TERPADU (3 MENU UTAMA - OPSI A) -->
     <div id="appSection" class="hidden space-y-5 py-5 min-h-[560px]">
-      <!-- BANNER LITURGI & DOA KATOLIK HARIAN SEKOLAH -->
-      <div class="bg-gradient-to-r from-blue-950 via-indigo-900 to-indigo-950 text-white rounded-3xl p-4 sm:p-5 shadow-sm border border-indigo-700/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 no-print">
-        <div class="flex items-center gap-3.5">
+      
+      <!-- BANNER LITURGI & DOA KATOLIK HARIAN SEKOLAH (DENGAN ANIMASI BINTANG & SALIB) -->
+      <div class="relative overflow-hidden bg-gradient-to-r from-blue-950 via-indigo-900 to-indigo-950 text-white rounded-3xl p-4 sm:p-5 shadow-sm border border-indigo-700/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 no-print">
+        <div class="absolute inset-0 pointer-events-none select-none overflow-hidden" aria-hidden="true">
+          <div class="absolute -top-10 -left-10 w-36 h-36 bg-amber-400/10 rounded-full blur-2xl"></div>
+          <div class="absolute -bottom-10 right-16 w-40 h-40 bg-blue-400/10 rounded-full blur-2xl"></div>
+          <span class="liturgy-bg-float absolute top-2.5 left-[18%] text-amber-300/30 text-sm" style="animation-delay: 0s;">✦</span>
+          <span class="liturgy-bg-twinkle absolute bottom-2.5 left-[34%] text-amber-200/25 text-xs" style="animation-delay: 1.1s;">✝</span>
+          <span class="liturgy-bg-float absolute top-3 left-[52%] text-amber-300/35 text-base" style="animation-delay: 2.2s;">★</span>
+          <span class="liturgy-bg-twinkle absolute bottom-3 left-[68%] text-indigo-200/30 text-sm" style="animation-delay: 0.6s;">✝</span>
+          <span class="liturgy-bg-float absolute top-2 right-[14%] text-amber-300/30 text-xs" style="animation-delay: 1.7s;">✦</span>
+          <span class="liturgy-bg-twinkle absolute bottom-2 right-[6%] text-amber-200/25 text-sm" style="animation-delay: 2.8s;">✝</span>
+        </div>
+
+        <div class="relative z-10 flex items-center gap-3.5">
           <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-amber-400/20 text-amber-300 border border-amber-300/40 flex items-center justify-center font-black text-lg shrink-0 shadow-inner">
             ✝
           </div>
           <div>
             <div class="flex items-center gap-2 flex-wrap">
-              <h4 class="font-extrabold text-sm sm:text-base text-white">Jadwal Doa & Liturgi Sekolah</h4>
+              <h4 class="font-extrabold text-sm sm:text-base text-white">Jadwal Doa &amp; Liturgi Sekolah</h4>
               <span class="bg-amber-400/20 text-amber-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-amber-300/30">
                 Angelus Pk 12.00 | Renungan Pk 07.15
               </span>
@@ -286,275 +329,538 @@
             </p>
           </div>
         </div>
-        <button type="button" onclick="bukaModalTeksDoaSiswa()" class="self-start sm:self-center shrink-0 bg-white/10 hover:bg-white/20 active:scale-95 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition border border-white/20 cursor-pointer flex items-center gap-1.5">
+        <button type="button" onclick="bukaModalTeksDoaSiswa()" class="relative z-10 self-start sm:self-center shrink-0 bg-white/10 hover:bg-white/20 active:scale-95 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition border border-white/20 cursor-pointer flex items-center gap-1.5">
           <svg class="w-3.5 h-3.5 text-amber-300" fill="currentColor" viewBox="0 0 20 20"><path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z"/></svg>
           <span>Buka Teks Doa</span>
         </button>
       </div>
 
-      <!-- ==================================================================== -->
-      <!-- MENU 1: PRESENSI & KEHADIRAN                                         -->
-      <!-- ==================================================================== -->
-      <div id="tabContent-presensi" class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-        <!-- SISI KIRI (LEBAR 5/12): KAMERA QR SCANNER / TOGGLE AJUKAN IZIN -->
-        <div class="lg:col-span-5 space-y-4">
-          <!-- Mode Switcher Presensi: Hadir (Kamera) vs Sakit/Izin -->
-          <div class="grid grid-cols-2 gap-1.5 bg-slate-200/80 p-1.5 rounded-2xl">
-            <button id="presensiModeBtn-scan" type="button" onclick="switchPresensiMode('scan')" class="py-2 text-xs font-bold rounded-xl bg-blue-600 text-white shadow-sm transition flex items-center justify-center gap-1.5 cursor-pointer">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
-              <span>Scan QR Hadir</span>
-            </button>
-            <button id="presensiModeBtn-izin" type="button" onclick="switchPresensiMode('izin')" class="py-2 text-xs font-bold rounded-xl text-slate-600 hover:text-slate-800 transition flex items-center justify-center gap-1.5 cursor-pointer">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-              <span>Ajukan Izin / Sakit</span>
-            </button>
-          </div>
-
-          <!-- KOTAK A: KAMERA QR SCANNER DENGAN PANDUAN VISUAL DINAMIS -->
-          <div id="boxPresensi-scan" class="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-200">
-            <div class="flex items-center justify-between gap-2 mb-3">
-              <div>
-                <h3 class="font-extrabold text-sm sm:text-base text-slate-800">Scan QR Presensi</h3>
-                <p class="text-[11px] text-slate-500 font-medium">Arahkan kamera ke QR Code kelas resmi.</p>
-              </div>
-              <span id="badgeStatusKamera" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
-                <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> Kamera Standby
-              </span>
-            </div>
-
-            <!-- Area Bingkai Kamera & Panduan Visual -->
-            <div class="relative w-full max-w-[280px] mx-auto overflow-hidden rounded-3xl border-2 border-indigo-900 bg-slate-950 aspect-square flex items-center justify-center shadow-inner">
-              <div id="reader" class="w-full h-full object-cover"></div>
-
-              <!-- Panduan Visual Saat Kamera Belum Aktif -->
-              <div id="scannerGuidePlaceholder" class="absolute inset-0 z-10 flex flex-col items-center justify-center p-4 text-center bg-gradient-to-b from-indigo-950/90 to-slate-950 text-white select-none">
-                <div class="relative w-28 h-28 flex items-center justify-center mb-3">
-                  <div class="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-amber-400 rounded-tl-lg"></div>
-                  <div class="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-amber-400 rounded-tr-lg"></div>
-                  <div class="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-amber-400 rounded-bl-lg"></div>
-                  <div class="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-amber-400 rounded-br-lg"></div>
-                  <div class="p-3 bg-white/10 rounded-2xl border border-white/20 backdrop-blur-sm">
-                    <svg class="w-12 h-12 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
-                    </svg>
-                  </div>
-                </div>
-                <p class="text-xs font-bold text-slate-100">Pasang Posisi QR di Dalam Kotak</p>
-                <p class="text-[10px] text-slate-400 mt-1 max-w-[200px] leading-relaxed">
-                  Tekan tombol di bawah untuk membuka kamera dan mulai memindai.
-                </p>
-              </div>
-
-              <!-- Viewfinder Aktif Saat Memindai -->
-              <div id="scannerActiveOverlay" class="hidden absolute inset-0 z-10 pointer-events-none flex flex-col items-center justify-center p-5">
-                <div class="relative w-48 h-48 border-2 border-white/40 rounded-2xl">
-                  <div class="absolute -top-1 -left-1 w-5 h-5 border-t-4 border-l-4 border-blue-400 rounded-tl-md"></div>
-                  <div class="absolute -top-1 -right-1 w-5 h-5 border-t-4 border-r-4 border-blue-400 rounded-tr-md"></div>
-                  <div class="absolute -bottom-1 -left-1 w-5 h-5 border-b-4 border-l-4 border-blue-400 rounded-bl-md"></div>
-                  <div class="absolute -bottom-1 -right-1 w-5 h-5 border-b-4 border-r-4 border-blue-400 rounded-br-md"></div>
-                  <div class="absolute left-1 right-1 h-0.5 bg-gradient-to-r from-transparent via-emerald-400 to-transparent shadow-[0_0_12px_#34d399] animate-scan-laser"></div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Tombol Pemicu Kamera -->
-            <div class="mt-4 flex justify-center items-center gap-2">
-              <button id="btnStartScan" type="button" class="w-full bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-bold py-2.5 rounded-xl shadow-md flex items-center justify-center gap-2 transition cursor-pointer">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                <span>Aktifkan Kamera</span>
+      <!-- ================================================================== -->
+      <!-- MENU 1: PRESENSI & KEHADIRAN                                       -->
+      <!-- ================================================================== -->
+      <div id="tabContent-presensi" class="space-y-4">
+        <div class="bg-white rounded-3xl p-4 sm:p-5 md:p-6 shadow-sm border border-slate-200 space-y-5">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+            <div class="flex items-center gap-2 flex-wrap">
+              <button type="button" onclick="bukaModalScanQR()" class="bg-indigo-900 hover:bg-indigo-950 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-md active:scale-95 transition flex items-center gap-2 cursor-pointer border border-indigo-700/50">
+                <svg class="w-4 h-4 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                <span>Scan QR Hadir</span>
               </button>
-              <button id="btnStopScan" type="button" class="hidden w-full bg-slate-700 hover:bg-slate-800 active:scale-95 text-white text-xs font-bold py-2.5 rounded-xl shadow-sm flex items-center justify-center gap-2 transition cursor-pointer">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                <span>Matikan Kamera</span>
+              <button type="button" onclick="bukaModalFormIzin()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-md active:scale-95 transition flex items-center gap-2 cursor-pointer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Izin / Sakit</span>
+              </button>
+              <button id="btnSegarkanRiwayat" type="button" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl shadow-md active:scale-95 transition flex items-center gap-1.5 cursor-pointer">
+                <svg id="iconRefreshAbsen" class="w-3.5 h-3.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                <span>Refresh</span>
               </button>
             </div>
-            <div id="absenAlert" class="hidden mt-3 p-2.5 rounded-xl text-xs font-bold text-center"></div>
-          </div>
 
-          <!-- KOTAK B: FORM PENGAJUAN IZIN / SAKIT -->
-          <div id="boxPresensi-izin" class="hidden bg-white rounded-3xl p-5 shadow-sm border border-slate-200">
-            <h3 class="font-extrabold text-sm sm:text-base mb-1 text-slate-800">Form Izin / Sakit Online</h3>
-            <p class="text-[11px] text-slate-500 mb-3 font-medium">Kirim surat permohonan ke bapak/ibu wali kelas.</p>
-            <form id="izinForm" class="space-y-3">
-              <div>
-                <label class="block text-[11px] font-semibold text-slate-600 mb-1">Status Ketidakhadiran *</label>
-                <select id="statusIzin" required class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs bg-white focus:ring-2 focus:ring-blue-600 focus:outline-none">
-                  <option value="Sakit">Sakit (Lampirkan Surat Dokter jika ada)</option>
-                  <option value="Izin">Izin (Keperluan Keluarga / Lainnya)</option>
-                </select>
-              </div>
-              <div>
-                <label class="block text-[11px] font-semibold text-slate-600 mb-1">Tanggal Mulai Berhalangan *</label>
-                <input type="date" id="tanggalMulai" required class="w-full min-h-[40px] px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-700 bg-white focus:ring-2 focus:ring-blue-600 focus:outline-none appearance-none" />
-              </div>
-              <div>
-                <label class="block text-[11px] font-semibold text-slate-600 mb-1">Keterangan / Alasan *</label>
-                <textarea id="keteranganIzin" rows="2" required placeholder="Jelaskan alasan izin secara singkat..." class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-600 focus:outline-none"></textarea>
-              </div>
-              <div>
-                <label class="block text-[11px] font-semibold text-slate-600 mb-1">Lampiran Foto Surat (Opsional)</label>
-                <input type="file" id="fileBukti" accept="image/*,.pdf" class="w-full text-[11px] text-slate-600 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-blue-50 file:text-blue-700 border border-slate-300 rounded-xl p-1" />
-              </div>
-              <button type="submit" id="btnSubmitIzin" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-2.5 rounded-xl shadow-md active:scale-95 transition text-xs flex items-center justify-center gap-1.5 cursor-pointer">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
-                <span>Kirim Permohonan Izin</span>
+            <div class="inline-flex bg-slate-100 p-1.5 rounded-2xl gap-1 self-start sm:self-auto flex-wrap">
+              <button id="presensiTabBtn-riwayat" type="button" onclick="switchPresensiTab('riwayat')" class="py-2 px-4 text-xs font-bold rounded-xl bg-blue-600 text-white shadow-sm transition flex items-center gap-1.5 cursor-pointer">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span>Riwayat Kehadiran</span>
               </button>
-            </form>
-            <div id="izinAlert" class="hidden mt-3 p-2.5 rounded-xl text-xs font-bold text-center"></div>
+              <button id="presensiTabBtn-izin" type="button" onclick="switchPresensiTab('izin')" class="py-2 px-4 text-xs font-bold rounded-xl text-slate-600 hover:text-slate-800 transition flex items-center gap-1.5 cursor-pointer">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                <span>Riwayat Izin / Sakit</span>
+              </button>
+            </div>
           </div>
-        </div>
 
-        <!-- SISI KANAN (LEBAR 7/12): RIWAYAT KEHADIRAN & TABEL STATUS ACC IZIN -->
-        <div class="lg:col-span-7 space-y-4">
-          <!-- Tabel Log Presensi Scan QR -->
-          <div class="bg-white rounded-3xl p-4 sm:p-5 shadow-sm border border-slate-200">
-            <div class="flex items-center justify-between mb-3">
+          <div id="presensiSubContent-riwayat" class="space-y-3">
+            <div class="flex items-center justify-between">
               <h3 class="font-extrabold text-sm md:text-base text-slate-800 flex items-center gap-2">
                 <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 <span>Riwayat Kehadiran (Scan QR)</span>
               </h3>
-              <button id="btnSegarkanRiwayat" type="button" class="text-xs text-blue-600 font-bold hover:underline flex items-center gap-1 cursor-pointer">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                <span>Refresh</span>
-              </button>
             </div>
-            <div class="overflow-x-auto">
+            <div class="overflow-x-auto min-h-[160px]">
               <table class="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr class="bg-slate-50 text-slate-700 border-b border-slate-200">
-                    <th class="p-2.5 rounded-tl-xl font-bold">Waktu Scan</th>
-                    <th class="p-2.5 font-bold">Kelas</th>
-                    <th class="p-2.5 font-bold">Status</th>
-                    <th class="p-2.5 rounded-tr-xl font-bold">Keterangan</th>
+                    <th class="p-3 w-12 rounded-tl-xl font-bold text-center">No</th>
+                    <th class="p-3 font-bold">Waktu Scan</th>
+                    <th class="p-3 font-bold">Kelas</th>
+                    <th class="p-3 font-bold">Status</th>
+                    <th class="p-3 rounded-tr-xl font-bold">Keterangan</th>
                   </tr>
                 </thead>
-                <tbody id="tableAbsensi" class="divide-y divide-slate-100">
-                  <tr><td colspan="4" class="p-4 text-center text-slate-400">Belum ada riwayat absensi.</td></tr>
-                </tbody>
+                <tbody id="tableAbsensi" class="divide-y divide-slate-100"></tbody>
               </table>
             </div>
           </div>
 
-          <!-- Tabel Riwayat Permohonan Izin / Sakit -->
-          <div class="bg-white rounded-3xl p-4 sm:p-5 shadow-sm border border-slate-200">
-            <div class="flex items-center justify-between mb-3">
+          <div id="presensiSubContent-izin" class="hidden space-y-3">
+            <div class="flex items-center justify-between">
               <h3 class="font-extrabold text-sm md:text-base text-slate-800 flex items-center gap-2">
                 <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                <span>Riwayat Pengajuan Izin / Sakit</span>
+                <span>Riwayat Izin / Sakit</span>
               </h3>
-              <button type="button" onclick="loadRiwayatIzin()" class="text-xs text-blue-600 font-bold hover:underline flex items-center gap-1 cursor-pointer">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                <span>Refresh</span>
-              </button>
             </div>
-            <div class="overflow-x-auto">
+            <div class="overflow-x-auto min-h-[160px]">
               <table class="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr class="bg-slate-50 text-slate-700 border-b border-slate-200">
-                    <th class="p-2.5 rounded-tl-xl font-bold">Tanggal</th>
-                    <th class="p-2.5 font-bold">Kategori</th>
-                    <th class="p-2.5 font-bold">Keterangan</th>
-                    <th class="p-2.5 font-bold">Lampiran</th>
-                    <th class="p-2.5 rounded-tr-xl font-bold">Status ACC</th>
+                    <th class="p-3 w-12 rounded-tl-xl font-bold text-center">No</th>
+                    <th class="p-3 font-bold">Tanggal Berhalangan</th>
+                    <th class="p-3 font-bold">Kategori</th>
+                    <th class="p-3 font-bold">Keterangan</th>
+                    <th class="p-3 font-bold">Lampiran</th>
+                    <th class="p-3 rounded-tr-xl font-bold">Status ACC</th>
                   </tr>
                 </thead>
-                <tbody id="tableRiwayatIzin" class="divide-y divide-slate-100">
-                  <tr><td colspan="5" class="p-4 text-center text-slate-400">Belum ada riwayat izin / sakit.</td></tr>
-                </tbody>
+                <tbody id="tableRiwayatIzin" class="divide-y divide-slate-100"></tbody>
               </table>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- ==================================================================== -->
-      <!-- MENU 2: TUGAS & PR                                                   -->
-      <!-- ==================================================================== -->
-      <div id="tabContent-tugas" class="hidden space-y-5">
-        <!-- Sisi Atas: Daftar Tugas Guru (Kiri) & Form Pengumpulan (Kanan) -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-          
-          <!-- SISI KIRI (LEBAR 7/12): DAFTAR TUGAS / PR DARI GURU -->
-          <div class="lg:col-span-7 bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-200 flex flex-col">
-            <div class="flex items-center justify-between mb-4 shrink-0">
-              <h3 class="font-extrabold text-base text-slate-800 flex items-center gap-2">
-                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-                <span>Daftar Tugas / PR dari Guru</span>
-              </h3>
-              <button id="btnPerbaruiTugasGuru" type="button" class="text-xs text-indigo-600 font-bold hover:underline flex items-center gap-1 cursor-pointer">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                <span>Perbarui</span>
+      <!-- ================================================================== -->
+      <!-- MENU 2: TUGAS & MATERI PELAJARAN (DENGAN 3 SWITCH TAB TERPADU)     -->
+      <!-- ================================================================== -->
+      <div id="tabContent-tugas" class="hidden space-y-4">
+        <div class="bg-white rounded-3xl p-4 sm:p-5 md:p-6 shadow-sm border border-slate-200 space-y-5">
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+            <div class="flex items-center gap-2 flex-wrap">
+              <button type="button" onclick="bukaModalKirimTugas()" class="bg-indigo-900 hover:bg-indigo-950 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-md active:scale-95 transition flex items-center gap-2 cursor-pointer border border-indigo-700/50">
+                <svg class="w-4 h-4 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                <span>Kumpulkan Tugas</span>
+              </button>
+              <button id="btnPerbaruiTugasGuru" type="button" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl shadow-md active:scale-95 transition flex items-center gap-1.5 cursor-pointer">
+                <svg id="iconRefreshDaftarTugas" class="w-3.5 h-3.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                <span>Refresh</span>
               </button>
             </div>
 
-            <!-- Wadah Daftar Tugas dengan Scroll Internal Responsif -->
-            <div id="containerDaftarTugasGuru" class="space-y-3 max-h-[460px] overflow-y-auto pr-1.5 scroll-smooth">
-              <p class="text-xs text-slate-500 text-center py-2">Memuat daftar tugas / PR...</p>
+            <!-- 3 Switch Tab di Kanan: Daftar Tugas | Materi Pelajaran | Riwayat & Nilai -->
+            <div class="inline-flex bg-slate-100 p-1.5 rounded-2xl gap-1 self-start lg:self-auto flex-wrap">
+              <button id="tugasTabBtn-daftar" type="button" onclick="switchTugasTab('daftar')" class="py-2 px-3.5 text-xs font-bold rounded-xl bg-blue-600 text-white shadow-sm transition flex items-center gap-1.5 cursor-pointer">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Daftar Tugas</span>
+              </button>
+              <button id="tugasTabBtn-materi" type="button" onclick="switchTugasTab('materi')" class="py-2 px-3.5 text-xs font-bold rounded-xl text-slate-600 hover:text-slate-800 transition flex items-center gap-1.5 cursor-pointer">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                <span>Materi Pelajaran</span>
+              </button>
+              <button id="tugasTabBtn-riwayat" type="button" onclick="switchTugasTab('riwayat')" class="py-2 px-3.5 text-xs font-bold rounded-xl text-slate-600 hover:text-slate-800 transition flex items-center gap-1.5 cursor-pointer">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span>Riwayat &amp; Nilai</span>
+              </button>
             </div>
           </div>
 
-          <!-- SISI KANAN (LEBAR 5/12): FORM PENGUMPULAN TUGAS KE GOOGLE DRIVE -->
-          <div class="lg:col-span-5 bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-200 lg:sticky lg:top-20">
-            <h3 class="font-extrabold text-base mb-1 text-slate-800">Kirim Tugas / PR</h3>
-            <p class="text-xs text-slate-500 mb-4 font-medium">Tersimpan otomatis ke Google Drive sekolah.</p>
-            <form id="tugasForm" class="space-y-3.5">
-              <div>
-                <label class="block text-xs font-semibold text-slate-600 mb-1">Mata Pelajaran *</label>
-                <select id="mapel" required class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs bg-white focus:ring-2 focus:ring-blue-600 focus:outline-none"></select>
-              </div>
-              <div>
-                <label class="block text-xs font-semibold text-slate-600 mb-1">Judul / Keterangan Tugas *</label>
-                <input type="text" id="judulTugas" required placeholder="Contoh: PR Matematika Hal 45" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-600 focus:outline-none" />
-              </div>
-              <div>
-                <label class="block text-xs font-semibold text-slate-600 mb-1">Upload Berkas Tugas (Foto, PDF, Word) *</label>
-                <input type="file" id="fileTugas" required accept="image/*,.pdf,.doc,.docx" class="w-full text-xs text-slate-600 file:mr-2 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-[11px] file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 border border-slate-300 rounded-xl p-1" />
-              </div>
-              <input type="hidden" id="tugasKelas" />
-              <button type="submit" id="btnSubmitTugas" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl shadow-md active:scale-95 transition text-xs flex items-center justify-center gap-1.5 cursor-pointer">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-                <span>Kirim ke Google Drive</span>
-              </button>
-            </form>
-            <div id="tugasAlert" class="hidden mt-3 p-2.5 rounded-xl text-xs font-bold text-center"></div>
-          </div>
-        </div>
-
-        <!-- Sisi Bawah: Riwayat Pengumpulan Tugas & Nilai dari Guru -->
-        <div class="bg-white rounded-3xl p-4 sm:p-5 md:p-6 shadow-sm border border-slate-200">
-          <div class="flex items-center justify-between mb-4">
+          <!-- SUB-TAB 1: DAFTAR TUGAS DARI GURU -->
+          <div id="tugasSubContent-daftar" class="space-y-3">
             <div>
-              <h3 class="font-extrabold text-sm md:text-base text-slate-800">Riwayat Pengumpulan & Nilai Tugas</h3>
-              <p class="text-xs text-slate-500 font-medium">Daftar tugas yang telah dikumpulkan beserta catatan evaluasi dari guru.</p>
+              <h3 class="font-extrabold text-sm md:text-base text-slate-800 flex items-center gap-2">
+                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Daftar Tugas dari Guru</span>
+              </h3>
+              <p class="text-xs text-slate-500 font-medium mt-0.5">Klik tombol <b>Kumpul Tugas Ini</b> pada kartu tugas atau tombol <b>Kumpulkan Tugas</b> di kiri atas untuk mengunggah berkas.</p>
             </div>
-            <button type="button" onclick="loadRiwayat()" class="text-xs text-blue-600 font-bold hover:underline flex items-center gap-1 cursor-pointer">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-              <span>Refresh</span>
-            </button>
+            <div id="containerDaftarTugasGuru" class="space-y-3 max-h-[520px] overflow-y-auto pr-1.5 scroll-smooth"></div>
           </div>
-          <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr class="bg-slate-100 text-slate-700 border-b">
-                  <th class="p-3 rounded-tl-xl font-bold">Waktu Upload</th>
-                  <th class="p-3 font-bold">Mata Pelajaran</th>
-                  <th class="p-3 font-bold">Materi, Judul & Catatan</th>
-                  <th class="p-3 rounded-tr-xl font-bold text-right">Nilai & Berkas</th>
-                </tr>
-              </thead>
-              <tbody id="tableTugas" class="divide-y divide-slate-100">
-                <tr><td colspan="4" class="p-4 text-center text-slate-400">Belum ada tugas yang dikumpulkan.</td></tr>
-              </tbody>
-            </table>
+
+          <!-- SUB-TAB 2: MATERI PELAJARAN DARI GURU -->
+          <div id="tugasSubContent-materi" class="hidden space-y-3">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+              <div>
+                <h3 class="font-extrabold text-sm md:text-base text-slate-800 flex items-center gap-2">
+                  <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                  <span>Materi Pelajaran &amp; Modul Kelas</span>
+                </h3>
+                <p class="text-xs text-slate-500 font-medium mt-0.5">Pelajari modul bacaan atau video pembelajaran dari guru, lalu klik <b>Tandai Sudah Dipelajari</b>.</p>
+              </div>
+              <div class="flex items-center gap-2 self-start sm:self-auto">
+                <label for="filterMapelMateriSiswa" class="text-xs font-bold text-slate-600 whitespace-nowrap">Filter Mapel:</label>
+                <select id="filterMapelMateriSiswa" class="bg-slate-50 hover:bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-blue-600 focus:outline-none cursor-pointer transition"></select>
+              </div>
+            </div>
+            <div id="containerDaftarMateriSiswa" class="space-y-3 max-h-[540px] overflow-y-auto pr-1.5 scroll-smooth"></div>
+          </div>
+
+          <!-- SUB-TAB 3: RIWAYAT PENGUMPULAN & NILAI TUGAS -->
+          <div id="tugasSubContent-riwayat" class="hidden space-y-3">
+            <div id="boxTabelRiwayatTugasWrap" class="space-y-3">
+              <div>
+                <h3 class="font-extrabold text-sm md:text-base text-slate-800 flex items-center gap-2">
+                  <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  <span>Riwayat Pengumpulan &amp; Nilai Tugas</span>
+                </h3>
+                <p class="text-xs text-slate-500 font-medium mt-0.5">Daftar tugas yang telah dikumpulkan beserta nilai dan catatan evaluasi dari guru.</p>
+              </div>
+              <div class="overflow-x-auto min-h-[160px]">
+                <table class="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr class="bg-slate-50 text-slate-700 border-b border-slate-200">
+                      <th class="p-3 w-12 rounded-tl-xl font-bold text-center">No</th>
+                      <th class="p-3 font-bold">Waktu Upload</th>
+                      <th class="p-3 font-bold">Mata Pelajaran</th>
+                      <th class="p-3 font-bold">Materi, Judul &amp; Catatan</th>
+                      <th class="p-3 rounded-tr-xl font-bold text-right">Nilai &amp; Berkas</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tableTugas" class="divide-y divide-slate-100"></tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
       </div>
+
+      <!-- ================================================================== -->
+      <!-- MENU 3: GRAFIK PERKEMBANGAN NILAI, KEHADIRAN & BIODATA SISWA       -->
+      <!-- ================================================================== -->
+      <div id="tabContent-perkembangan" class="hidden space-y-5">
+        <div class="bg-white rounded-3xl p-4 sm:p-5 md:p-6 shadow-sm border border-slate-200 space-y-5">
+          <!-- Baris Action Button di Kiri & Filter Mata Pelajaran di Kanan -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+            <div class="flex items-center gap-2 flex-wrap">
+              <button type="button" id="btnExportRaporMiniPDF" onclick="eksporPerkembanganSiswa('pdf')" class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl shadow-md active:scale-95 transition flex items-center gap-1.5 cursor-pointer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                <span>Export PDF</span>
+              </button>
+              <button type="button" id="btnExportRaporMiniXLSX" onclick="eksporPerkembanganSiswa('xlsx')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl shadow-md active:scale-95 transition flex items-center gap-1.5 cursor-pointer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                <span>Export XLSX</span>
+              </button>
+              <button type="button" id="btnRefreshPerkembanganSiswa" onclick="muatUlangPerkembanganSiswa()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl shadow-md active:scale-95 transition flex items-center gap-1.5 cursor-pointer">
+                <svg id="iconRefreshPerkembanganSiswa" class="w-3.5 h-3.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                <span>Refresh</span>
+              </button>
+            </div>
+
+            <div class="flex items-center gap-2 self-start sm:self-auto">
+              <label for="filterMapelGrafikSiswa" class="text-xs font-bold text-slate-600 whitespace-nowrap">Filter Mapel:</label>
+              <select id="filterMapelGrafikSiswa" class="bg-slate-50 hover:bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-blue-600 focus:outline-none cursor-pointer transition"></select>
+            </div>
+          </div>
+
+          <!-- BAGIAN ATAS: PROFIL / BIODATA SINGKAT SISWA & STATISTIK KEHADIRAN -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            <!-- Kartu Biodata Singkat Siswa -->
+            <div class="lg:col-span-5 bg-gradient-to-br from-indigo-950 via-indigo-900 to-blue-900 text-white rounded-3xl p-5 shadow-md border border-indigo-800/70 flex flex-col justify-between gap-4">
+              <div class="flex items-start justify-between gap-3">
+                <div class="flex items-center gap-3.5">
+                  <div id="profilAvatarBesar" class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-400 to-amber-300 text-indigo-950 font-black text-xl flex items-center justify-center shadow-lg shrink-0">
+                    S
+                  </div>
+                  <div>
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-400/20 text-emerald-300 border border-emerald-400/30 mb-1">
+                      <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Kartu Pelajar Digital
+                    </span>
+                    <h3 id="profilNamaSiswa" class="font-black text-base sm:text-lg text-white leading-tight">Nama Siswa</h3>
+                    <p id="profilNisKelas" class="text-xs text-indigo-200 font-semibold mt-0.5">NIS: - • Kelas -</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2.5 bg-white/10 backdrop-blur-xs rounded-2xl p-3.5 border border-white/15 text-xs">
+                <div>
+                  <span class="text-[10px] text-indigo-200 block">Jenis Kelamin</span>
+                  <span id="profilJkSiswa" class="font-bold text-white">-</span>
+                </div>
+                <div>
+                  <span class="text-[10px] text-indigo-200 block">Tahun Ajaran</span>
+                  <span id="profilTahunAjaran" class="font-bold text-amber-300">2026/2027 (Ganjil)</span>
+                </div>
+                <div>
+                  <span class="text-[10px] text-indigo-200 block">Orang Tua / Wali</span>
+                  <span id="profilOrtuSiswa" class="font-bold text-white truncate block">-</span>
+                </div>
+                <div>
+                  <span class="text-[10px] text-indigo-200 block">Kontak WhatsApp</span>
+                  <span id="profilNohpSiswa" class="font-mono font-bold text-emerald-300">-</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Kartu Statistik Kehadiran & Ringkasan Akademik -->
+            <div class="lg:col-span-7 bg-slate-50 rounded-3xl p-5 border border-slate-200/90 flex flex-col justify-between gap-4">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/80 pb-3">
+                <div>
+                  <h4 class="font-extrabold text-sm text-slate-800 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <span>Rekapitulasi Kehadiran &amp; Disiplin Presensi</span>
+                  </h4>
+                  <p class="text-[11px] text-slate-500">Proporsi kehadiran harian berdasarkan scan QR dan izin yang disetujui.</p>
+                </div>
+                <span id="badgePredikatKehadiran" class="self-start sm:self-auto px-3 py-1 rounded-full text-[11px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200">
+                  Kehadiran 100%
+                </span>
+              </div>
+
+              <div class="grid grid-cols-3 gap-3 text-center">
+                <div class="bg-white p-3 rounded-2xl border border-emerald-200/80 shadow-xs">
+                  <span class="text-[11px] font-bold text-slate-500 block">Total Hadir</span>
+                  <span id="statJmlHadir" class="text-xl font-black text-emerald-600 mt-0.5 block">0</span>
+                  <span class="text-[10px] text-emerald-700 font-semibold">Hari</span>
+                </div>
+                <div class="bg-white p-3 rounded-2xl border border-amber-200/80 shadow-xs">
+                  <span class="text-[11px] font-bold text-slate-500 block">Total Izin</span>
+                  <span id="statJmlIzin" class="text-xl font-black text-amber-600 mt-0.5 block">0</span>
+                  <span class="text-[10px] text-amber-700 font-semibold">Pengajuan</span>
+                </div>
+                <div class="bg-white p-3 rounded-2xl border border-rose-200/80 shadow-xs">
+                  <span class="text-[11px] font-bold text-slate-500 block">Total Sakit</span>
+                  <span id="statJmlSakit" class="text-xl font-black text-rose-600 mt-0.5 block">0</span>
+                  <span class="text-[10px] text-rose-700 font-semibold">Pengajuan</span>
+                </div>
+              </div>
+
+              <div class="space-y-1.5">
+                <div class="flex items-center justify-between text-[11px] font-bold text-slate-600">
+                  <span>Tingkat Kehadiran Aktif</span>
+                  <span id="teksPersenKehadiran" class="text-emerald-700 font-black">100%</span>
+                </div>
+                <div class="w-full h-3 bg-slate-200 rounded-full overflow-hidden flex">
+                  <div id="barHadirSiswa" class="h-full bg-emerald-500 transition-all duration-500" style="width: 100%"></div>
+                  <div id="barIzinSiswa" class="h-full bg-amber-400 transition-all duration-500" style="width: 0%"></div>
+                  <div id="barSakitSiswa" class="h-full bg-rose-500 transition-all duration-500" style="width: 0%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- BAGIAN TENGAH: 4 KARTU RINGKASAN NILAI TUGAS HARIAN -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div class="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-100">
+              <span class="text-[11px] font-bold text-indigo-600 block">Rata-Rata Nilai Tugas</span>
+              <div class="flex items-baseline gap-1.5 mt-1">
+                <span id="kpiRataNilaiSiswa" class="text-2xl font-black text-indigo-950">0</span>
+                <span class="text-[11px] font-bold text-indigo-500">/ 100</span>
+              </div>
+              <p id="kpiPredikatNilaiSiswa" class="text-[10px] font-bold text-indigo-700 mt-1">Belum ada nilai</p>
+            </div>
+            <div class="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-100">
+              <span class="text-[11px] font-bold text-emerald-700 block">Nilai Tugas Tertinggi</span>
+              <div class="flex items-baseline gap-1.5 mt-1">
+                <span id="kpiNilaiTertinggiSiswa" class="text-2xl font-black text-emerald-900">0</span>
+                <span class="text-[11px] font-bold text-emerald-600">Poin</span>
+              </div>
+              <p id="kpiMapelTertinggiSiswa" class="text-[10px] font-semibold text-emerald-700 mt-1 truncate">-</p>
+            </div>
+            <div class="p-4 rounded-2xl bg-blue-50/70 border border-blue-100">
+              <span class="text-[11px] font-bold text-blue-700 block">Tugas Sudah Dinilai</span>
+              <div class="flex items-baseline gap-1.5 mt-1">
+                <span id="kpiJmlTugasDinilai" class="text-2xl font-black text-blue-900">0</span>
+                <span id="kpiTotalTugasTerkumpul" class="text-[11px] font-bold text-blue-600">dari 0 tugas</span>
+              </div>
+              <p class="text-[10px] font-semibold text-blue-700 mt-1">Terkumpul di Google Drive</p>
+            </div>
+            <div class="p-4 rounded-2xl bg-amber-50/70 border border-amber-200/80">
+              <span class="text-[11px] font-bold text-amber-800 block">Standar KKM Sekolah</span>
+              <div class="flex items-baseline gap-1.5 mt-1">
+                <span id="kpiNilaiKKMSekolah" class="text-2xl font-black text-amber-950">75</span>
+                <span id="kpiStatusTuntasKKM" class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">Tuntas</span>
+              </div>
+              <p class="text-[10px] font-semibold text-amber-800 mt-1">Batas Ketuntasan Minimal</p>
+            </div>
+          </div>
+
+          <!-- BAGIAN BAWAH: GRAFIK BATANG PERKEMBANGAN NILAI HARIAN & REKAP PER MAPEL -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+            <!-- Grafik Batang Tren Nilai Tugas Harian -->
+            <div class="lg:col-span-7 bg-slate-50 rounded-3xl p-4 sm:p-5 border border-slate-200/90 space-y-3">
+              <div class="flex items-center justify-between flex-wrap gap-2">
+                <div>
+                  <h4 class="font-extrabold text-sm text-slate-800">Grafik Perkembangan Nilai Tugas Harian</h4>
+                  <p class="text-[11px] text-slate-500">Visualisasi nilai setiap tugas yang telah dinilai guru dibandingkan garis KKM.</p>
+                </div>
+                <div class="flex items-center gap-3 text-[10px] font-bold">
+                  <span class="inline-flex items-center gap-1 text-emerald-700"><span class="w-2.5 h-2.5 rounded-xs bg-emerald-500"></span> Tuntas (&ge; KKM)</span>
+                  <span class="inline-flex items-center gap-1 text-amber-700"><span class="w-2.5 h-2.5 rounded-xs bg-amber-500"></span> Perlu Bimbingan</span>
+                </div>
+              </div>
+              <div id="containerGrafikNilaiSiswa" class="min-h-[220px] flex items-center justify-center"></div>
+            </div>
+
+            <!-- Rincian Rata-Rata Nilai per Mata Pelajaran -->
+            <div class="lg:col-span-5 bg-slate-50 rounded-3xl p-4 sm:p-5 border border-slate-200/90 space-y-3">
+              <div>
+                <h4 class="font-extrabold text-sm text-slate-800">Capaian Rata-Rata per Mata Pelajaran</h4>
+                <p class="text-[11px] text-slate-500">Ringkasan rata-rata nilai dan predikat berdasarkan mata pelajaran.</p>
+              </div>
+              <div id="containerRekapMapelSiswa" class="space-y-2.5 max-h-[240px] overflow-y-auto pr-1"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </main>
 
   <!-- ======================================================================== -->
-  <!-- 3. MODAL PANDUAN LITURGI & DOA KATOLIK SISWA                             -->
+  <!-- 3. MODAL POPUP KHUSUS (SCAN QR, FORM IZIN, KIRIM TUGAS & PANDUAN DOA)    -->
   <!-- ======================================================================== -->
+
+  <!-- MODAL SCAN QR HADIR (KOTAK LASER TEPAT PROPORSIONAL DI TENGAH & TEKS DI ATAS) -->
+  <div id="modalScanQR" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-100 space-y-3.5">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3 gap-2">
+        <h3 class="font-extrabold text-base text-slate-800 flex items-center gap-2">
+          <svg class="w-5 h-5 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          <span>Scan QR Code Presensi</span>
+        </h3>
+        <div class="flex items-center gap-2">
+          <span id="badgeStatusKamera" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> Kamera Standby
+          </span>
+          <button type="button" onclick="tutupModalScanQR()" class="text-slate-400 hover:text-slate-600 font-black text-sm p-1 cursor-pointer">✕</button>
+        </div>
+      </div>
+
+      <div class="text-center px-2">
+        <p class="text-xs font-extrabold text-slate-800">Pasang Posisi QR di Dalam Kotak</p>
+        <p class="text-[11px] text-slate-500 mt-0.5">Tekan tombol <b class="text-blue-600">Aktifkan Kamera</b> di bawah untuk memindai QR kelas.</p>
+      </div>
+
+      <div class="relative w-full max-w-[260px] mx-auto overflow-hidden rounded-3xl border-2 border-indigo-900 bg-slate-950 aspect-square flex items-center justify-center shadow-inner">
+        <div id="reader" class="w-full h-full object-cover"></div>
+
+        <div id="scannerGuidePlaceholder" class="absolute inset-0 z-10 flex items-center justify-center p-5 bg-gradient-to-b from-indigo-950/90 to-slate-950 text-white select-none">
+          <div class="relative w-48 h-48 flex items-center justify-center overflow-hidden rounded-2xl border border-white/15 bg-slate-900/40 shadow-inner">
+            <div class="absolute top-0 left-0 w-7 h-7 border-t-4 border-l-4 border-amber-400 rounded-tl-lg"></div>
+            <div class="absolute top-0 right-0 w-7 h-7 border-t-4 border-r-4 border-amber-400 rounded-tr-lg"></div>
+            <div class="absolute bottom-0 left-0 w-7 h-7 border-b-4 border-l-4 border-amber-400 rounded-bl-lg"></div>
+            <div class="absolute bottom-0 right-0 w-7 h-7 border-b-4 border-r-4 border-amber-400 rounded-br-lg"></div>
+            <div class="animate-scan-laser"></div>
+            <div class="p-3.5 bg-white/10 rounded-2xl border border-white/20 backdrop-blur-sm">
+              <svg class="w-11 h-11 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div id="scannerActiveOverlay" class="hidden absolute inset-0 z-20 pointer-events-none flex items-center justify-center p-5">
+          <div class="relative w-48 h-48 border-2 border-white/35 rounded-2xl overflow-hidden">
+            <div class="absolute top-0 left-0 w-7 h-7 border-t-4 border-l-4 border-amber-400 rounded-tl-lg"></div>
+            <div class="absolute top-0 right-0 w-7 h-7 border-t-4 border-r-4 border-amber-400 rounded-tr-lg"></div>
+            <div class="absolute bottom-0 left-0 w-7 h-7 border-b-4 border-l-4 border-amber-400 rounded-bl-lg"></div>
+            <div class="absolute bottom-0 right-0 w-7 h-7 border-b-4 border-r-4 border-amber-400 rounded-br-lg"></div>
+            <div class="animate-scan-laser"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-center items-center gap-2 pt-1">
+        <button id="btnStartScan" type="button" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2.5 rounded-xl shadow-md transition cursor-pointer">Aktifkan Kamera</button>
+        <button id="btnStopScan" type="button" class="hidden w-full bg-slate-700 hover:bg-slate-800 text-white text-xs font-bold py-2.5 rounded-xl shadow-sm transition cursor-pointer">Matikan Kamera</button>
+      </div>
+      <div id="absenAlert" class="hidden p-2.5 rounded-xl text-xs font-bold text-center"></div>
+      <button type="button" onclick="tutupModalScanQR()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl text-xs transition cursor-pointer">Tutup</button>
+    </div>
+  </div>
+
+  <!-- MODAL POP-UP FORM KIRIM / KUMPULKAN TUGAS BARU -->
+  <div id="modalKirimTugas" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-100 space-y-4 text-left my-8">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-900 shadow-inner shrink-0">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+          </div>
+          <div>
+            <h3 class="font-extrabold text-sm sm:text-base text-slate-800">Kumpulkan / Kirim Tugas</h3>
+            <p class="text-[11px] text-slate-500">Tersimpan otomatis ke Google Drive sekolah.</p>
+          </div>
+        </div>
+        <button type="button" onclick="tutupModalKirimTugas()" class="text-slate-400 hover:text-slate-600 font-black text-sm p-1.5 rounded-xl transition cursor-pointer">✕</button>
+      </div>
+
+      <form id="tugasForm" class="space-y-3.5">
+        <div>
+          <label for="mapel" class="block text-xs font-semibold text-slate-600 mb-1">Mata Pelajaran *</label>
+          <select id="mapel" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs bg-white focus:ring-2 focus:ring-blue-600 focus:outline-none"></select>
+        </div>
+        <div>
+          <label for="judulTugas" class="block text-xs font-semibold text-slate-600 mb-1">Judul / Keterangan Tugas *</label>
+          <input type="text" id="judulTugas" required placeholder="Contoh: PR Matematika Hal 45" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-600 focus:outline-none" />
+        </div>
+        <div>
+          <label for="fileTugas" class="block text-xs font-semibold text-slate-600 mb-1">Upload Berkas Tugas (Foto, PDF, Word) *</label>
+          <input type="file" id="fileTugas" required accept="image/*,.pdf,.doc,.docx" class="w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 border border-slate-300 rounded-xl p-1 cursor-pointer" />
+        </div>
+        <input type="hidden" id="tugasKelas" />
+        <div class="pt-2 flex gap-2">
+          <button type="button" onclick="tutupModalKirimTugas()" class="w-1/3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl text-xs transition cursor-pointer">Batal</button>
+          <button type="submit" id="btnSubmitTugas" class="w-2/3 bg-indigo-900 hover:bg-indigo-950 text-white font-bold py-2.5 rounded-xl shadow-md active:scale-95 transition text-xs flex items-center justify-center gap-1.5 cursor-pointer border border-indigo-700/50">
+            <svg class="w-4 h-4 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+            <span>Kirim ke Google Drive</span>
+          </button>
+        </div>
+      </form>
+      <div id="tugasAlert" class="hidden mt-3 p-2.5 rounded-xl text-xs font-bold text-center"></div>
+    </div>
+  </div>
+
+  <!-- MODAL FORM IZIN / SAKIT (MENDUKUNG RENTANG TANGGAL & TOMBOL UPLOAD SERAGAM) -->
+  <div id="modalFormIzin" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-100 space-y-4 my-8 text-left">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-700 shadow-inner shrink-0">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          </div>
+          <div>
+            <h3 class="font-extrabold text-sm sm:text-base text-slate-800">Form Izin / Sakit Online</h3>
+            <p class="text-[11px] text-slate-500">Pilih tanggal mulai s/d selesai berhalangan hadir.</p>
+          </div>
+        </div>
+        <button type="button" onclick="tutupModalFormIzin()" class="text-slate-400 hover:text-slate-600 font-black text-sm p-1.5 rounded-xl transition cursor-pointer">✕</button>
+      </div>
+
+      <form id="izinForm" class="space-y-3.5">
+        <div>
+          <label for="statusIzin" class="block text-xs font-semibold text-slate-600 mb-1">Status Ketidakhadiran *</label>
+          <select id="statusIzin" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs bg-white focus:ring-2 focus:ring-blue-600 focus:outline-none">
+            <option value="Sakit">Sakit (Lampirkan Surat Dokter jika ada)</option>
+            <option value="Izin">Izin (Keperluan Keluarga / Lainnya)</option>
+          </select>
+        </div>
+
+        <div class="space-y-1.5">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div>
+              <label for="tanggalMulai" class="block text-xs font-semibold text-slate-600 mb-1">Dari Tanggal Berhalangan *</label>
+              <input type="date" id="tanggalMulai" required class="w-full min-h-[40px] px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-700 bg-white focus:ring-2 focus:ring-blue-600 focus:outline-none" />
+            </div>
+            <div>
+              <label for="tanggalSelesai" class="block text-xs font-semibold text-slate-600 mb-1">Sampai Tanggal *</label>
+              <input type="date" id="tanggalSelesai" required class="w-full min-h-[40px] px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-700 bg-white focus:ring-2 focus:ring-blue-600 focus:outline-none" />
+            </div>
+          </div>
+          <div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-indigo-50/80 border border-indigo-100 text-[11px] text-indigo-800 font-semibold">
+            <svg class="w-3.5 h-3.5 text-indigo-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            <span id="infoRentangTanggalIzin">Tanggal berhalangan: -</span>
+          </div>
+        </div>
+
+        <div>
+          <label for="keteranganIzin" class="block text-xs font-semibold text-slate-600 mb-1">Keterangan / Alasan *</label>
+          <textarea id="keteranganIzin" rows="2" required placeholder="Jelaskan alasan izin atau sakit secara singkat..." class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-blue-600 focus:outline-none"></textarea>
+        </div>
+
+        <div>
+          <label for="fileBukti" class="block text-xs font-semibold text-slate-600 mb-1">Lampiran Foto Surat (Opsional)</label>
+          <input type="file" id="fileBukti" accept="image/*,.pdf,.doc,.docx" class="w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 border border-slate-300 rounded-xl p-1 cursor-pointer" />
+        </div>
+
+        <div class="pt-2 flex gap-2">
+          <button type="button" onclick="tutupModalFormIzin()" class="w-1/3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl text-xs transition cursor-pointer">Batal</button>
+          <button type="submit" id="btnSubmitIzin" class="w-2/3 bg-blue-700 hover:bg-blue-800 text-white font-bold py-2.5 rounded-xl shadow-md active:scale-95 transition text-xs flex items-center justify-center gap-1.5 cursor-pointer">
+            <span>Kirim Permohonan Izin</span>
+          </button>
+        </div>
+      </form>
+      <div id="izinAlert" class="hidden p-2.5 rounded-xl text-xs font-bold text-center"></div>
+    </div>
+  </div>
+
+  <!-- MODAL PANDUAN LITURGI & DOA KATOLIK SISWA -->
   <div id="modalDoaSiswa" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-slate-100 space-y-4">
       <div class="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -566,7 +872,6 @@
       </div>
 
       <div class="space-y-4 max-h-[65vh] overflow-y-auto pr-1 text-xs text-slate-700 leading-relaxed">
-        <!-- 1. Doa Angelus -->
         <div class="p-3.5 bg-blue-50/70 rounded-2xl border border-blue-100 space-y-2.5">
           <div class="flex items-center justify-between flex-wrap gap-2">
             <span class="font-black text-blue-900 text-sm">1. Doa Malaikat Tuhan (Angelus)</span>
@@ -581,20 +886,19 @@
               <span>Dentang Lonceng</span>
             </button>
           </div>
-          <p><b>P:</b> Maria diberi kabar oleh Malaikat Tuhan,<br><b>U:</b> Bahwa ia akan mengandung dari Roh Kudus.<br><i>(Salam Maria...)</i></p>
-          <p><b>P:</b> Aku ini hamba Tuhan,<br><b>U:</b> Terjadilah padaku menurut perkataan-Mu.<br><i>(Salam Maria...)</i></p>
-          <p><b>P:</b> Sabda sudah menjadi manusia,<br><b>U:</b> Dan tinggal di antara kita.<br><i>(Salam Maria...)</i></p>
-          <p><b>P:</b> Doakanlah kami, ya Santa Bunda Allah,<br><b>U:</b> Supaya kami dapat menikmati janji Kristus.</p>
+          <p><b>P:</b> Maria diberi kabar oleh Malaikat Tuhan,<br /><b>U:</b> Bahwa ia akan mengandung dari Roh Kudus.<br /><i>(Salam Maria...)</i></p>
+          <p><b>P:</b> Aku ini hamba Tuhan,<br /><b>U:</b> Terjadilah padaku menurut perkataan-Mu.<br /><i>(Salam Maria...)</i></p>
+          <p><b>P:</b> Sabda sudah menjadi manusia,<br /><b>U:</b> Dan tinggal di antara kita.<br /><i>(Salam Maria...)</i></p>
+          <p><b>P:</b> Doakanlah kami, ya Santa Bunda Allah,<br /><b>U:</b> Supaya kami dapat menikmati janji Kristus.</p>
           <p class="text-[11px] bg-white p-2.5 rounded-xl border border-blue-100 text-slate-800">
-            <b>Marilah Berdoa:</b><br>
+            <b>Marilah Berdoa:</b><br />
             Ya Tuhan, karena kabar Malaikat kami mengetahui bahwa Yesus Kristus Putra-Mu menjadi manusia. Curahkanlah rahmat-Mu ke dalam hati kami, supaya karena sengsara dan salib-Nya, kami dibawa kepada kebangkitan yang mulia. Sebab Dialah Tuhan kami. Amin.
           </p>
         </div>
 
-        <!-- 2. Renungan & Doa Pagi -->
         <div class="p-3.5 bg-amber-50/70 rounded-2xl border border-amber-200/80 space-y-2">
           <div class="flex items-center justify-between">
-            <span class="font-black text-amber-950 text-sm">2. Renungan & Doa Pembuka Pagi</span>
+            <span class="font-black text-amber-950 text-sm">2. Renungan &amp; Doa Pembuka Pagi</span>
             <span class="bg-amber-200 text-amber-950 text-[10px] font-bold px-2 py-0.5 rounded-full">Pk 07.15 WIB</span>
           </div>
           <p>
@@ -602,14 +906,13 @@
           </p>
         </div>
 
-        <!-- 3. Doa Penutup & Pulang -->
         <div class="p-3.5 bg-emerald-50/70 rounded-2xl border border-emerald-100 space-y-2">
           <div class="flex items-center justify-between">
-            <span class="font-black text-emerald-950 text-sm">3. Doa Penutup Pembelajaran & Pulang</span>
+            <span class="font-black text-emerald-950 text-sm">3. Doa Penutup Pembelajaran &amp; Pulang</span>
             <span class="bg-emerald-200 text-emerald-950 text-[10px] font-bold px-2 py-0.5 rounded-full">Selesai Belajar</span>
           </div>
           <p>
-            Tuhan Yesus, terima kasih atas berkat penyertaan-Mu sepanjang pelajaran hari ini. Lindungilah perjalanan pulang kami agar tiba di rumah bersama orang tua kami dengan selamat. Amin. <i>(Ditutup Bapa Kami & Salam Maria)</i>.
+            Tuhan Yesus, terima kasih atas berkat penyertaan-Mu sepanjang pelajaran hari ini. Lindungilah perjalanan pulang kami agar tiba di rumah bersama orang tua kami dengan selamat. Amin. <i>(Ditutup Bapa Kami &amp; Salam Maria)</i>.
           </p>
         </div>
       </div>
@@ -619,16 +922,6 @@
       </button>
     </div>
   </div>
-
-  <!-- Handler Interaksi Modal Doa Siswa -->
-  <script>
-    function bukaModalTeksDoaSiswa() {
-      document.getElementById('modalDoaSiswa')?.classList.remove('hidden');
-    }
-    function tutupModalTeksDoaSiswa() {
-      document.getElementById('modalDoaSiswa')?.classList.add('hidden');
-    }
-  </script>
 
   <!-- ======================================================================== -->
   <!-- 4. FOOTER CONTAINER & PEMANGGILAN SCRIPT EKSTERNAL                       -->
