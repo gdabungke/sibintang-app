@@ -149,10 +149,6 @@
                     <svg class="w-4 h-4 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
                     <span>Lihat Grafik Nilai &amp; Profil</span>
                   </button>
-                  <a id="linkLintasPortalGuru" href="/guru.html" class="hidden w-full text-left px-2.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 flex items-center gap-2 text-amber-900 font-bold text-xs transition">
-                    <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
-                    <span>Buka Portal Guru &amp; Admin</span>
-                  </a>
                 </div>
 
                 <button type="button" id="btnLogout" class="w-full cursor-pointer flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 active:scale-95 transition">
@@ -215,9 +211,9 @@
   <!-- ======================================================================== -->
   <!-- 2. CONTAINER KONTEN UTAMA                                                -->
   <!-- ======================================================================== -->
-  <main class="flex-grow w-full max-w-6xl mx-auto px-3 sm:px-4 md:px-6 flex flex-col justify-center">
+ <main class="flex-grow w-full max-w-6xl mx-auto px-3 sm:px-4 md:px-6 flex flex-col justify-start">
 
-    <!-- 2A. HALAMAN AUTENTIKASI SISWA (LOGIN / DAFTAR BARU) -->
+  <!-- 2A. HALAMAN AUTENTIKASI SISWA (LOGIN / DAFTAR BARU) -->
     <section id="loginSection" class="min-h-[calc(100dvh-4.5rem)] flex items-center justify-center py-6 no-print">
       <div class="bg-white rounded-3xl shadow-xl p-5 sm:p-8 w-full max-w-md border border-slate-200/80">
         <div class="text-center mb-6">
@@ -298,8 +294,8 @@
     </section>
 
     <!-- 2B. DASHBOARD APLIKASI SISWA TERPADU (3 MENU UTAMA - OPSI A) -->
-    <div id="appSection" class="hidden space-y-5 py-5 min-h-[560px]">
-      
+    <div id="appSection" class="hidden space-y-5 pt-4 pb-6">
+        
       <!-- BANNER LITURGI & DOA KATOLIK HARIAN SEKOLAH (DENGAN ANIMASI BINTANG & SALIB) -->
       <div class="relative overflow-hidden bg-gradient-to-r from-blue-950 via-indigo-900 to-indigo-950 text-white rounded-3xl p-4 sm:p-5 shadow-sm border border-indigo-700/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 no-print">
         <div class="absolute inset-0 pointer-events-none select-none overflow-hidden" aria-hidden="true">
@@ -362,9 +358,10 @@
                 <span>Riwayat Kehadiran</span>
               </button>
               <button id="presensiTabBtn-izin" type="button" onclick="switchPresensiTab('izin')" class="py-2 px-4 text-xs font-bold rounded-xl text-slate-600 hover:text-slate-800 transition flex items-center gap-1.5 cursor-pointer">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                <span>Riwayat Izin / Sakit</span>
-              </button>
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              <span>Riwayat Izin / Sakit</span>
+              <span id="badgeJumlahIzinSiswa" class="hidden bg-amber-100 text-amber-800 px-1.5 py-0.2 rounded-full text-[10px] font-extrabold">0</span>
+            </button>
             </div>
           </div>
 
@@ -437,17 +434,20 @@
             <!-- 3 Switch Tab di Kanan: Daftar Tugas | Materi Pelajaran | Riwayat & Nilai -->
             <div class="inline-flex bg-slate-100 p-1.5 rounded-2xl gap-1 self-start lg:self-auto flex-wrap">
               <button id="tugasTabBtn-daftar" type="button" onclick="switchTugasTab('daftar')" class="py-2 px-3.5 text-xs font-bold rounded-xl bg-blue-600 text-white shadow-sm transition flex items-center gap-1.5 cursor-pointer">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                <span>Daftar Tugas</span>
-              </button>
-              <button id="tugasTabBtn-materi" type="button" onclick="switchTugasTab('materi')" class="py-2 px-3.5 text-xs font-bold rounded-xl text-slate-600 hover:text-slate-800 transition flex items-center gap-1.5 cursor-pointer">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+              <span>Daftar Tugas</span>
+              <span id="badgeJumlahTugasSiswa" class="hidden bg-amber-100 text-amber-800 px-1.5 py-0.2 rounded-full text-[10px] font-extrabold">0</span>
+            </button>
+              <button type="button" id="tugasTabBtn-materi" onclick="switchTugasTab('materi')" class="py-2 px-3.5 text-xs font-bold rounded-xl text-slate-600 hover:text-slate-800 transition flex items-center justify-center gap-1.5 cursor-pointer">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
                 <span>Materi Pelajaran</span>
+                <span id="badgeJumlahMateriSiswa" class="bg-blue-100 text-blue-800 px-1.5 py-0.2 rounded-full text-[10px] font-extrabold">0</span>
               </button>
               <button id="tugasTabBtn-riwayat" type="button" onclick="switchTugasTab('riwayat')" class="py-2 px-3.5 text-xs font-bold rounded-xl text-slate-600 hover:text-slate-800 transition flex items-center gap-1.5 cursor-pointer">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                <span>Riwayat &amp; Nilai</span>
-              </button>
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              <span>Riwayat &amp; Nilai</span>
+              <span id="badgeJumlahBelumDinilaiSiswa" class="hidden bg-amber-100 text-amber-800 px-1.5 py-0.2 rounded-full text-[10px] font-extrabold">0</span>
+            </button>
             </div>
           </div>
 
