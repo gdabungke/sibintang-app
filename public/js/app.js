@@ -432,18 +432,16 @@
   }
 
   // ==========================================================================
-  // 5. FUNGSI UTAMA BOOTSTRAPPING APLIKASI (bootApp)
+  // 5. FUNGSI UTAMA BOOTSTRAP APLIKASI (bootApp)
   // ==========================================================================
   async function bootApp() {
     try {
-      // 1. Muat mock-local.js khusus apabila dijalankan di lingkungan lokal
-      if (isLocalHost()) {
-        try {
-          await muatScript('/js/mock-local.js');
-          console.log('[SiBintang] Lingkungan lokal terdeteksi: mock-local.js diaktifkan.');
-        } catch {
-          console.info('[SiBintang] mock-local.js tidak ditemukan. Melanjutkan dengan API reguler.');
-        }
+      // PAKSA MUAT MOCK-LOCAL.JS AGAR APLIKASI JALAN LANCAR TANPA CREDENTIALS.JSON
+      try {
+        await muatScript('/js/mock-local.js');
+        console.log('[SiBintang] Mode Mock Lokal dipaksa aktif (tidak memerlukan credentials.json).');
+      } catch (err) {
+        console.info('[SiBintang] mock-local.js opsional tidak dimuat:', err);
       }
 
       // 2. Muat pustaka master data, utilitas UI, dan pengelola sesi secara berurutan
