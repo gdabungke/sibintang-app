@@ -854,52 +854,62 @@ function unduhDataXLSX({
 /**
  * Menampilkan Modal Pratinjau Laporan Resmi Siap Cetak / Simpan ke PDF
  */
-function eksporTabelKePDF({
-  filename = 'Laporan_SiBintang.pdf',
-  title = 'LAPORAN REKAPITULASI DATA AKADEMIK & PRESENSI',
-  subtitle = '',
-  headers = [],
-  rows = [],
-  signerRole = 'Pengelola / Guru',
-  signerName = '________________________',
-}) {
+function eksporTabelKePDF({ filename = 'Laporan_SiBintang.pdf', title = 'LAPORAN REKAPITULASI DATA AKADEMIK & PRESENSI', subtitle = '', headers = [], rows = [], signerRole = 'Pengelola / Guru', signerName = '________________________', }) {
   let modal = document.getElementById('modalPreviewExportPDF');
   if (modal) modal.remove();
-
-  const waktuCetak = new Date().toLocaleDateString('id-ID', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
-  });
-
+  const waktuCetak = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric', });
   const thHtml = headers
     .map(
-      (h) =>
-        `<th class="py-2.5 px-3 bg-indigo-950 text-white font-bold text-[11px] border border-slate-300 text-left">${escapeHtml(h)}</th>`
+      (h) => `<th class="py-2.5 px-3 bg-indigo-950 text-white font-bold text-[11px] border border-slate-300 text-left">${escapeHtml(h)}</th>`
     )
     .join('');
-
   const trHtml = rows
     .map(
       (r, idx) => `
       <tr class="${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}">
         ${r
           .map(
-            (cell, cIdx) =>
-              `<td class="py-2 px-3 border border-slate-300 text-[11px] text-slate-800 ${cIdx === 0 ? 'text-center font-bold' : ''}">${escapeHtml(cell)}</td>`
+            (cell, cIdx) => `<td class="py-2 px-3 border border-slate-300 text-[11px] text-slate-800 ${cIdx === 0 ? 'text-center font-bold' : ''}">${escapeHtml(cell)}</td>`
           )
           .join('')}
       </tr>
     `
     )
     .join('');
-
   modal = document.createElement('div');
   modal.id = 'modalPreviewExportPDF';
-  modal.className =
-    'fixed inset-0 z-[9998] bg-slate-900/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto';
-
+  modal.className = 'fixed inset-0 z-[9998] bg-slate-900/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto';
   modal.innerHTML = `
+    <style>
+      @media print {
+        body, html {
+          background: white !important;
+          height: auto !important;
+          overflow: visible !important;
+        }
+        body * {
+          visibility: hidden !important;
+        }
+        #areaDokumenCetakPDF, #areaDokumenCetakPDF * {
+          visibility: visible !important;
+        }
+        #areaDokumenCetakPDF {
+          position: absolute !important;
+          left: 0 !important;
+          top: 0 !important;
+          width: 100% !important;
+          max-height: none !important;
+          overflow: visible !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          background: white !important;
+          box-shadow: none !important;
+        }
+        .no-print {
+          display: none !important;
+        }
+      }
+    </style>
     <div class="bg-white rounded-3xl max-w-4xl w-full p-5 sm:p-7 shadow-2xl border border-slate-200 my-auto max-h-[92vh] flex flex-col">
       <div class="flex items-center justify-between pb-3.5 border-b border-slate-200 shrink-0 no-print">
         <div class="flex items-center gap-2.5">
@@ -919,19 +929,23 @@ function eksporTabelKePDF({
           <button type="button" id="btnClosePdfPreview" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-3 py-2 rounded-xl transition cursor-pointer">✕ Tutup</button>
         </div>
       </div>
-
       <div id="areaDokumenCetakPDF" class="overflow-y-auto p-4 sm:p-6 bg-white text-slate-900 space-y-4">
-        <div class="border-b-2 border-slate-900 pb-3 text-center">
-          <p class="text-[11px] font-bold uppercase tracking-wider text-slate-600">YAYASAN PERGURUAN KATOLIK SANTO LAURENSIUS</p>
-          <h2 class="text-base sm:text-lg font-black text-slate-900 uppercase tracking-tight">SD SWASTA RK BINTANG TIMUR RANTAUPRAPAT</h2>
-          <p class="text-[11px] text-slate-600">Jl. Cut Mutia No. 48, Rantauprapat | Telp: (0624) 2602068 | NPSN: 10205570 (Akreditasi A)</p>
+        <!-- Header dengan CSS Grid 3 Kolom & Logo digeser ke kanan dengan pl-4 -->
+        <div class="border-b-2 border-slate-900 pb-3.5 grid grid-cols-[auto_1fr_auto] items-center gap-4 px-2 sm:px-3">
+          <div class="flex items-center pl-4 sm:pl-6">
+            <img src="/icon.png" alt="Logo Sekolah" class="w-20 h-20 sm:w-24 sm:h-24 object-contain bg-transparent" onerror="this.style.display='none'" />
+          </div>
+          <div class="text-center space-y-0.5">
+            <p class="text-[11px] font-bold uppercase tracking-wider text-slate-600">YAYASAN PERGURUAN KATOLIK SANTO LAURENSIUS</p>
+            <h2 class="text-base sm:text-lg font-black text-slate-900 uppercase tracking-tight">SD SWASTA RK BINTANG TIMUR RANTAUPRAPAT</h2>
+            <p class="text-[11px] text-slate-600">Jl. Cut Mutia No. 48, Rantauprapat | Telp: (0624) 2602068 | NPSN: 10205570 (Akreditasi A)</p>
+          </div>
+          <div class="w-20 sm:w-24 invisible select-none"></div>
         </div>
-
         <div class="text-center space-y-0.5">
           <h3 class="text-sm font-black uppercase text-slate-900">${escapeHtml(title)}</h3>
           <p class="text-xs font-semibold text-slate-600">${escapeHtml(subtitle)}</p>
         </div>
-
         <div class="overflow-x-auto">
           <table class="w-full border-collapse border border-slate-300">
             <thead>
@@ -940,7 +954,6 @@ function eksporTabelKePDF({
             <tbody>${trHtml}</tbody>
           </table>
         </div>
-
         <div class="pt-6 flex justify-end text-xs text-slate-800">
           <div class="text-center w-60 space-y-12">
             <div>
@@ -955,14 +968,11 @@ function eksporTabelKePDF({
       </div>
     </div>
   `;
-
   document.body.appendChild(modal);
-
   modal.querySelector('#btnClosePdfPreview')?.addEventListener('click', () => modal.remove());
   modal.addEventListener('click', (e) => {
     if (e.target === modal) modal.remove();
   });
-
   modal.querySelector('#btnPrintPdfNow')?.addEventListener('click', () => {
     window.print();
     showToast(`Dialog cetak / simpan PDF untuk "${filename}" dibuka.`, 'success');
