@@ -972,7 +972,10 @@
   // ==========================================================================
   async function loadRekapMateriGuru() {
     const canAllKelas = currentGuru && Auth.hasPermission(currentGuru, 'canAksesSemuaKelas');
-    const kelas = canAllKelas ? 'SEMUA' : dapatkanKelasTargetAbsen();
+    const rawKelas = dapatkanKelasTargetAbsen();
+    // Jika kelas wali belum diset ('-' atau kosong), muat SEMUA kelas agar materi yang baru dibuat tetap tampil
+    const kelas = canAllKelas || !rawKelas || rawKelas === '-' ? 'SEMUA' : rawKelas;
+
     const activeRole = Auth.getActiveRole(currentGuru);
     const mapel =
       (activeRole === 'Guru Mapel' || activeRole === 'Guru Mata Pelajaran') &&
@@ -989,17 +992,22 @@
       const data = await res.json();
       if (!data.success) return;
 
-      cacheDaftarMateriGuru = data.daftarMateri || [];
-      cacheLogBacaMateri = data.logBaca || [];
+      cacheDaftarMateriGuru = Array.isArray(data.daftarMateri) ? data.daftarMateri : [];
+      // cacheLogBacaMateri (rekap status baca per siswa) untuk tabel Log Baca / Akses Siswa
+      cacheLogBacaMateri = Array.isArray(data.logAksesSiswa)
+        ? data.logAksesSiswa
+        : Array.isArray(data.logBaca)
+          ? data.logBaca
+          : [];
 
       const bTotal = document.getElementById('badgeTotalMateriGuru');
       const bBelumBaca = document.getElementById('badgeBelumBacaMateri');
-      if (bTotal) bTotal.textContent = cacheDaftarMateriGuru.length;
+      if (bTotal) bTotal.textContent = String(cacheDaftarMateriGuru.length);
       if (bBelumBaca) {
         const jmlBelum = cacheLogBacaMateri.filter(
           (s) => (s.statusBaca || '').toLowerCase().includes('belum')
         ).length;
-        bBelumBaca.textContent = jmlBelum;
+        bBelumBaca.textContent = String(jmlBelum);
       }
 
       dtStateDaftarMateri.page = 1;
@@ -1043,11 +1051,15 @@
             linkExtBtn = `<a href="${urlVideo}" target="_blank" rel="noopener noreferrer" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80 px-2.5 py-1 rounded-xl font-bold inline-flex items-center gap-1.5 text-[11px] transition shadow-xs">${ICONS.globe || ''}<span>Tautan Web</span>${ICONS.external}</a>`;
           }
         }
-        const fallbackMedia =
-          !fileBtn && !linkExtBtn ? `<span class="text-slate-400 text-[11px]">Ringkasan Teks</span>` : '';
 
-        const safeId = (m.id || '').replace(/'/g, "\\'");
-        const safeJudul = (m.judul || '').replace(/'/g, "\\'");
+        const mediaFallback =
+          !fileBtn && !linkExtBtn
+            ? `<span class="text-slate-400 text-[11px]">Catatan Teks</span>`
+            : '';
+
+        // PERBAIKAN BUG: Konversi m.id dan m.judul ke String terlebih dahulu sebelum .replace()
+        const safeId = String(m.id ?? m.rowIndex ?? '').replace(/'/g, "\\'");
+        const safeJudul = String(m.judul ?? '').replace(/'/g, "\\'");
 
         const btnJadikanTugas = canBuatTugas
           ? `<button type="button" onclick="lanjutkanMateriKeTugas('${safeId}')" title="Buat latihan/tugas dari materi ini" class="cursor-pointer bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 px-2.5 py-1 rounded-xl text-[11px] font-bold inline-flex items-center gap-1 transition">
@@ -1065,16 +1077,16 @@
           <tr class="${bgRowClass} hover:bg-slate-50 transition border-b border-slate-100">
             <td class="p-3 font-mono text-slate-500 text-center font-bold">${index + 1}</td>
             <td class="p-3 text-slate-500 whitespace-nowrap text-xs">${escapeHtml(m.waktu || '-')}</td>
-            <td class="p-3"><span class="bg-slate-100 text-slate-800 font-bold px-2.5 py-1 rounded-lg text-xs">${escapeHtml(m.kelas)}</span></td>
+            <td class="p-3"><span class="bg-slate-100 text-slate-800 font-bold px-2.5 py-1 rounded-lg text-xs">${escapeHtml(m.kelas || '-')}</span></td>
             <td class="p-3">
-              <div class="font-bold text-indigo-700 text-xs">${escapeHtml(m.mapel)}</div>
+              <div class="font-bold text-indigo-700 text-xs">${escapeHtml(m.mapel || '-')}</div>
               <div class="text-[11px] text-slate-500 font-medium">${escapeHtml(m.bab || '-')}</div>
             </td>
             <td class="p-3 max-w-xs">
-              <div class="font-bold text-slate-800 text-xs truncate" title="${escapeHtml(m.judul)}">${escapeHtml(m.judul)}</div>
+              <div class="font-bold text-slate-800 text-xs truncate" title="${escapeHtml(m.judul || '-')}">${escapeHtml(m.judul || '-')}</div>
               <div class="text-[11px] text-slate-500 truncate" title="${escapeHtml(m.ringkasan || '-')}">${escapeHtml(m.ringkasan || '-')}</div>
             </td>
-            <td class="p-3 whitespace-nowrap"><div class="inline-flex items-center gap-1.5 flex-wrap">${fileBtn}${linkExtBtn}${fallbackMedia}</div></td>
+            <td class="p-3 whitespace-nowrap"><div class="inline-flex items-center gap-1.5 flex-wrap">${fileBtn}${linkExtBtn}${mediaFallback}</div></td>
             <td class="p-3 text-right whitespace-nowrap"><div class="inline-flex items-center justify-end gap-1.5">${btnJadikanTugas}${btnHapus}</div></td>
           </tr>
         `;
@@ -1116,8 +1128,7 @@
             <td class="p-3 whitespace-nowrap">${badgeStatus}</td>
             <td class="p-3">
               <div class="font-semibold text-slate-700 text-xs truncate max-w-[220px]" title="${escapeHtml(s.materiTerakhir || '-')}">${escapeHtml(s.materiTerakhir || '-')}</div>
-              <div class="text-[10px] text-slate-400 font-mono">${escapeHtml(s.waktuBaca || '-')}</div>
-            </td>
+              <div class="text-[10px] text-slate-400 font-mono">${escapeHtml(s.waktuTerakhir || s.waktuBaca || s.waktu || '-')}</div></td>
             <td class="p-3 text-right whitespace-nowrap">${actionWa}</td>
           </tr>
         `;
@@ -1330,9 +1341,23 @@
   }
 
   async function loadRekapTugas() {
-    const canAllKelas = currentGuru && Auth.hasPermission(currentGuru, 'canAksesSemuaKelas');
-    const kelas = canAllKelas ? 'SEMUA' : dapatkanKelasTargetAbsen();
-    const activeRole = Auth.getActiveRole(currentGuru);
+    // Pastikan objek Auth aman
+    const authObj = typeof Auth !== 'undefined' ? Auth : window.Auth || {};
+    const canAllKelas = currentGuru && typeof authObj.hasPermission === 'function' && authObj.hasPermission(currentGuru, 'canAksesSemuaKelas');
+    const kelas = canAllKelas ? 'SEMUA' : (typeof dapatkanKelasTargetAbsen === 'function' ? dapatkanKelasTargetAbsen() : 'SEMUA');
+    
+    // Deklarasi aman untuk activeRole agar tidak terjadi ReferenceError
+    let activeRole = 'Guru Kelas';
+    try {
+      if (typeof authObj.getActiveRole === 'function' && currentGuru) {
+        activeRole = authObj.getActiveRole(currentGuru);
+      } else if (currentGuru?.role) {
+        activeRole = currentGuru.role;
+      }
+    } catch {
+      activeRole = currentGuru?.role || 'Guru Kelas';
+    }
+
     const mapel =
       (activeRole === 'Guru Mapel' || activeRole === 'Guru Mata Pelajaran') &&
       currentGuru?.mapelAjar &&
