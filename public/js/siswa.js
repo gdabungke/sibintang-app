@@ -6,7 +6,7 @@
  * Mengelola seluruh interaksi pada Portal Siswa:
  * - Autentikasi bebas kedipan & dukungan akses Admin lintas portal
  * - Reset dashboard saat klik logo SiBintang
- * - Urutan 3 Menu Utama (Opsi A):
+ * - Urutan 3 Menu Utama:
  *   1. Presensi & Kehadiran
  *   2. Tugas & Materi (Daftar Tugas, Materi Pelajaran, Riwayat & Nilai)
  *   3. Perkembangan & Profil (Grafik Nilai Harian, Statistik Kehadiran, Biodata)
@@ -1070,162 +1070,173 @@
   // 7. DAFTAR TUGAS, MATERI PELAJARAN & PENGUMPULAN KE GOOGLE DRIVE
   // ==========================================================================
   async function loadDaftarTugasGuru() {
-    if (!currentStudent) return;
-    const container = document.getElementById('containerDaftarTugasGuru');
-    if (!container) return;
+  if (!currentStudent) return;
+  const container = document.getElementById('containerDaftarTugasGuru');
+  if (!container) return;
+  try {
+    const [resSoal, resRiwayat] = await Promise.all([
+      fetch(`/api/guru/tugas?kelas=${encodeURIComponent(currentStudent.kelas)}`),
+      fetch(`/api/riwayat/${currentStudent.nis}`).catch(() => null),
+    ]);
+    const result = await resSoal.json();
+    const tugasList = result.daftarSoal || result.bankSoal || result.data || result.daftarTugas || [];
+    let riwayatTugasKumpul = [];
+    if (resRiwayat && resRiwayat.ok) {
+      const dataRiwayat = await resRiwayat.json();
+      riwayatTugasKumpul = (dataRiwayat.tugas || []).map((t) => {
+        const m = (t.mapel || '').trim().toLowerCase();
+        const j = (t.judul || '').trim().toLowerCase();
+        return `${m}:::${j}`;
+      });
+    }
 
-    try {
-      const [resSoal, resRiwayat] = await Promise.all([
-        fetch(`/api/guru/tugas?kelas=${encodeURIComponent(currentStudent.kelas)}`),
-        fetch(`/api/riwayat/${currentStudent.nis}`).catch(() => null),
-      ]);
+    // Menghitung jumlah tugas yang belum diselesaikan
+    const tugasBelumSelesai = tugasList.filter((t) => {
+      const key = `${(t.mapel || '').trim().toLowerCase()}:::${(t.judul || '').trim().toLowerCase()}`;
+      const keyWithMateri = `${(t.mapel || '').trim().toLowerCase()}:::[${(t.materi || '').trim().toLowerCase()}] ${(t.judul || '').trim().toLowerCase()}`;
+      return !riwayatTugasKumpul.includes(key) && !riwayatTugasKumpul.includes(keyWithMateri);
+    });
 
-      const result = await resSoal.json();
-      const tugasList = result.daftarSoal || result.bankSoal || result.data || result.daftarTugas || [];
+    // Memperbarui Badge Angka Tugas Belum Selesai di Tab Daftar Tugas
+    const badgeTugasTab = document.getElementById('badgeJumlahTugasSiswa');
+    if (badgeTugasTab) {
+      badgeTugasTab.textContent = String(tugasBelumSelesai.length);
+      badgeTugasTab.classList.toggle('hidden', tugasBelumSelesai.length === 0);
+    }
 
-      let riwayatTugasKumpul = [];
-      if (resRiwayat && resRiwayat.ok) {
-        const dataRiwayat = await resRiwayat.json();
-        riwayatTugasKumpul = (dataRiwayat.tugas || []).map((t) => {
-          const m = (t.mapel || '').trim().toLowerCase();
-          const j = (t.judul || '').trim().toLowerCase();
-          return `${m}:::${j}`;
-        });
-      }
-
-      if (!result.success || tugasList.length === 0) {
-        container.innerHTML = `
-          <div class="p-8 text-center bg-slate-50 border border-dashed border-slate-200 rounded-3xl space-y-3">
-            <div class="w-14 h-14 bg-indigo-50 text-indigo-500 rounded-2xl flex items-center justify-center mx-auto shadow-inner border border-indigo-100">
-              <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-            </div>
-            <div>
-              <h4 class="font-extrabold text-sm text-slate-800">Belum ada tugas terbaru dari guru</h4>
-              <p class="text-xs text-slate-400 mt-1 max-w-sm mx-auto leading-relaxed">Saat ini belum ada tugas atau PR aktif untuk Kelas ${escapeHtml(currentStudent.kelas)}. Silakan periksa kembali nanti.</p>
-            </div>
+    if (!result.success || tugasList.length === 0) {
+      container.innerHTML = `
+        <div class="p-8 text-center bg-slate-50 border border-dashed border-slate-200 rounded-3xl space-y-3">
+          <div class="w-14 h-14 bg-indigo-50 text-indigo-500 rounded-2xl flex items-center justify-center mx-auto shadow-inner border border-indigo-100">
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
           </div>
-        `;
-        return;
-      }
-
-      container.innerHTML = tugasList
-        .map((t) => {
-          const safeJudul = (t.judul || '').replace(/'/g, "\\'");
-          const safeMapel = (t.mapel || '').replace(/'/g, "\\'");
-          const safeMateri = (t.materi || '').replace(/'/g, "\\'");
-
-          const keyTugas = `${(t.mapel || '').trim().toLowerCase()}:::${(t.judul || '').trim().toLowerCase()}`;
-          const keyTugasWithMateri = `${(t.mapel || '').trim().toLowerCase()}:::[${(t.materi || '').trim().toLowerCase()}] ${(t.judul || '').trim().toLowerCase()}`;
-          const sudahKumpul =
-            riwayatTugasKumpul.includes(keyTugas) || riwayatTugasKumpul.includes(keyTugasWithMateri);
-
-          const fileLinkBtn =
-            t.link && t.link !== '-' && t.link !== '#'
-              ? `<a href="${t.link}" target="_blank" rel="noopener noreferrer" class="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200/80 px-3 py-1.5 rounded-xl font-bold text-xs inline-flex items-center gap-1.5 transition">${ICONS.fileDoc || ''}<span>Buka File Soal</span>${ICONS.external}</a>`
-              : '';
-
-          let urlMateri = t.linkMateri || t.linkExternal || t.linkYoutube || t.video || '';
-          if (!urlMateri && t.link && (t.link.includes('youtu.be') || t.link.includes('youtube.com'))) {
-            urlMateri = t.link;
-          }
-
-          const isYt = getYouTubeId(urlMateri);
-          const ytEmbed = isYt ? renderYouTubeEmbed(urlMateri) : '';
-          const ytLinkBtn = isYt
-            ? `<a href="${urlMateri}" target="_blank" rel="noopener noreferrer" class="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/80 px-3 py-1.5 rounded-xl font-bold text-xs inline-flex items-center gap-1.5 transition">${ICONS.youtube || ''}<span>Tonton di YouTube</span>${ICONS.external}</a>`
-            : '';
-
-          const webMateriBtn =
-            !isYt && urlMateri && urlMateri !== '-' && urlMateri !== '#'
-              ? `<a href="${urlMateri}" target="_blank" rel="noopener noreferrer" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80 px-3 py-1.5 rounded-xl font-bold text-xs inline-flex items-center gap-1.5 transition">
-                   ${ICONS.globe || ''}
-                   <span>Buka Tautan Materi</span>
-                   ${ICONS.external}
-                 </a>`
-              : '';
-
-          const materiBadge = t.materi
-            ? `<span class="text-[11px] font-semibold text-slate-500 bg-slate-200/60 px-2 py-0.5 rounded-md">${escapeHtml(t.materi)}</span>`
-            : '';
-
-          if (sudahKumpul) {
-            return `
-              <div class="p-4 rounded-2xl border border-emerald-200 bg-emerald-50/70 space-y-2.5 transition-all">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
-                  <div class="flex items-center gap-1.5 flex-wrap">
-                    <span class="text-xs font-bold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-md">${escapeHtml(t.mapel)}</span>
-                    ${materiBadge}
-                  </div>
-                  <span class="text-[11px] text-slate-400 font-medium">Batas Waktu: ${escapeHtml(t.deadline || '-')}</span>
-                </div>
-                <h4 class="text-sm font-black text-slate-800">${escapeHtml(t.judul)}</h4>
-                <p class="text-xs text-slate-600 leading-relaxed">${escapeHtml(t.deskripsi || '-')}</p>
-                ${ytEmbed}
-                <div class="pt-2 flex items-center justify-between gap-2 flex-wrap border-t border-emerald-200/60">
-                  <div class="flex items-center gap-1.5 flex-wrap">${fileLinkBtn} ${ytLinkBtn} ${webMateriBtn}</div>
-                  <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-200/80 text-emerald-800 text-xs font-bold ml-auto">
-                    <svg class="w-4 h-4 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                    <span>Sudah Dikerjakan</span>
-                  </span>
-                </div>
-              </div>
-            `;
-          }
-
+          <div>
+            <h4 class="font-extrabold text-sm text-slate-800">Belum ada tugas terbaru dari guru</h4>
+            <p class="text-xs text-slate-400 mt-1 max-w-sm mx-auto leading-relaxed">Saat ini belum ada tugas atau PR aktif untuk Kelas ${escapeHtml(currentStudent.kelas)}. Silakan periksa kembali nanti.</p>
+          </div>
+        </div>
+      `;
+      return;
+    }
+    container.innerHTML = tugasList
+      .map((t) => {
+        const safeJudul = (t.judul || '').replace(/'/g, "\\'");
+        const safeMapel = (t.mapel || '').replace(/'/g, "\\'");
+        const safeMateri = (t.materi || '').replace(/'/g, "\\'");
+        const keyTugas = `${(t.mapel || '').trim().toLowerCase()}:::${(t.judul || '').trim().toLowerCase()}`;
+        const keyTugasWithMateri = `${(t.mapel || '').trim().toLowerCase()}:::[${(t.materi || '').trim().toLowerCase()}] ${(t.judul || '').trim().toLowerCase()}`;
+        const sudahKumpul = riwayatTugasKumpul.includes(keyTugas) || riwayatTugasKumpul.includes(keyTugasWithMateri);
+        const fileLinkBtn = t.link && t.link !== '-' && t.link !== '#' ? `<a href="${t.link}" target="_blank" rel="noopener noreferrer" class="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200/80 px-3 py-1.5 rounded-xl font-bold text-xs inline-flex items-center gap-1.5 transition">${ICONS.fileDoc || ''}<span>Buka File Soal</span>${ICONS.external}</a>` : '';
+        let urlMateri = t.linkMateri || t.linkExternal || t.linkYoutube || t.video || '';
+        if (!urlMateri && t.link && (t.link.includes('youtu.be') || t.link.includes('youtube.com'))) {
+          urlMateri = t.link;
+        }
+        const isYt = getYouTubeId(urlMateri);
+        const ytEmbed = isYt ? renderYouTubeEmbed(urlMateri) : '';
+        const ytLinkBtn = isYt ? `<a href="${urlMateri}" target="_blank" rel="noopener noreferrer" class="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/80 px-3 py-1.5 rounded-xl font-bold text-xs inline-flex items-center gap-1.5 transition">${ICONS.youtube || ''}<span>Tonton di YouTube</span>${ICONS.external}</a>` : '';
+        const webMateriBtn = !isYt && urlMateri && urlMateri !== '-' && urlMateri !== '#' ? `<a href="${urlMateri}" target="_blank" rel="noopener noreferrer" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80 px-3 py-1.5 rounded-xl font-bold text-xs inline-flex items-center gap-1.5 transition"> ${ICONS.globe || ''} <span>Buka Tautan Materi</span> ${ICONS.external} </a>` : '';
+        const materiBadge = t.materi ? `<span class="text-[11px] font-semibold text-slate-500 bg-slate-200/60 px-2 py-0.5 rounded-md">${escapeHtml(t.materi)}</span>` : '';
+        if (sudahKumpul) {
           return `
-            <div class="p-4 rounded-2xl border border-slate-200 bg-slate-50 space-y-2.5 transition-all">
+            <div class="p-4 rounded-2xl border border-emerald-200 bg-emerald-50/70 space-y-2.5 transition-all">
               <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
                 <div class="flex items-center gap-1.5 flex-wrap">
-                  <span class="text-xs font-bold text-blue-700 bg-blue-100/70 px-2.5 py-0.5 rounded-md">${escapeHtml(t.mapel)}</span>
+                  <span class="text-xs font-bold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-md">${escapeHtml(t.mapel)}</span>
                   ${materiBadge}
                 </div>
-                <span class="text-[11px] text-slate-500 font-medium">Batas Waktu: ${escapeHtml(t.deadline || '-')}</span>
+                <span class="text-[11px] text-slate-400 font-medium">Batas Waktu: ${escapeHtml(t.deadline || '-')}</span>
               </div>
               <h4 class="text-sm font-black text-slate-800">${escapeHtml(t.judul)}</h4>
               <p class="text-xs text-slate-600 leading-relaxed">${escapeHtml(t.deskripsi || '-')}</p>
               ${ytEmbed}
-              <div class="pt-2 flex items-center justify-between gap-2 flex-wrap border-t border-slate-200/60">
+              <div class="pt-2 flex items-center justify-between gap-2 flex-wrap border-t border-emerald-200/60">
                 <div class="flex items-center gap-1.5 flex-wrap">${fileLinkBtn} ${ytLinkBtn} ${webMateriBtn}</div>
-                <button type="button" onclick="pilihTugas('${safeJudul}', '${safeMapel}', '${safeMateri}')" class="cursor-pointer text-xs bg-indigo-900 hover:bg-indigo-950 active:scale-95 text-white font-bold px-3.5 py-2 rounded-xl transition shadow-sm border border-indigo-700/50 inline-flex items-center gap-1.5 ml-auto">
-                  <svg class="w-3.5 h-3.5 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-                  <span>Kumpul Tugas Ini</span>
-                </button>
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-200/80 text-emerald-800 text-xs font-bold ml-auto">
+                  <svg class="w-4 h-4 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                  <span>Sudah Dikerjakan</span>
+                </span>
               </div>
             </div>
           `;
-        })
-        .join('');
-    } catch {
-      container.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">Gagal memuat daftar tugas terbaru.</p>`;
-    }
+        }
+        return `
+          <div class="p-4 rounded-2xl border border-slate-200 bg-slate-50 space-y-2.5 transition-all">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="text-xs font-bold text-blue-700 bg-blue-100/70 px-2.5 py-0.5 rounded-md">${escapeHtml(t.mapel)}</span>
+                ${materiBadge}
+              </div>
+              <span class="text-[11px] text-slate-500 font-medium">Batas Waktu: ${escapeHtml(t.deadline || '-')}</span>
+            </div>
+            <h4 class="text-sm font-black text-slate-800">${escapeHtml(t.judul)}</h4>
+            <p class="text-xs text-slate-600 leading-relaxed">${escapeHtml(t.deskripsi || '-')}</p>
+            ${ytEmbed}
+            <div class="pt-2 flex items-center justify-between gap-2 flex-wrap border-t border-slate-200/60">
+              <div class="flex items-center gap-1.5 flex-wrap">${fileLinkBtn} ${ytLinkBtn} ${webMateriBtn}</div>
+              <button type="button" onclick="pilihTugas('${safeJudul}', '${safeMapel}', '${safeMateri}')" class="cursor-pointer text-xs bg-indigo-900 hover:bg-indigo-950 active:scale-95 text-white font-bold px-3.5 py-2 rounded-xl transition shadow-sm border border-indigo-700/50 inline-flex items-center gap-1.5 ml-auto">
+                <svg class="w-3.5 h-3.5 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                <span>Kumpul Tugas Ini</span>
+              </button>
+            </div>
+          </div>
+        `;
+      })
+      .join('');
+  } catch {
+    container.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">Gagal memuat daftar tugas terbaru.</p>`;
   }
+}
 
   /**
    * Memuat & Merender Daftar Materi Pelajaran dari Guru pada Sub-Tab "Materi Pelajaran"
    */
   async function loadDaftarMateriSiswa() {
-    if (!currentStudent) return;
-    try {
-      const res = await fetch(`/api/materi?kelas=${encodeURIComponent(currentStudent.kelas)}`);
-      const result = await res.json();
-      if (result.success) {
-        cacheMateriAjarSiswa = result.daftarMateri || [];
-        if (Array.isArray(result.logBaca)) {
-          result.logBaca.forEach((log) => {
-            if (String(log.nis) === String(currentStudent.nis) && log.materiTerakhir && log.materiTerakhir !== '-') {
+  if (!currentStudent) return;
+  try {
+    const kelasBersih = String(currentStudent.kelas || '')
+      .trim()
+      .replace(/^Kelas\s+/i, '');
+    const res = await fetch(`/api/materi?kelas=${encodeURIComponent(kelasBersih)}`);
+    const result = await res.json();
+    
+    if (result.success) {
+      cacheMateriAjarSiswa = Array.isArray(result.daftarMateri) ? result.daftarMateri : [];
+      
+      if (Array.isArray(result.logBaca)) {
+        result.logBaca.forEach((log) => {
+          if (String(log.nis) === String(currentStudent.nis)) {
+            if (log.judulMateri && log.judulMateri !== '-') {
+              cacheMateriDibacaSet.add(log.judulMateri);
+            }
+            if (log.materiTerakhir && log.materiTerakhir !== '-') {
               cacheMateriDibacaSet.add(log.materiTerakhir);
             }
-          });
-        }
-        renderDaftarMateriSiswa();
+          }
+        });
       }
-    } catch {
-      const container = document.getElementById('containerDaftarMateriSiswa');
-      if (container) {
-        container.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">Gagal memuat materi pelajaran.</p>`;
+
+      // KOREKSI KONSISTENSI: Hitung sisa materi yang BELUM dibaca/dipelajari
+      const filterMapel = document.getElementById('filterMapelMateriSiswa')?.value || 'SEMUA';
+      const listFiltered = cacheMateriAjarSiswa.filter(
+        (m) => !filterMapel || filterMapel === 'SEMUA' || m.mapel === filterMapel
+      );
+      
+      const sisaBelumDibaca = listFiltered.filter((m) => !cacheMateriDibacaSet.has(m.judul)).length;
+
+      const badgeMateri = document.getElementById('badgeJumlahMateriSiswa');
+      if (badgeMateri) {
+        badgeMateri.textContent = String(sisaBelumDibaca);
       }
+
+      renderDaftarMateriSiswa();
+    }
+  } catch {
+    const container = document.getElementById('containerDaftarMateriSiswa');
+    if (container) {
+      container.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">Gagal memuat materi pelajaran.</p>`;
     }
   }
+}
 
   function renderDaftarMateriSiswa() {
     const container = document.getElementById('containerDaftarMateriSiswa');
@@ -1437,40 +1448,66 @@
   // 8. TABEL RIWAYAT KEHADIRAN, IZIN, & NILAI TUGAS (DATATABLES)
   // ==========================================================================
   async function loadRiwayat() {
-    if (!currentStudent) return;
-    try {
-      const res = await fetch(`/api/riwayat/${currentStudent.nis}`);
-      const result = await res.json();
-      if (!result.success) return;
+  if (!currentStudent) return;
+  try {
+    const res = await fetch(`/api/riwayat/${currentStudent.nis}`);
+    const result = await res.json();
+    if (!result.success) return;
+    
+    cacheAbsensiRaw = result.absensi || [];
+    dtStateAbsenSiswa.page = 1;
+    renderTabelAbsensi();
 
-      cacheAbsensiRaw = result.absensi || [];
-      dtStateAbsenSiswa.page = 1;
-      renderTabelAbsensi();
+    cacheTugasRaw = result.tugas || [];
+    dtStateTugasSiswa.page = 1;
+    renderTabelTugasKumpul();
 
-      cacheTugasRaw = result.tugas || [];
-      dtStateTugasSiswa.page = 1;
-      renderTabelTugasKumpul();
-      renderDashboardPerkembanganSiswa();
-    } catch (err) {
-      console.error('[SiBintang] Gagal memuat riwayat:', err);
+    // Menghitung jumlah tugas yang sudah dikumpul tapi status nilainya masih kosong/menunggu
+    const jumlahBelumDinilai = cacheTugasRaw.filter(
+      (t) => t.nilai === '' || t.nilai === null || t.nilai === undefined || isNaN(Number(t.nilai))
+    ).length;
+
+    // Memperbarui Badge Angka Riwayat & Nilai
+    const badgeNilaiTab = document.getElementById('badgeJumlahBelumDinilaiSiswa');
+    if (badgeNilaiTab) {
+      badgeNilaiTab.textContent = String(jumlahBelumDinilai);
+      badgeNilaiTab.classList.toggle('hidden', jumlahBelumDinilai === 0);
     }
+
+    renderDashboardPerkembanganSiswa();
+  } catch (err) {
+    console.error('[SiBintang] Gagal memuat riwayat:', err);
   }
+}
 
   async function loadRiwayatIzin() {
-    if (!currentStudent) return;
-    try {
-      const res = await fetch(`/api/izin/${currentStudent.nis}`);
-      const result = await res.json();
-      if (!result.success) return;
+  if (!currentStudent) return;
+  try {
+    const res = await fetch(`/api/izin/${currentStudent.nis}`);
+    const result = await res.json();
+    if (!result.success) return;
+    
+    cacheIzinRaw = result.izin || [];
+    dtStateIzinSiswa.page = 1;
+    renderTabelIzin();
 
-      cacheIzinRaw = result.izin || [];
-      dtStateIzinSiswa.page = 1;
-      renderTabelIzin();
-      renderDashboardPerkembanganSiswa();
-    } catch (err) {
-      console.error('[SiBintang] Gagal memuat riwayat izin:', err);
+    // PENAMBAHAN BADGE HITUNG JUMLAH UNTUK IZIN STATUS "MENUNGGU"
+    const jumlahMenunggu = cacheIzinRaw.filter(
+      (i) => String(i.verifikasi || i.statusVerifikasi || '').toLowerCase() === 'menunggu'
+    ).length;
+    
+    // Perbarui elemen badge pada tab izin siswa jika tersedia
+    const badgeIzinTab = document.getElementById('badgeJumlahIzinSiswa');
+    if (badgeIzinTab) {
+      badgeIzinTab.textContent = String(jumlahMenunggu);
+      badgeIzinTab.classList.toggle('hidden', jumlahMenunggu === 0);
     }
+
+    renderDashboardPerkembanganSiswa();
+  } catch (err) {
+    console.error('[SiBintang] Gagal memuat riwayat izin:', err);
   }
+}
 
   function renderTabelAbsensi() {
     buatDataTables({
