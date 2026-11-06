@@ -83,6 +83,29 @@ html[data-auth-state="guest"] #headerGuruContainer {
   max-width: 28rem !important;
 }
 
+/* Pastikan saat sudah login, konten utama menempel rapi di bawah header (tidak terdorong ke tengah layar) */
+html[data-auth-state="authenticated"] main {
+  justify-content: flex-start !important;
+}
+
+html[data-auth-state="guest"] main {
+  justify-content: center !important;
+}
+
+#appSection,
+#dashboardGuruSection {
+  margin-top: 0 !important;
+  padding-top: 0.5rem !important;
+}
+
+html[data-auth-state="authenticated"] #headerSiswaContainer,
+html[data-auth-state="authenticated"] #appSection {
+  max-width: 72rem !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  width: 100% !important;
+}
+
 /* ==========================================================================
    3. DASAR LAYOUT, STABILITAS SCROLLBAR & OPTIMASI PWA
    ========================================================================== */
