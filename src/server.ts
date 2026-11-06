@@ -888,9 +888,15 @@ app.post('/api/guru/izin', handlePostVerifikasiIzinGuru);
 
 app.get('/api/materi', async (req: Request, res: Response) => {
   try {
-    const kelas = String(req.query.kelas || 'SEMUA').trim().toUpperCase();
+    const normKelas = (val: any) =>
+      String(val || '')
+        .trim()
+        .toUpperCase()
+        .replace(/^KELAS\s+/i, '');
+
+    const kelas = normKelas(req.query.kelas || 'SEMUA');
     const mapel = String(req.query.mapel || 'SEMUA').trim();
-    const isAllKelas = !kelas || kelas === 'SEMUA';
+    const isAllKelas = !kelas || kelas === 'SEMUA' || kelas === '-';
 
     const [siswaRes, materiRes, logBacaRes] = await Promise.all([
       sheets.spreadsheets.values
@@ -923,7 +929,8 @@ app.get('/api/materi', async (req: Request, res: Response) => {
         pembuat: row[8] || 'Guru',
       }))
       .filter((m) => {
-        const matchKelas = isAllKelas || m.kelas === kelas;
+        const mKelas = normKelas(m.kelas);
+        const matchKelas = isAllKelas || mKelas === 'SEMUA' || mKelas === kelas;
         const matchMapel = !mapel || mapel === 'SEMUA' || m.mapel === mapel;
         return matchKelas && matchMapel && Boolean(m.judul && m.judul !== '-');
       })
@@ -1227,9 +1234,15 @@ app.get('/api/riwayat/:nis', async (req: Request, res: Response) => {
 
 app.get('/api/guru/tugas', async (req: Request, res: Response) => {
   try {
-    const kelas = String(req.query.kelas || 'SEMUA').trim().toUpperCase();
+    const normKelas = (val: any) =>
+      String(val || '')
+        .trim()
+        .toUpperCase()
+        .replace(/^KELAS\s+/i, '');
+
+    const kelas = normKelas(req.query.kelas || 'SEMUA');
     const mapel = String(req.query.mapel || 'SEMUA').trim();
-    const isAllKelas = !kelas || kelas === 'SEMUA';
+    const isAllKelas = !kelas || kelas === 'SEMUA' || kelas === '-';
 
     const [siswaRes, tugasRes, daftarSoalRes] = await Promise.all([
       sheets.spreadsheets.values
@@ -1259,9 +1272,12 @@ app.get('/api/guru/tugas', async (req: Request, res: Response) => {
 
     const daftarSoalKelas: SoalTugas[] = allSoal
       .filter((row) => {
-        const rowKelas = String(row[1] || '').trim().toUpperCase();
+        const rowKelas = normKelas(row[1]);
         const rowMapel = String(row[2] || '').trim();
-        return (isAllKelas || rowKelas === kelas) && (!mapel || mapel === 'SEMUA' || rowMapel === mapel);
+        return (
+          (isAllKelas || rowKelas === 'SEMUA' || rowKelas === kelas) &&
+          (!mapel || mapel === 'SEMUA' || rowMapel === mapel)
+        );
       })
       .map((row, idx) => ({
         id: idx + 1,
